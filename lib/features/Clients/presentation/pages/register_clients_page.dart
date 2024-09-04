@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:rayo_taxi/features/Clients/domain/entities/client.dart';
+import 'package:rayo_taxi/features/Clients/presentation/getxs/client/client_getx.dart';
 
-class RegisterUserPage extends StatefulWidget {
+class RegisterClientsPage extends StatefulWidget {
   @override
-  _RegisterUserPage createState() => _RegisterUserPage();
+  _RegisterClientsPage createState() => _RegisterClientsPage();
 }
 
-class _RegisterUserPage extends State<RegisterUserPage> {
+class _RegisterClientsPage extends State<RegisterClientsPage> {
   final _formKey = GlobalKey<FormState>();
+  final ClientGetx _clientGetx = Get.find<ClientGetx>();
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _oldController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -24,6 +31,18 @@ class _RegisterUserPage extends State<RegisterUserPage> {
     if (_formKey.currentState!.validate()) {
       print('Email: ${_emailController.text}');
       print('Password: ${_passwordController.text}');
+
+      String name = _nameController.text;
+      String password = _passwordController.text;
+      String email = _emailController.text;
+      int years_old = int.parse(_oldController.text);
+      print('Nombre: $name');
+      print('Contraseña: $password');
+      print('Correo electrónico: $email');
+      final post = Client(
+          name: name, password: password, email: email, years_old: years_old);
+
+      _clientGetx.createClient(CreateClientEvent(post));
     }
   }
 
@@ -32,7 +51,7 @@ class _RegisterUserPage extends State<RegisterUserPage> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-       appBar: AppBar(
+      appBar: AppBar(
         backgroundColor: Color(0xFFEFC300),
         elevation: 0,
         leading: IconButton(
@@ -82,6 +101,33 @@ class _RegisterUserPage extends State<RegisterUserPage> {
                           TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 20),
+                    Obx(() {
+                      if (_clientGetx.state.value
+                          is ClientCreatedSuccessfully) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Text(
+                            'Registro exitoso', 
+                            style: TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        );
+                      } else if (_clientGetx.state.value
+                          is ClientCreationFailure) {
+                        final failureState =
+                            _clientGetx.state.value as ClientCreationFailure;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Text(
+                            failureState.error,
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        );
+                      }
+                      return SizedBox.shrink();
+                    }),
+                    SizedBox(height: 20),
                     Form(
                       key: _formKey,
                       child: Column(
@@ -91,7 +137,7 @@ class _RegisterUserPage extends State<RegisterUserPage> {
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 16.0),
                             child: TextFormField(
-                              controller: _passwordController,
+                              controller: _nameController,
                               decoration: InputDecoration(
                                 labelText: 'Nombre',
                                 labelStyle: TextStyle(color: Color(0xFF545454)),
@@ -102,12 +148,36 @@ class _RegisterUserPage extends State<RegisterUserPage> {
                                   borderSide: BorderSide.none,
                                 ),
                               ),
-                              obscureText: true,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Por favor ingrese su contraseña';
+                                  return 'Por favor ingrese su nombre';
                                 }
-                               
+
+                                return null;
+                              },
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: TextFormField(
+                              controller: _oldController,
+                              decoration: InputDecoration(
+                                labelText: 'Edad',
+                                labelStyle: TextStyle(color: Color(0xFF545454)),
+                                filled: true,
+                                fillColor: Color(0xFFD9D9D9),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Por favor ingrese su Edad';
+                                }
+
                                 return null;
                               },
                             ),
@@ -162,14 +232,11 @@ class _RegisterUserPage extends State<RegisterUserPage> {
                                 if (value == null || value.isEmpty) {
                                   return 'Por favor ingrese su contraseña';
                                 }
-                                if (value.length < 6) {
-                                  return 'La contraseña debe tener al menos 6 caracteres';
-                                }
+                               
                                 return null;
                               },
                             ),
                           ),
-                          
                           SizedBox(height: 20),
                           Padding(
                             padding:

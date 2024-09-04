@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import 'register_user_page.dart';
+import 'register_clients_page.dart';
 
-class LoginUserPage extends StatefulWidget {
+class LoginClientsPage extends StatefulWidget {
   @override
-  _LoginUserPage createState() => _LoginUserPage();
+  _LoginClientsPage createState() => _LoginClientsPage();
 }
 
-class _LoginUserPage extends State<LoginUserPage> {
+class _LoginClientsPage extends State<LoginClientsPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -214,7 +214,7 @@ class _LoginUserPage extends State<LoginUserPage> {
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) =>
-                                          RegisterUserPage()),
+                                          RegisterClientsPage()),
                                 );
                               },
                               child: Text(

@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:rayo_taxi/usecase_config.dart';
 
-import 'features/user/presentation/pages/login_user_page.dart';
+import 'features/Clients/presentation/getxs/client/client_getx.dart';
+import 'features/Clients/presentation/pages/login_clients_page.dart';
+UsecaseConfig usecaseConfig = UsecaseConfig();
 
 void main() {
-  runApp(const MyApp());
+  runApp( MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
+ MyApp() {
+    
+    Get.put(ClientGetx(createClientUsecase: usecaseConfig.createClientUsecase!));
+  }
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-       
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home:  LoginUserPage(),
+      
+      home:  LoginClientsPage(),
     );
   }
 }
