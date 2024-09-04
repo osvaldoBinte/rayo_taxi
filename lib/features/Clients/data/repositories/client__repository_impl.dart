@@ -10,4 +10,15 @@ class ClientRepositoryImpl implements ClientRepository {
   Future<void> createClient(Client client) async {
     return await clientLocalDataSource.createClient(client);
   }
+  
+  @override
+  Future<void> loginClient(Client client) async {
+    return await clientLocalDataSource.loginClient(client);
+  }
+  
+  @override
+    Future<bool> verifyToken() async {
+    return await clientLocalDataSource.verifyToken();
+  }
+  
 }

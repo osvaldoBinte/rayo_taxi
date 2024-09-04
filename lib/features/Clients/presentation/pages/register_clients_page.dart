@@ -41,7 +41,6 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
       print('Correo electrónico: $email');
       final post = Client(
           name: name, password: password, email: email, years_old: years_old);
-
       _clientGetx.createClient(CreateClientEvent(post));
     }
   }

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import '../../domain/entities/client.dart';
+import '../getxs/login/loginclient_getx.dart';
+import 'Homeprueba.dart';
 import 'register_clients_page.dart';
 
 class LoginClientsPage extends StatefulWidget {
@@ -8,11 +12,14 @@ class LoginClientsPage extends StatefulWidget {
 }
 
 class _LoginClientsPage extends State<LoginClientsPage> {
+  final LoginclientGetx _clientGetx = Get.find<LoginclientGetx>();
+
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isEmailEntered = false;
+  bool _obscureText = true;
 
   void _nextStep() {
     if (_formKey.currentState!.validate()) {
@@ -22,10 +29,22 @@ class _LoginClientsPage extends State<LoginClientsPage> {
     }
   }
 
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscureText = !_obscureText;
+    });
+  }
+
   void _login() {
     if (_formKey.currentState!.validate()) {
       print('Email: ${_emailController.text}');
       print('Password: ${_passwordController.text}');
+
+      String password = _passwordController.text;
+      String email = _emailController.text;
+      final post = Client(email: email, password: password);
+
+      _clientGetx.createClient(LoginClientEvent(post));
     }
   }
 
@@ -73,6 +92,34 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                       style:
                           TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
+                    SizedBox(height: 20),
+                    Obx(() {
+                      if (_clientGetx.state.value is LoginclientSuccessfully) {
+                        Future.microtask(() => Get.to(() => Homeprueba()));
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Text(
+                            'Exitoso',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        );
+                      } else if (_clientGetx.state.value
+                          is LoginclientFailure) {
+                        final failureState =
+                            _clientGetx.state.value as LoginclientFailure;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Text(
+                            failureState.error,
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        );
+                      }
+                      return SizedBox.shrink();
+                    }),
                     SizedBox(height: 20),
                     Form(
                       key: _formKey,
@@ -151,14 +198,21 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                                     borderRadius: BorderRadius.circular(8.0),
                                     borderSide: BorderSide.none,
                                   ),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscureText
+                                          ? Icons.visibility
+                                          : Icons.visibility_off,
+                                      color: Color(0xFF545454),
+                                    ),
+                                    onPressed: _togglePasswordVisibility,
+                                  ),
                                 ),
-                                obscureText: true,
+                                obscureText:
+                                    _obscureText, // Controla la visibilidad de la contraseña
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return 'Por favor ingrese su contraseña';
-                                  }
-                                  if (value.length < 6) {
-                                    return 'La contraseña debe tener al menos 6 caracteres';
                                   }
                                   return null;
                                 },

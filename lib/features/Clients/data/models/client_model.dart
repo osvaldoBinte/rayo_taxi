@@ -3,10 +3,10 @@ import 'package:rayo_taxi/features/Clients/domain/entities/client.dart';
 class ClientModel extends Client {
   ClientModel({
     int? id,
-    required String name,
-    required String email,
-    required String password,
-    required int years_old,
+     String? name,
+     String? email,
+     String? password,
+     int? years_old,
     int? id_company,
     String? token,
   }) : super(
