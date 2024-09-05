@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/usecase_config.dart';
 
-import 'features/Clients/data/datasources/client_local_data_source.dart';
 import 'features/Clients/presentation/getxs/client/client_getx.dart';
 import 'features/Clients/presentation/getxs/login/loginclient_getx.dart';
 import 'features/Clients/presentation/getxs/token/tokenclient_getx.dart';

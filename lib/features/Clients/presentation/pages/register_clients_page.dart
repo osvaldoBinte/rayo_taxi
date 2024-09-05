@@ -106,7 +106,7 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: Text(
-                            'Registro exitoso', 
+                            'Registro exitoso',
                             style: TextStyle(
                                 color: Colors.green,
                                 fontWeight: FontWeight.bold),
@@ -176,6 +176,14 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
                                 if (value == null || value.isEmpty) {
                                   return 'Por favor ingrese su Edad';
                                 }
+                                final edad = int.tryParse(value);
+                                if (edad == null) {
+                                  return 'Por favor ingrese un número válido';
+                                }
+
+                                if (edad < 18) {
+                                  return 'Debe tener al menos 18 años';
+                                }
 
                                 return null;
                               },
@@ -231,7 +239,7 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
                                 if (value == null || value.isEmpty) {
                                   return 'Por favor ingrese su contraseña';
                                 }
-                               
+
                                 return null;
                               },
                             ),
