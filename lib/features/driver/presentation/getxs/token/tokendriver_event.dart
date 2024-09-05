@@ -1,7 +1,7 @@
-part of 'tokenclient_getx.dart';
+part of 'tokendriver_getx.dart';
 
 @immutable
-abstract class TokenclientEvent {}
+abstract class TokendriverEvent {}
 
 class FetchTokenDetailsEvent {
    

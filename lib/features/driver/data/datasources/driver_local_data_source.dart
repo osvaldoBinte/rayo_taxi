@@ -1,20 +1,21 @@
-import 'package:rayo_taxi/features/Clients/domain/entities/client.dart';
+
+import 'package:rayo_taxi/features/driver/domain/entities/driver.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import '../models/client_model.dart';
 
-abstract class ClientLocalDataSource {
-  Future<void> createClient(Client client);
-  Future<void> loginClient(Client client);
+import '../models/driver_model.dart';
+abstract class DriverLocalDataSource{
+  Future<void> loginDriver(Driver driver);
   Future<bool> verifyToken();
 }
+class DriverLocalDataSourceImp implements DriverLocalDataSource{
+ 
 
-class ClientLocalDataSourceImp implements ClientLocalDataSource {
   final String _baseUrl =
-      'https://developer.binteapi.com:3009/api/app_clients/users';
+      'https://developer.binteapi.com:3009/api/app_drivers/users';
   @override
-  Future<bool> verifyToken() async {
+  Future<bool> verifyToken()async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('auth_token');
 
@@ -34,16 +35,17 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
       }
     }
     return false; 
+   
   }
-
+  
   @override
-  Future<void> loginClient(Client client) async {
-    var response = await http.post(
+  Future<void> loginDriver(Driver driver) async{
+     var response = await http.post(
       Uri.parse('$_baseUrl/auth/login'),
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode(ClientModel.fromEntity(client).toJson()),
+      body: jsonEncode(DriverModel.fromEntity(driver).toJson()),
     );
 
     dynamic body = jsonDecode(response.body);
@@ -63,27 +65,5 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
       throw Exception(message);
     }
   }
-
-  @override
-  Future<void> createClient(Client client) async {
-    var response = await http.post(
-      Uri.parse('$_baseUrl/clients'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(ClientModel.fromEntity(client).toJson()),
-    );
-
-    dynamic body = jsonDecode(response.body);
-
-    print(response.statusCode);
-    if (response.statusCode == 200) {
-      String message = body['message'].toString();
-      print(message);
-    } else {
-      String message = body['message'].toString();
-      print(body);
-      throw Exception(message);
-    }
-  }
+  
 }
