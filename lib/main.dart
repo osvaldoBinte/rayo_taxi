@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:rayo_taxi/features/Clients/presentation/getxs/Device/device_getx.dart';
 import 'package:rayo_taxi/usecase_config.dart';
 
 import 'features/Clients/presentation/getxs/client/client_getx.dart';
@@ -12,8 +13,7 @@ UsecaseConfig usecaseConfig = UsecaseConfig();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
- Get.put(
-        TokenclientGetx(tokenclientUsecase: usecaseConfig.tokenclientUsecase!));
+ Get.put(TokenclientGetx(tokenclientUsecase: usecaseConfig.tokenclientUsecase!));
   final tokenclientGetx = Get.find<TokenclientGetx>();
   await tokenclientGetx.verifyToken();
   final isValidToken = tokenclientGetx.state.value is TokenclientVerified;
@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
         ClientGetx(createClientUsecase: usecaseConfig.createClientUsecase!));
     Get.put(
         LoginclientGetx(loginClientUsecase: usecaseConfig.loginClientUsecase!));
-   
+   Get.put(DeviceGetx(deviceCientUsecase: usecaseConfig.deviceCientUsecase!));
   }
 
   @override

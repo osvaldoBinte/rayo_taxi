@@ -1,8 +1,8 @@
 import 'package:rayo_taxi/features/Clients/data/datasources/client_local_data_source.dart';
 import 'package:rayo_taxi/features/Clients/data/repositories/client__repository_impl.dart';
 import 'package:rayo_taxi/features/Clients/domain/usecases/create_client_usecase.dart';
+import 'package:rayo_taxi/features/Clients/domain/usecases/device_cient_usecase.dart';
 import 'package:rayo_taxi/features/Clients/domain/usecases/login_client_usecase.dart';
-
 import 'features/Clients/domain/usecases/tokenclient_usecase.dart';
 
 class UsecaseConfig {
@@ -12,7 +12,8 @@ class UsecaseConfig {
   CreateClientUsecase? createClientUsecase;
   LoginClientUsecase? loginClientUsecase;
   TokenclientUsecase? tokenclientUsecase;
-
+  DeviceCientUsecase?deviceCientUsecase;
+  
   UsecaseConfig() {
     clientLocalDataSourceImp = ClientLocalDataSourceImp();
     clientRepositoryImpl =
@@ -21,5 +22,6 @@ class UsecaseConfig {
     createClientUsecase = CreateClientUsecase(clientRepositoryImpl!);
     loginClientUsecase = LoginClientUsecase(clientRepositoryImpl!);
     tokenclientUsecase = TokenclientUsecase(clientRepositoryImpl!);
+    deviceCientUsecase = DeviceCientUsecase(clientRepository: clientRepositoryImpl!);
   }
 }

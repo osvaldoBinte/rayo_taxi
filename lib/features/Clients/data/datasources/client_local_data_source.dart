@@ -3,16 +3,37 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/client_model.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'dart:io';
+import 'dart:convert' as convert;
 
 abstract class ClientLocalDataSource {
   Future<void> createClient(Client client);
   Future<void> loginClient(Client client);
   Future<bool> verifyToken();
+  Future<String?> getDeviceId();
+  Future<List<ClientModel>> getClient();
 }
 
 class ClientLocalDataSourceImp implements ClientLocalDataSource {
   final String _baseUrl =
       'https://developer.binteapi.com:3009/api/app_clients/users';
+  @override
+  Future<String?> getDeviceId() async {
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
+    if (Platform.isAndroid) {
+      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      print('Device: $androidInfo');
+      return androidInfo.id;
+    } else if (Platform.isIOS) {
+      IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+      print(iosInfo.identifierForVendor);
+      return iosInfo.identifierForVendor;
+    }
+    return null;
+  }
+
   @override
   Future<bool> verifyToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -33,7 +54,7 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
         return true;
       }
     }
-    return false; 
+    return false;
   }
 
   @override
@@ -84,6 +105,24 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
       String message = body['message'].toString();
       print(body);
       throw Exception(message);
+    }
+  }
+  
+  @override
+  Future<List<ClientModel>> getClient() async{
+      var response = await http.get(Uri.parse('$_baseUrl/2'));
+
+    if (response.statusCode == 200) {
+      final jsonResponse = convert.jsonDecode(response.body);
+      if (jsonResponse['ok'] == true && jsonResponse['data'] != null) {
+        return (jsonResponse['data'] as List)
+            .map<ClientModel>((data) => ClientModel.fromJson(data))
+            .toList();
+      } else {
+        throw Exception('Estructura de respuesta inesperada');
+      }
+    } else {
+      throw Exception('Error en la petición: ${response.statusCode}');
     }
   }
 }
