@@ -34,28 +34,41 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
     return null;
   }
 
-  @override
-  Future<bool> verifyToken() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('auth_token');
+@override
+Future<bool> verifyToken() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? token = prefs.getString('auth_token'); // Usamos 'auth_token'
 
-    if (token != null) {
-      var response = await http.get(
-        Uri.parse('$_baseUrl/auth/renew'),
-        headers: {
-          'Content-Type': 'application/json',
-          'x-token': token,
-        },
-      );
+  if (token != null) {
+    var response = await http.get(
+      Uri.parse('$_baseUrl/auth/renew'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': token,
+      },
+    );
 
-      dynamic body = jsonDecode(response.body);
+    dynamic body = jsonDecode(response.body);
 
-      if (response.statusCode == 200 && body['ok'] == true) {
-        return true;
-      }
+    if (response.statusCode == 200 && body['ok'] == true) {
+      // Guardamos el nuevo token renovado en 'auth_token'
+      String newToken = body['data']['token'].toString(); // Tomamos el nuevo token
+      await prefs.setString('auth_token', newToken); // Lo guardamos
+      print('Nuevo auth_token: ' + newToken);
+      return true;
+    } else {
+      // El token no es válido o la renovación falló
+      print('Token no válido o fallo en la renovación');
+      await prefs.remove('auth_token'); // Eliminamos el token inválido
+      return false;
     }
+  } else {
+    // No hay token en SharedPreferences
     return false;
   }
+}
+
+
 
   @override
   Future<void> loginClient(Client client) async {
@@ -107,10 +120,10 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
       throw Exception(message);
     }
   }
-  
+
   @override
-  Future<List<ClientModel>> getClient() async{
-      var response = await http.get(Uri.parse('$_baseUrl/2'));
+  Future<List<ClientModel>> getClient() async {
+    var response = await http.get(Uri.parse('$_baseUrl/2'));
 
     if (response.statusCode == 200) {
       final jsonResponse = convert.jsonDecode(response.body);

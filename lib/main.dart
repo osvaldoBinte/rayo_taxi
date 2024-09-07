@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rayo_taxi/features/Clients/presentation/getxs/Device/device_getx.dart';
 import 'package:rayo_taxi/usecase_config.dart';
 
@@ -13,29 +14,27 @@ UsecaseConfig usecaseConfig = UsecaseConfig();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
- Get.put(TokenclientGetx(tokenclientUsecase: usecaseConfig.tokenclientUsecase!));
-  final tokenclientGetx = Get.find<TokenclientGetx>();
-  await tokenclientGetx.verifyToken();
-  final isValidToken = tokenclientGetx.state.value is TokenclientVerified;
+  Get.put(ClientGetx(createClientUsecase: usecaseConfig.createClientUsecase!));
+  Get.put(LoginclientGetx(loginClientUsecase: usecaseConfig.loginClientUsecase!));
+  Get.put(DeviceGetx(deviceCientUsecase: usecaseConfig.deviceCientUsecase!));
 
-  runApp(MyApp(isValidToken: isValidToken));
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token');
+
+  runApp(MyApp(token: token));
 }
 
 class MyApp extends StatelessWidget {
-  final bool isValidToken;
+  final String? token;
 
-  MyApp({required this.isValidToken}) {
-    Get.put(
-        ClientGetx(createClientUsecase: usecaseConfig.createClientUsecase!));
-    Get.put(
-        LoginclientGetx(loginClientUsecase: usecaseConfig.loginClientUsecase!));
-   Get.put(DeviceGetx(deviceCientUsecase: usecaseConfig.deviceCientUsecase!));
-  }
+  MyApp({this.token});
 
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      home: isValidToken ? Homeprueba() : LoginClientsPage(),
+      home: token != null && token!.isNotEmpty
+          ? Homeprueba() 
+          : LoginClientsPage(),
     );
   }
 }

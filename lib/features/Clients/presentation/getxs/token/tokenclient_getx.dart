@@ -9,7 +9,6 @@ import '../../pages/login_clients_page.dart';
 part 'tokenclient_event.dart';
 part 'tokenclient_state.dart';
 
-
 class TokenclientGetx extends GetxController {
   final TokenclientUsecase tokenclientUsecase;
   var state = Rx<TokenclientState>(TokenclientInitial());
