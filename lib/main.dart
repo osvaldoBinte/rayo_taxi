@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/driver/presentation/getxs/login/logindriver_getx.dart';
 import 'package:rayo_taxi/usecase_config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'features/driver/presentation/getxs/token/tokendriver_getx.dart';
 import 'features/driver/presentation/pages/Homeprueba.dart';
 import 'features/driver/presentation/pages/login_driver_page.dart';
@@ -14,21 +15,23 @@ void main() async {
         LogindriverGetx(loginDriverUsecase: usecaseConfig.loginDriverUsecase!));
   Get.put(
       TokendriverGetx(tokendriverUsecase: usecaseConfig.tokendriverUsecase!));
-  final tokendriverGetx = Get.find<TokendriverGetx>();
-  await tokendriverGetx.verifyToken();
-  final isValidToken = tokendriverGetx.state.value is TokendriverVerified;
-  runApp(MyApp(isValidToken: isValidToken));
+   final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token');
+
+  runApp(MyApp(token: token));
 }
 
 class MyApp extends StatelessWidget {
-  final bool isValidToken;
+  final String? token;
 
-  MyApp({required this.isValidToken}) ;
+  MyApp({this.token});
 
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      home: isValidToken ? Homeprueba() : LoginDriverPage(),
+      home: token != null && token!.isNotEmpty
+          ? Homeprueba() 
+          : LoginDriverPage(),
     );
   }
 }
