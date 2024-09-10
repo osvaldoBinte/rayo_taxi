@@ -4,6 +4,10 @@ import 'package:rayo_taxi/features/Clients/domain/entities/client.dart';
 import 'package:rayo_taxi/features/Clients/domain/repositories/client_repository.dart';
 
 class ClientRepositoryImpl implements ClientRepository {
+   @override
+  Future<List<ClientModel>> getClient() async {
+    return await clientLocalDataSource.getClient();
+  }
   final ClientLocalDataSource clientLocalDataSource;
   ClientRepositoryImpl({required this.clientLocalDataSource});
 
@@ -27,8 +31,5 @@ class ClientRepositoryImpl implements ClientRepository {
     return await clientLocalDataSource.getDeviceId();
   }
 
-  @override
-  Future<List<ClientModel>> getClient() async {
-    return await clientLocalDataSource.getClient();
-  }
+ 
 }

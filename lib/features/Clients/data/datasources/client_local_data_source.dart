@@ -18,6 +18,42 @@ abstract class ClientLocalDataSource {
 class ClientLocalDataSourceImp implements ClientLocalDataSource {
   final String _baseUrl =
       'https://developer.binteapi.com:3009/api/app_clients/users';
+   @override
+  Future<List<ClientModel>> getClient() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('auth_token');
+
+    if (token == null) {
+      print('Token no encontrado');
+      throw Exception('Token no encontrado');
+    }
+
+    var headers = {
+      'x-token': token,
+    };
+
+    var response = await http.get(
+      Uri.parse('$_baseUrl/auth/renew'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = convert.jsonDecode(response.body);
+      if (jsonResponse['data'] != null) {
+        var data = jsonResponse['data'];
+        return [ClientModel.fromJson(data)];
+      } else {
+        print('hola else $token');
+        print('hola else $jsonResponse');
+
+        throw Exception('Estructura de respuesta inesperada');
+      }
+    } else {
+      throw Exception('Error en la petición: ${response.statusCode}');
+    }
+  }
+
+
   @override
   Future<String?> getDeviceId() async {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
@@ -34,41 +70,36 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
     return null;
   }
 
-@override
-Future<bool> verifyToken() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  String? token = prefs.getString('auth_token'); // Usamos 'auth_token'
+  @override
+  Future<bool> verifyToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('auth_token');
 
-  if (token != null) {
-    var response = await http.get(
-      Uri.parse('$_baseUrl/auth/renew'),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-token': token,
-      },
-    );
+    if (token != null) {
+      var response = await http.get(
+        Uri.parse('$_baseUrl/auth/renew'),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-token': token,
+        },
+      );
 
-    dynamic body = jsonDecode(response.body);
+      dynamic body = jsonDecode(response.body);
 
-    if (response.statusCode == 200 && body['ok'] == true) {
-      // Guardamos el nuevo token renovado en 'auth_token'
-      String newToken = body['data']['token'].toString(); // Tomamos el nuevo token
-      await prefs.setString('auth_token', newToken); // Lo guardamos
-      print('Nuevo auth_token: ' + newToken);
-      return true;
+      if (response.statusCode == 200 && body['ok'] == true) {
+        String newToken = body['data']['token'].toString();
+        await prefs.setString('auth_token', newToken);
+        print('Nuevo auth_token: ' + newToken);
+        return true;
+      } else {
+        print('Token no válido o fallo en la renovación');
+        await prefs.remove('auth_token');
+        return false;
+      }
     } else {
-      // El token no es válido o la renovación falló
-      print('Token no válido o fallo en la renovación');
-      await prefs.remove('auth_token'); // Eliminamos el token inválido
       return false;
     }
-  } else {
-    // No hay token en SharedPreferences
-    return false;
   }
-}
-
-
 
   @override
   Future<void> loginClient(Client client) async {
@@ -118,24 +149,6 @@ Future<bool> verifyToken() async {
       String message = body['message'].toString();
       print(body);
       throw Exception(message);
-    }
-  }
-
-  @override
-  Future<List<ClientModel>> getClient() async {
-    var response = await http.get(Uri.parse('$_baseUrl/2'));
-
-    if (response.statusCode == 200) {
-      final jsonResponse = convert.jsonDecode(response.body);
-      if (jsonResponse['ok'] == true && jsonResponse['data'] != null) {
-        return (jsonResponse['data'] as List)
-            .map<ClientModel>((data) => ClientModel.fromJson(data))
-            .toList();
-      } else {
-        throw Exception('Estructura de respuesta inesperada');
-      }
-    } else {
-      throw Exception('Error en la petición: ${response.statusCode}');
     }
   }
 }
