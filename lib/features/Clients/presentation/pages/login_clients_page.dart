@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/Clients/presentation/pages/get_client_page.dart';
+import 'package:rayo_taxi/features/Clients/presentation/pages/prueba.dart';
 
 import '../../domain/entities/client.dart';
 import '../getxs/login/loginclient_getx.dart';
-import 'Homeprueba.dart';
 import 'register_clients_page.dart';
 
 class LoginClientsPage extends StatefulWidget {
@@ -95,8 +95,16 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                     ),
                     SizedBox(height: 20),
                     Obx(() {
+                      
                       if (_clientGetx.state.value is LoginclientSuccessfully) {
-                        Future.microtask(() => Get.to(() => GetClientPage()));
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          //Get.to(() => GetClientPage());
+                          Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          MyHomePage()));
+                        });
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: Text(

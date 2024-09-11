@@ -18,13 +18,16 @@ abstract class ClientLocalDataSource {
 class ClientLocalDataSourceImp implements ClientLocalDataSource {
   final String _baseUrl =
       'https://developer.binteapi.com:3009/api/app_clients/users';
-   @override
+  @override
   Future<List<ClientModel>> getClient() async {
+    print(
+        'Llamada a getClient iniciada'); 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('auth_token');
+    print('Token recuperado al iniciar getClient: $token');
 
     if (token == null) {
-      print('Token no encontrado');
+      print('Token no encontrado $token');
       throw Exception('Token no encontrado');
     }
 
@@ -43,16 +46,12 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
         var data = jsonResponse['data'];
         return [ClientModel.fromJson(data)];
       } else {
-        print('hola else $token');
-        print('hola else $jsonResponse');
-
         throw Exception('Estructura de respuesta inesperada');
       }
     } else {
       throw Exception('Error en la petición: ${response.statusCode}');
     }
   }
-
 
   @override
   Future<String?> getDeviceId() async {
@@ -119,8 +118,16 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
       String token = body['data']['token'].toString();
 
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('auth_token', token);
-      print('auth_token: ' + token);
+      bool isSaved = await prefs.setString('auth_token', token);
+
+      if (isSaved) {
+        print('Token guardado correctamente: $token');
+        String? savedToken = prefs.getString('auth_token');
+        print('Token recuperado de SharedPreferences: $savedToken');
+      } else {
+        print('Error al guardar el token');
+      }
+
       print(message);
     } else {
       String message = body['message'].toString();

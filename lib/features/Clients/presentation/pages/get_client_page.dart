@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/Clients/presentation/getxs/get/get_client_getx.dart';
-import 'weight.dart'; // Importa el archivo weight.dart
+import 'weight.dart';
 
 class GetClientPage extends StatefulWidget {
   @override
@@ -52,7 +52,7 @@ class _GetClientPageState extends State<GetClientPage> {
                   children: [
                     CircleAvatar(
                       radius: 60,
-                      backgroundColor: const Color(0xFFEFC300), // Cambiado a #EFC300
+                      backgroundColor: const Color(0xFFEFC300),
                       child: Text(
                         client.name?.substring(0, 1) ?? 'N',
                         style: const TextStyle(
@@ -74,7 +74,7 @@ class _GetClientPageState extends State<GetClientPage> {
                           backgroundColor: Colors.white,
                           child: Icon(
                             Icons.edit,
-                            color: const Color(0xFFEFC300), // Color del ícono
+                            color: const Color(0xFFEFC300), 
                           ),
                         ),
                       ),
@@ -133,17 +133,16 @@ class _GetClientPageState extends State<GetClientPage> {
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
                   onPressed: () {
-                    // Acción para editar cliente
                   },
                   icon: const Icon(Icons.edit, color: Colors.white),
                   label: const Text(
                     'Editar Cliente',
                     style: TextStyle(
-                      color: Colors.white, // Texto en color blanco
+                      color: Colors.white, 
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEFC300), // Color principal #EFC300
+                    backgroundColor: const Color(0xFFEFC300), 
                     padding: const EdgeInsets.symmetric(
                       horizontal: 30,
                       vertical: 15,
@@ -160,11 +159,7 @@ class _GetClientPageState extends State<GetClientPage> {
           return Container(); 
         }),
       ),
-      bottomNavigationBar: buildBottomNavigationBar(_pageIndex, (index) {
-        setState(() {
-          _pageIndex = index;
-        });
-      }), 
+     
     );
   }
 }

@@ -21,13 +21,17 @@ class GetClientGetx extends GetxController {
     state.value = GetClientLoading();
     try {
       var getDetails = await getClientUsecase.execute();
-      if (getDetails.isEmpty) {
-        state.value = GetClientFailure("No hay ningun cliente registrado");
-      } else {
-        state.value = GetClientLoaded(getDetails);
-      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (getDetails.isEmpty) {
+          state.value = GetClientFailure("No hay ningun cliente registrado");
+        } else {
+          state.value = GetClientLoaded(getDetails);
+        }
+      });
     } catch (e) {
-      state.value = GetClientFailure(e.toString());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        state.value = GetClientFailure(e.toString());
+      });
     }
   }
 }
