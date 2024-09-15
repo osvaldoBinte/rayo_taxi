@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/client_model.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:io';
 import 'dart:convert' as convert;
 
@@ -77,21 +76,7 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
     }
   }
 
-  @override
-  Future<String?> getDeviceId() async {
-    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-
-    if (Platform.isAndroid) {
-      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-      print('Device: $androidInfo');
-      return androidInfo.id;
-    } else if (Platform.isIOS) {
-      IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
-      print(iosInfo.identifierForVendor);
-      return iosInfo.identifierForVendor;
-    }
-    return null;
-  }
+ 
 
   @override
   Future<bool> verifyToken() async {
@@ -212,5 +197,11 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
       print(body);
       throw Exception(message);
     }
+  }
+  
+  @override
+  Future<String?> getDeviceId() {
+    // TODO: implement getDeviceId
+    throw UnimplementedError();
   }
 }

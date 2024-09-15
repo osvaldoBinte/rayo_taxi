@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/get_client_page.dart';
-import 'package:rayo_taxi/features/clients/presentation/pages/prueba.dart';
+import 'package:rayo_taxi/features/clients/presentation/pages/home_page.dart';
 
 import '../../domain/entities/client.dart';
 import '../getxs/login/loginclient_getx.dart';
@@ -103,7 +103,7 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                   context,
                   MaterialPageRoute(
                       builder: (context) =>
-                          MyHomePage()));
+                          HomePage()));
                         });
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),

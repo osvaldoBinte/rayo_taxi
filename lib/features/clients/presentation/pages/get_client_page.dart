@@ -45,9 +45,7 @@ class _GetClientPage extends State<GetClientPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mi Perfil'),
-      ),
+    
       body: SingleChildScrollView(
         child: Container(
           color: const Color.fromARGB(255, 255, 255, 255),

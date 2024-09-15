@@ -1,38 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:get/get.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/get_client_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../notification/presentetion/page/notification_page.dart';
 import '../../../travel/presentation/page/mapa.dart';
-//import 'package:rayo_taxi/features/travel/presentation/page/mapa_page.dart';
-
-class HomeScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(child: Text('Home Screen')),
-    );
-  }
-}
+import 'login_clients_page.dart';
 
 
 
-class MyHomePage extends StatefulWidget {
+class HomePage extends StatefulWidget {
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<HomePage> {
   final List<Widget> _pages = [
-    HomeScreen(),
+    NotificationPage(),
     MapScreen(),
     GetClientPage(),
   ];
-
+  Future<void> _logout() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token'); 
+    Get.offAll(() => LoginClientsPage()); 
+  }
   int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(
+        title: Center(
+          child: const Text('Rayo_taxi'),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout), 
+            onPressed: () async {
+              await _logout();
+            },
+          ),
+        ],
+      ),
       body: _pages[_selectedIndex], 
       bottomNavigationBar: CurvedNavigationBar(
         backgroundColor: Colors.transparent,

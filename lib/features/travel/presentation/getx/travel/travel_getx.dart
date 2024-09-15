@@ -14,6 +14,7 @@ class TravelGetx extends GetxController {
     state.value = TravelLoading();
     try {
       await poshTravelUsecase.execute(event.travel);
+      print("object");
       state.value = TravelCreatedSuccessfully();
     } catch (e) {
       state.value = TravelCreationFailure(e.toString());

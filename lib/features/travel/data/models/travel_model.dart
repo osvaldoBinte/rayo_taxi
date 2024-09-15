@@ -3,10 +3,10 @@ import 'package:rayo_taxi/features/travel/domain/entities/travel.dart';
 
 class TravelModel extends Travel {
   TravelModel({
-  String? start_longitude,
-  String? start_latitude,
-  String? end_longitude,
-  String? end_latitude,
+  double? start_longitude,
+  double? start_latitude,
+  double? end_longitude,
+  double? end_latitude,
   String? kilometers,
   }) : super(
             start_longitude: start_longitude,

@@ -1,4 +1,4 @@
-package com.example.rayo_taxi
+package com.rayo.taxi
 
 import io.flutter.embedding.android.FlutterActivity
 

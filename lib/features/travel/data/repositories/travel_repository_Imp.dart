@@ -9,42 +9,42 @@ class TravelRepositoryImp implements TravelRepository{
 
   @override
   double calculateDistance(LatLng start, LatLng end) {
-   return travelLocalDataSource.calculateDistance(start, end);
+   return  travelLocalDataSource.calculateDistance(start, end);
   }
 
   @override
   List<LatLng> decodePolyline(String encoded) {
-   return travelLocalDataSource.decodePolyline(encoded);
+   return  travelLocalDataSource.decodePolyline(encoded);
   }
 
   @override
   double degreesToRadians(double degrees) {
-    return travelLocalDataSource.degreesToRadians(degrees);
+    return  travelLocalDataSource.degreesToRadians(degrees);
   }
 
   @override
-  Future<String> getEncodedPoints() {
-    return travelLocalDataSource.getEncodedPoints();
+  Future<String> getEncodedPoints() async {
+    return await travelLocalDataSource.getEncodedPoints();
   }
 
   @override
-  Future<void> getPlaceDetailsAndMove(String placeId, Function(LatLng p1) moveToLocation, Function(LatLng p1) addMarker) {
-    return travelLocalDataSource.getPlaceDetailsAndMove(placeId, moveToLocation, addMarker);
+  Future<void> getPlaceDetailsAndMove(String placeId, Function(LatLng p1) moveToLocation, Function(LatLng p1) addMarker) async {
+    return await travelLocalDataSource.getPlaceDetailsAndMove(placeId, moveToLocation, addMarker);
   }
 
   @override
-  Future<List> getPlacePredictions(String input) {
-    return travelLocalDataSource.getPlacePredictions(input);
+  Future<List> getPlacePredictions(String input) async {
+    return await travelLocalDataSource.getPlacePredictions(input);
   }
 
   @override
-  Future<void> getRoute(LatLng startLocation, LatLng endLocation) {
-    return travelLocalDataSource.getRoute(startLocation, endLocation);
+  Future<void> getRoute(LatLng startLocation, LatLng endLocation) async {
+    return await travelLocalDataSource.getRoute(startLocation, endLocation);
   }
 
   @override
-  Future<void> poshTravel(Travel travel) {
-    return travelLocalDataSource.poshTravel(travel);
+  Future<void> poshTravel(Travel travel) async {
+    return await travelLocalDataSource.poshTravel(travel);
   }
 
 }

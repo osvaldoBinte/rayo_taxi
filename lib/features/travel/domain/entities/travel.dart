@@ -1,8 +1,8 @@
 class Travel{
-  String? start_longitude;
-  String? start_latitude;
-  String? end_longitude;
-  String? end_latitude;
+  double? start_longitude;
+  double? start_latitude;
+  double? end_longitude;
+  double? end_latitude;
   String? kilometers;
   Travel({
     this.start_longitude,

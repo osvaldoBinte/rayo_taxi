@@ -1,6 +1,13 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/travel.dart';
+import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
+
+import '../../../../connectivity_service.dart';
 
 class MapScreen extends StatefulWidget {
   @override
@@ -9,6 +16,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   late GoogleMapController _mapController;
+  final TravelGetx _travelGetx = Get.find<TravelGetx>();
   Set<Marker> _markers = {};
   Set<Polyline> _polylines = {};
   int _markerCount = 0;
@@ -20,18 +28,37 @@ class _MapScreenState extends State<MapScreen> {
   TextEditingController _searchController = TextEditingController();
   TravelLocalDataSource _travelLocalDataSource = TravelLocalDataSourceImp();
 
+ 
+  // Servicio de conectividad
+  late ConnectivityService _connectivityService;
+
   @override
   void initState() {
     super.initState();
+    _connectivityService = ConnectivityService();
     _searchController.addListener(() {
       _searchPlace(_searchController.text);
+    });
+
+    // Escuchar cambios en la conectividad
+    Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+      setState(() {
+        if (result == ConnectivityResult.none) {
+          // Mostrar SnackBar cuando se pierda la conexión Wi-Fi
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Se perdió la conectividad Wi-Fi'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      });
     });
   }
 
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
   }
-
   void _addMarker(LatLng latLng) {
     setState(() {
       if (_markerCount == 0) {
@@ -43,7 +70,7 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
         _startLocation = latLng;
-        _buttonText = " Dirección destino";
+        _buttonText = "Dirección destino";
       } else if (_markerCount == 1) {
         _markers.add(
           Marker(
@@ -53,7 +80,7 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
         _endLocation = latLng;
-        _buttonText = "buscar conductor";
+        _buttonText = "Buscar conductor";
 
         _traceRoute();
       }
@@ -77,7 +104,7 @@ class _MapScreenState extends State<MapScreen> {
             width: 5,
           ));
         });
-        _showRouteDetails();
+        // _showRouteDetails();
       } catch (e) {
         print('Error al trazar la ruta: $e');
       }
@@ -91,6 +118,33 @@ class _MapScreenState extends State<MapScreen> {
       print("Start: ${_startLocation!.longitude}, ${_startLocation!.latitude}");
       print("End: ${_endLocation!.longitude}, ${_endLocation!.latitude}");
       print("Distance: ${distance.toStringAsFixed(2)} km");
+
+      final post = Travel(
+        start_longitude: _startLocation!.longitude,
+        start_latitude: _startLocation!.latitude,
+        end_longitude: _endLocation!.longitude,
+        end_latitude: _endLocation!.latitude,
+        kilometers: distance.toStringAsFixed(2),
+      );
+
+      _travelGetx.poshTravel(CreateTravelEvent(post));
+
+      Alert(
+        context: context,
+        type: AlertType.success,
+        title: "Éxito",
+        desc: "Te avisaremos cuando algun chofer acepte tu viaje",
+        buttons: [
+          DialogButton(
+            child: Text(
+              "OK",
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+            onPressed: () => Navigator.pop(context),
+            width: 120,
+          )
+        ],
+      ).show();
     }
   }
 
@@ -137,9 +191,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Google Maps'),
-      ),
+     
       body: Column(
         children: [
           Padding(
@@ -253,23 +305,9 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
               ElevatedButton(
-                onPressed: _markerCount == 2
+                onPressed: _markerCount == 2 && _connectivityService.isConnected
                     ? () async {
-                        await _travelLocalDataSource.getRoute(
-                            _startLocation!, _endLocation!);
-                        String encodedPoints =
-                            await _travelLocalDataSource.getEncodedPoints();
-                        List<LatLng> polylineCoordinates =
-                            _travelLocalDataSource
-                                .decodePolyline(encodedPoints);
-                        setState(() {
-                          _polylines.add(Polyline(
-                            polylineId: PolylineId('route'),
-                            points: polylineCoordinates,
-                            color: Colors.blue,
-                            width: 5,
-                          ));
-                        });
+                        await _traceRoute();
                         _showRouteDetails();
                       }
                     : null,

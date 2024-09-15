@@ -3,10 +3,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:rayo_taxi/features/travel/data/models/travel_model.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/travel.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class TravelLocalDataSource {
-    Future<void> poshTravel(Travel travel);
+  Future<void> poshTravel(Travel travel);
   Future<void> getRoute(LatLng startLocation, LatLng endLocation);
   List<LatLng> decodePolyline(String encoded);
   double calculateDistance(LatLng start, LatLng end);
@@ -20,7 +22,8 @@ abstract class TravelLocalDataSource {
 class TravelLocalDataSourceImp implements TravelLocalDataSource {
   final String _apiKey = 'AIzaSyDUVS-wh25ShrtIHnuXW0J8MuBRz9KC7ak';
   String? _encodedPoints;
-
+  final String _baseUrl =
+      'https://developer.binteapi.com:3009/api/app_clients/travels';
   @override
   Future<void> getRoute(LatLng startLocation, LatLng endLocation) async {
     final String url =
@@ -130,10 +133,35 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
       throw Exception('Encoded points no disponibles');
     }
   }
-  
+
+  Future<String?> _getToken() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_token');
+  }
+
   @override
-  Future<void> poshTravel(Travel travel) {
-    // TODO: implement poshTravel
-    throw UnimplementedError();
+  Future<void> poshTravel(Travel travel) async {
+    String? savedToken = await _getToken();
+
+    var response = await http.post(
+      Uri.parse('$_baseUrl/travels'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': savedToken ?? '',
+      },
+      body: jsonEncode(TravelModel.fromEntity(travel).toJson()),
+    );
+
+    dynamic body = jsonDecode(response.body);
+    print(body);
+    print(response.statusCode);
+    if (response.statusCode == 200) {
+      String message = body['message'].toString();
+      print(message);
+    } else {
+      String message = body['message'].toString();
+      print(body);
+      throw Exception(message);
+    }
   }
 }
