@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "47066793329",
+    "project_id": "rayo-driver",
+    "storage_bucket": "rayo-driver.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:47066793329:android:d337b4d3ff96c2875562d0",
+        "android_client_info": {
+          "package_name": "com.taxi.driver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBB2iBHZf53O82JvYwr6JCA1HsEkhDmRIY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

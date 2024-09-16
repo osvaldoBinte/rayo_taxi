@@ -1,19 +1,28 @@
 import 'package:rayo_taxi/features/driver/data/datasources/driver_local_data_source.dart';
 import 'package:rayo_taxi/features/driver/data/repositories/driver_repository_imp.dart';
+import 'package:rayo_taxi/features/driver/domain/usecases/get_driver_usecase.dart';
 import 'package:rayo_taxi/features/driver/domain/usecases/login_driver_usecase.dart';
-import 'features/driver/domain/usecases/tokendriver_usecase.dart';
+import 'package:rayo_taxi/features/notification/data/datasources/notification_local_data_source.dart';
+import 'package:rayo_taxi/features/notification/data/repositories/notification_repository_imp.dart';
+import 'package:rayo_taxi/features/notification/domain/usecases/id_device_usecase.dart';
 
 class UsecaseConfig {
   DriverLocalDataSourceImp? driverLocalDataSourceImp;
   DriverRepositoryImp?driverRepositoryImp;
-  LoginDriverUsecase? loginDriverUsecase;
-  TokendriverUsecase?tokendriverUsecase;
+  NotificationLocalDataSourceImp? notificationLocalDataSourceImp;
+  NotificationRepositoryImp? notificationRepositoryImp;
 
+  LoginDriverUsecase? loginDriverUsecase;
+  GetDriverUsecase? getDriverUsecase;
+  IdDeviceUsecase? idDeviceUsecase;
 
   UsecaseConfig() {
     driverLocalDataSourceImp = DriverLocalDataSourceImp();
+    notificationLocalDataSourceImp = NotificationLocalDataSourceImp();
     driverRepositoryImp = DriverRepositoryImp(driverLocalDataSource: driverLocalDataSourceImp!);
+    notificationRepositoryImp = NotificationRepositoryImp(notificationLocalDataSource: notificationLocalDataSourceImp!);
     loginDriverUsecase = LoginDriverUsecase(driverRepository: driverRepositoryImp!);
-    tokendriverUsecase = TokendriverUsecase(driverRepository: driverRepositoryImp!);
+    getDriverUsecase = GetDriverUsecase(driverRepository: driverRepositoryImp!);
+    idDeviceUsecase = IdDeviceUsecase(notificationRepository: notificationRepositoryImp!);
   }
 }

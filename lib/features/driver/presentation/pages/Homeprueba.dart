@@ -14,16 +14,10 @@ class Homeprueba extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color.fromARGB(255, 252, 252, 252),
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.purpleAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        
         child: Center(
           child: Text(
             'Prueba Home',
@@ -35,13 +29,7 @@ class Homeprueba extends StatelessWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Acción del botón
-        },
-        backgroundColor: Colors.deepPurple,
-        child: Icon(Icons.navigation),
-      ),
+      
     );
   }
 }

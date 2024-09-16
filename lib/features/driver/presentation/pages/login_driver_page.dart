@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:rayo_taxi/connectivity_service.dart';
 
 import '../../domain/entities/driver.dart';
 import '../getxs/login/logindriver_getx.dart';
 import 'Homeprueba.dart';
+import 'home_page.dart';
 
 class LoginDriverPage extends StatefulWidget {
   @override
@@ -12,12 +15,14 @@ class LoginDriverPage extends StatefulWidget {
 
 class _LoginDriverPage extends State<LoginDriverPage> {
   final LogindriverGetx _driverGetx = Get.find<LogindriverGetx>();
+  final ConnectivityService _connectivityService = ConnectivityService(); // Inicializamos el servicio
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   bool _obscureText = true;
+  String _errorMessage = ''; // Variable para almacenar mensajes de error
 
   void _togglePasswordVisibility() {
     setState(() {
@@ -25,8 +30,21 @@ class _LoginDriverPage extends State<LoginDriverPage> {
     });
   }
 
-  void _login() {
+  void _login() async {
+    // Primero, verificamos si hay conexión a Internet
+    if (!_connectivityService.isConnected) {
+      setState(() {
+        _errorMessage = 'No tienes conexión a Internet. Verifica tu red.';
+      });
+      return;
+    }
+
+    // Si hay conexión, validamos el formulario y procesamos el inicio de sesión
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _errorMessage = ''; // Limpiamos el mensaje de error si la conexión es exitosa
+      });
+      
       print('Email: ${_emailController.text}');
       print('Password: ${_passwordController.text}');
 
@@ -34,6 +52,7 @@ class _LoginDriverPage extends State<LoginDriverPage> {
       String email = _emailController.text;
       final post = Driver(email: email, password: password);
 
+      // Iniciamos sesión con Getx
       _driverGetx.createClient(LoginDriverEvent(post));
     }
   }
@@ -43,150 +62,159 @@ class _LoginDriverPage extends State<LoginDriverPage> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      body:SingleChildScrollView(
-      child: Stack(
-        children: <Widget>[
-          Container(
-            color: Color.fromARGB(255, 255, 255, 255),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20.0),
-                    child: Image.asset(
-                      'assets/images/rayo_taxi.png',
-                      width: MediaQuery.of(context).size.width * 0.8,
-                      height: screenHeight * 0.29,
-                      fit: BoxFit.contain,
+      body: SingleChildScrollView(
+        child: Stack(
+          children: <Widget>[
+            Container(
+              color: Color.fromARGB(255, 255, 255, 255),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20.0),
+                      child: Image.asset(
+                        'assets/images/rayo_taxi.png',
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        height: screenHeight * 0.29,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
-                ),
-                Text(
-                  'LOGIN',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 20),
-                Obx(() {
-                  if (_driverGetx.state.value is LogindriverSuccessfully) {
-                    Future.microtask(() => Get.to(() => Homeprueba()));
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(
-                        'Exitoso',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
+                  Text(
+                    'LOGIN',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 20),
+                  Obx(() {
+                    if (_driverGetx.state.value is LogindriverSuccessfully) {
+                      Future.microtask(() => Get.to(() => HomePage()));
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          'Exitoso',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    );
-                  } else if (_driverGetx.state.value is LogindriverFailure) {
-                    final failureState =
-                        _driverGetx.state.value as LogindriverFailure;
-                    return Padding(
+                      );
+                    } else if (_driverGetx.state.value is LogindriverFailure) {
+                      final failureState =
+                          _driverGetx.state.value as LogindriverFailure;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          failureState.error,
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      );
+                    }
+                    return SizedBox.shrink();
+                  }),
+                  SizedBox(height: 20),
+                  // Si hay un error, mostramos el mensaje
+                  if (_errorMessage.isNotEmpty)
+                    Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
-                        failureState.error,
+                        _errorMessage,
                         style: TextStyle(color: Colors.red),
                       ),
-                    );
-                  }
-                  return SizedBox.shrink();
-                }),
-                SizedBox(height: 20),
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: TextFormField(
-                          controller: _emailController,
-                          decoration: InputDecoration(
-                            labelText: 'Correo electrónico',
-                            labelStyle: TextStyle(color: Color(0xFF545454)),
-                            filled: true,
-                            fillColor: Color(0xFFD9D9D9),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Por favor ingrese su correo electrónico';
-                            }
-                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                                .hasMatch(value)) {
-                              return 'Por favor ingrese un correo electrónico válido';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: TextFormField(
-                          controller: _passwordController,
-                          decoration: InputDecoration(
-                            labelText: 'Contraseña',
-                            labelStyle: TextStyle(color: Color(0xFF545454)),
-                            filled: true,
-                            fillColor: Color(0xFFD9D9D9),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                              borderSide: BorderSide.none,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureText
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                                color: Color(0xFF545454),
+                    ),
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: TextFormField(
+                            controller: _emailController,
+                            decoration: InputDecoration(
+                              labelText: 'Correo electrónico',
+                              labelStyle: TextStyle(color: Color(0xFF545454)),
+                              filled: true,
+                              fillColor: Color(0xFFD9D9D9),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                                borderSide: BorderSide.none,
                               ),
-                              onPressed: _togglePasswordVisibility,
                             ),
-                          ),
-                          obscureText: _obscureText,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Por favor ingrese su contraseña';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: ElevatedButton(
-                          onPressed: _login,
-                          child: Text(
-                            'Iniciar Sesión',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFFEFC300),
-                            minimumSize: Size(double.infinity, 50),
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingrese su correo electrónico';
+                              }
+                              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                  .hasMatch(value)) {
+                                return 'Por favor ingrese un correo electrónico válido';
+                              }
+                              return null;
+                            },
                           ),
                         ),
-                      ),
-                    ],
+                        SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: TextFormField(
+                            controller: _passwordController,
+                            decoration: InputDecoration(
+                              labelText: 'Contraseña',
+                              labelStyle: TextStyle(color: Color(0xFF545454)),
+                              filled: true,
+                              fillColor: Color(0xFFD9D9D9),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                                borderSide: BorderSide.none,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscureText
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Color(0xFF545454),
+                                ),
+                                onPressed: _togglePasswordVisibility,
+                              ),
+                            ),
+                            obscureText: _obscureText,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingrese su contraseña';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: ElevatedButton(
+                            onPressed: _login,
+                            child: Text(
+                              'Iniciar Sesión',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFFEFC300),
+                              minimumSize: Size(double.infinity, 50),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
