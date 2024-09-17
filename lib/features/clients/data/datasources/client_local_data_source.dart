@@ -1,7 +1,9 @@
+import 'package:get/get.dart';
 import 'package:rayo_taxi/features/clients/domain/entities/client.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../../../notification/presentetion/getx/Device/device_getx.dart';
 import '../models/client_model.dart';
 import 'dart:io';
 import 'dart:convert' as convert;
@@ -111,6 +113,8 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
 
   @override
   Future<void> loginClient(Client client) async {
+          final DeviceGetx _driverGetx = Get.find<DeviceGetx>();
+
     var response = await http.post(
       Uri.parse('$_baseUrl/auth/login'),
       headers: {
@@ -133,6 +137,7 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
         print('Token guardado correctamente: $token');
         String? savedToken = prefs.getString('auth_token');
         print('Token recuperado de SharedPreferences: $savedToken');
+              await _driverGetx.getDeviceId();  
       } else {
         print('Error al guardar el token');
       }
