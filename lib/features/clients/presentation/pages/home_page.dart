@@ -51,9 +51,9 @@ class _MyHomePageState extends State<HomePage> {
         buttonBackgroundColor: Colors.orangeAccent,
         height: 60,
         items: const <Widget>[
-          Icon(Icons.edit, size: 30, color: Colors.white),
+          Icon(Icons.notifications, size: 30, color: Colors.white),
           Icon(Icons.car_rental, size: 30, color: Colors.white),
-          Icon(Icons.edit, size: 30, color: Colors.white),
+          Icon(Icons.person, size: 30, color: Colors.white),
         ],
         animationDuration: const Duration(milliseconds: 300),
         animationCurve: Curves.easeInOut,

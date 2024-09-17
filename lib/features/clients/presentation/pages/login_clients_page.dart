@@ -95,15 +95,13 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                     ),
                     SizedBox(height: 20),
                     Obx(() {
-                      
                       if (_clientGetx.state.value is LoginclientSuccessfully) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
-                          //Get.to(() => GetClientPage());
                           Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          HomePage()));
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => HomePage()),
+                          );
                         });
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -294,74 +292,21 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                             ),
                           ),
                           SizedBox(height: 20),
-                          Container(
-                            width: 300,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: Color(0xFFD9D9D9),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                SizedBox(
-                                  width: 30,
-                                  height: 30,
-                                  child: Image.asset(
-                                    'assets/images/google.png',
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                SizedBox(width: 8.0),
-                                Text('Iniciar sesión con Google'),
-                              ],
-                            ),
+                          _buildSocialLoginButton(
+                            imagePath: 'assets/images/google.png',
+                            text: 'Iniciar sesión con Google',
                           ),
                           SizedBox(height: 20),
-                          Container(
-                            width: 300,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: Color(0xFFD9D9D9),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                Container(
-                                  margin: EdgeInsets.only(right: 8.0),
-                                  child: Icon(
-                                    Icons.facebook,
-                                    color: Colors.blue,
-                                    size: 30,
-                                  ),
-                                ),
-                                Text('Iniciar sesión con Facebook'),
-                              ],
-                            ),
+                          _buildSocialLoginButton(
+                            icon: Icons.facebook,
+                            text: 'Iniciar sesión con Facebook',
+                            color: Colors.blue,
                           ),
                           SizedBox(height: 20),
-                          Container(
-                            width: 300,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: Color(0xFFD9D9D9),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                Container(
-                                  margin: EdgeInsets.only(right: 8.0),
-                                  child: Icon(
-                                    Icons.apple,
-                                    color: Colors.black,
-                                    size: 30,
-                                  ),
-                                ),
-                                Text('Iniciar sesión con Apple'),
-                              ],
-                            ),
+                          _buildSocialLoginButton(
+                            icon: Icons.apple,
+                            text: 'Iniciar sesión con Apple',
+                            color: Colors.black,
                           ),
                         ],
                       ),
@@ -371,6 +316,35 @@ class _LoginClientsPage extends State<LoginClientsPage> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSocialLoginButton({String? imagePath, IconData? icon, required String text, Color? color}) {
+    return Container(
+      width: 300,
+      height: 50,
+      decoration: BoxDecoration(
+        color: Color(0xFFD9D9D9),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (imagePath != null)
+            Image.asset(
+              imagePath,
+              width: 24,
+              height: 24,
+            ),
+          if (icon != null)
+            Icon(
+              icon,
+              color: color ?? Colors.black,
+            ),
+          SizedBox(width: 10),
+          Text(text),
         ],
       ),
     );
