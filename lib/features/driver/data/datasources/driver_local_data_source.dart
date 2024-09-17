@@ -38,7 +38,7 @@ class DriverLocalDataSourceImp implements DriverLocalDataSource {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('auth_token', token);
       print('auth_token: ' + token);
-       _driverGetx.deviceState();
+      await _driverGetx.getDeviceId();
       print(message);
     } else {
       String message = body['message'].toString();
