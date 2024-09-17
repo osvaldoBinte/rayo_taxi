@@ -27,14 +27,7 @@ void main() async {
 
   String? authToken = prefs.getString('auth_token');
 
-
- if (authToken != null && authToken.isNotEmpty) {
-    final deviceGetx = DeviceGetx(idDeviceUsecase: usecaseConfig.idDeviceUsecase!);
-    Get.put(deviceGetx);
-    await deviceGetx.getDeviceId();
-  } else {
-    print("No se encontró Auth Token");
-  }
+  Get.put(DeviceGetx(idDeviceUsecase: usecaseConfig.idDeviceUsecase!));
 
   Get.put(ClientGetx(createClientUsecase: usecaseConfig.createClientUsecase!));
   Get.put(

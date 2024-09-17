@@ -13,7 +13,7 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
   final ClientGetx _clientGetx = Get.find<ClientGetx>();
 
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _oldController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -29,19 +29,19 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
 
   void _register() {
     if (_formKey.currentState!.validate()) {
-      print('Email: ${_emailController.text}');
-      print('Password: ${_passwordController.text}');
-
       String name = _nameController.text;
       String password = _passwordController.text;
       String email = _emailController.text;
-      int years_old = int.parse(_oldController.text);
-      print('Nombre: $name');
-      print('Contraseña: $password');
-      print('Correo electrónico: $email');
-      final post = Client(
-          name: name, password: password, email: email, years_old: years_old);
-      _clientGetx.createClient(CreateClientEvent(post));
+      int age = int.parse(_ageController.text);
+
+      final client = Client(
+        name: name,
+        password: password,
+        email: email,
+        years_old: age,
+      );
+
+      _clientGetx.createClient(CreateClientEvent(client));
     }
   }
 
@@ -55,9 +55,7 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Stack(
@@ -89,27 +87,30 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
               child: Container(
                 color: Colors.white,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0, vertical: 20.0),
+                  horizontal: 16.0,
+                  vertical: 20.0,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     Text(
                       'Registrarse',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     SizedBox(height: 20),
                     Obx(() {
-                      if (_clientGetx.state.value
-                          is ClientCreatedSuccessfully) {
+                      if (_clientGetx.state.value is ClientCreatedSuccessfully) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: Text(
                             'Registro exitoso',
                             style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold),
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         );
                       } else if (_clientGetx.state.value
@@ -130,137 +131,73 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
                     Form(
                       key: _formKey,
                       child: Column(
-                        mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: TextFormField(
-                              controller: _nameController,
-                              decoration: InputDecoration(
-                                labelText: 'Nombre',
-                                labelStyle: TextStyle(color: Color(0xFF545454)),
-                                filled: true,
-                                fillColor: Color(0xFFD9D9D9),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Por favor ingrese su nombre';
-                                }
-
-                                return null;
-                              },
-                            ),
+                          _buildTextFormField(
+                            controller: _nameController,
+                            label: 'Nombre',
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingrese su nombre';
+                              }
+                              return null;
+                            },
                           ),
                           SizedBox(height: 20),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: TextFormField(
-                              controller: _oldController,
-                              decoration: InputDecoration(
-                                labelText: 'Edad',
-                                labelStyle: TextStyle(color: Color(0xFF545454)),
-                                filled: true,
-                                fillColor: Color(0xFFD9D9D9),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Por favor ingrese su Edad';
-                                }
-                                final edad = int.tryParse(value);
-                                if (edad == null) {
-                                  return 'Por favor ingrese un número válido';
-                                }
-
-                                if (edad < 18) {
-                                  return 'Debe tener al menos 18 años';
-                                }
-
-                                return null;
-                              },
-                            ),
+                          _buildTextFormField(
+                            controller: _ageController,
+                            label: 'Edad',
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingrese su Edad';
+                              }
+                              final age = int.tryParse(value);
+                              if (age == null || age < 18) {
+                                return 'Debe tener al menos 18 años';
+                              }
+                              return null;
+                            },
                           ),
                           SizedBox(height: 20),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: TextFormField(
-                              controller: _emailController,
-                              decoration: InputDecoration(
-                                labelText: 'Correo electrónico',
-                                labelStyle: TextStyle(color: Color(0xFF545454)),
-                                filled: true,
-                                fillColor: Color(0xFFD9D9D9),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Por favor ingrese su correo electrónico';
-                                }
-                                if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                                    .hasMatch(value)) {
-                                  return 'Por favor ingrese un correo electrónico válido';
-                                }
-                                return null;
-                              },
-                            ),
+                          _buildTextFormField(
+                            controller: _emailController,
+                            label: 'Correo electrónico',
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingrese su correo electrónico';
+                              }
+                              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                  .hasMatch(value)) {
+                                return 'Por favor ingrese un correo electrónico válido';
+                              }
+                              return null;
+                            },
                           ),
                           SizedBox(height: 20),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: TextFormField(
-                              controller: _passwordController,
-                              decoration: InputDecoration(
-                                labelText: 'Contraseña',
-                                labelStyle: TextStyle(color: Color(0xFF545454)),
-                                filled: true,
-                                fillColor: Color(0xFFD9D9D9),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
-                              obscureText: true,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Por favor ingrese su contraseña';
-                                }
-
-                                return null;
-                              },
-                            ),
+                          _buildTextFormField(
+                            controller: _passwordController,
+                            label: 'Contraseña',
+                            obscureText: true,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingrese su contraseña';
+                              }
+                              return null;
+                            },
                           ),
                           SizedBox(height: 20),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: ElevatedButton(
-                              onPressed: _register,
-                              child: Text(
-                                'Registrarse',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                          ElevatedButton(
+                            onPressed: _register,
+                            child: Text(
+                              'Registrarse',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
                               ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFFEFC300),
-                                minimumSize: Size(double.infinity, 50),
-                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFFEFC300),
+                              minimumSize: Size(double.infinity, 50),
                             ),
                           ),
                         ],
@@ -272,6 +209,34 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTextFormField({
+    required TextEditingController controller,
+    required String label,
+    bool obscureText = false,
+    TextInputType keyboardType = TextInputType.text,
+    required String? Function(String?) validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Color(0xFF545454)),
+          filled: true,
+          fillColor: Color(0xFFD9D9D9),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: BorderSide.none,
+          ),
+        ),
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        validator: validator,
       ),
     );
   }

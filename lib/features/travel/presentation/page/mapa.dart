@@ -15,6 +15,7 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  
   late GoogleMapController _mapController;
   final TravelGetx _travelGetx = Get.find<TravelGetx>();
   Set<Marker> _markers = {};
@@ -23,13 +24,11 @@ class _MapScreenState extends State<MapScreen> {
   LatLng? _startLocation;
   LatLng? _endLocation;
   LatLng _center = const LatLng(20.676666666667, -103.39182);
-  String _buttonText = "Agregar inicio";
+  String _buttonText = "buscar conductor";
   List<dynamic> _predictions = [];
   TextEditingController _searchController = TextEditingController();
   TravelLocalDataSource _travelLocalDataSource = TravelLocalDataSourceImp();
 
- 
-  // Servicio de conectividad
   late ConnectivityService _connectivityService;
 
   @override
@@ -59,28 +58,19 @@ class _MapScreenState extends State<MapScreen> {
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
   }
+
   void _addMarker(LatLng latLng) {
     setState(() {
-      if (_markerCount == 0) {
-        _markers.add(
-          Marker(
-            markerId: MarkerId('start'),
-            position: latLng,
-            infoWindow: InfoWindow(title: 'Dirección de inicio'),
-          ),
-        );
-        _startLocation = latLng;
-        _buttonText = "Dirección destino";
-      } else if (_markerCount == 1) {
+      if (_markerCount == 1) { // Permitir solo añadir el destino
         _markers.add(
           Marker(
             markerId: MarkerId('destination'),
             position: latLng,
-            infoWindow: InfoWindow(title: 'Dirección de destino'),
+            infoWindow: InfoWindow(title: 'Buscar'),
           ),
         );
         _endLocation = latLng;
-        _buttonText = "Buscar conductor";
+        _buttonText = "Buscar";
 
         _traceRoute();
       }
@@ -104,7 +94,6 @@ class _MapScreenState extends State<MapScreen> {
             width: 5,
           ));
         });
-        // _showRouteDetails();
       } catch (e) {
         print('Error al trazar la ruta: $e');
       }
@@ -133,7 +122,7 @@ class _MapScreenState extends State<MapScreen> {
         context: context,
         type: AlertType.success,
         title: "Éxito",
-        desc: "Te avisaremos cuando algun chofer acepte tu viaje",
+        desc: "Te avisaremos cuando algún chofer acepte tu viaje",
         buttons: [
           DialogButton(
             child: Text(
@@ -164,12 +153,29 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _selectPlace(String placeId) async {
-    await _travelLocalDataSource.getPlaceDetailsAndMove(placeId,
-        (LatLng location) {
+    await _travelLocalDataSource.getPlaceDetailsAndMove(placeId, (LatLng location) {
       _mapController.moveCamera(CameraUpdate.newLatLng(location));
     }, (LatLng location) {
-      _addMarker(location);
+      // Aquí añades los marcadores solo desde el buscador
+      if (_markerCount == 0) { 
+        _startLocation = location; // Marcador de inicio desde el buscador
+        _markers.add(Marker(
+          markerId: MarkerId('start'),
+          position: location,
+          infoWindow: InfoWindow(title: 'Inicio'),
+        ));
+      } else if (_markerCount == 1) {
+        _endLocation = location; // Marcador de destino desde el buscador
+        _markers.add(Marker(
+          markerId: MarkerId('destination'),
+          position: location,
+          infoWindow: InfoWindow(title: 'Destino'),
+        ));
+        _traceRoute(); // Trazar la ruta cuando ya están ambos marcadores
+      }
+      _markerCount++;
     });
+
     setState(() {
       _predictions = [];
       _searchController.clear();
@@ -183,7 +189,7 @@ class _MapScreenState extends State<MapScreen> {
       _markerCount = 0;
       _startLocation = null;
       _endLocation = null;
-      _buttonText = "Agregar Dirección de inicio";
+      _buttonText = "Buscar";
     });
     _mapController.moveCamera(CameraUpdate.newLatLng(_center));
   }
@@ -191,129 +197,135 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     
-      body: Column(
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
+          GoogleMap(
+            onMapCreated: _onMapCreated,
+            initialCameraPosition: CameraPosition(
+              target: _center,
+              zoom: 11.0,
+            ),
+            markers: _markers,
+            polylines: _polylines,
+            onTap: null,
+          ),
+          
+          Positioned(
+            top: 20.0,
+            left: 10.0,
+            right: 10.0,
             child: Column(
               children: [
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    labelText: 'Buscar lugar',
-                    labelStyle: TextStyle(
-                      color: Colors.blueAccent,
-                      fontWeight: FontWeight.bold,
+                Row(
+                  children: [
+                    ElevatedButton(
+                      onPressed: _resetMap,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                        textStyle: TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.refresh, color: Colors.white),
+                          SizedBox(width: 8.0),
+                        ],
+                      ),
                     ),
-                    hintText: 'Escribe una dirección',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[600],
+                    SizedBox(width: 8.0),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                      decoration: InputDecoration(
+                          labelText: _markerCount == 0
+                              ? 'Buscar lugar de inicio'
+                              : 'Buscar lugar destino',
+                          labelStyle: TextStyle(
+                            color: Colors.blueAccent,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          hintText: 'Escribe una dirección',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[600],
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: Colors.blueAccent,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            borderSide:
+                                BorderSide(color: Colors.blueAccent, width: 2.0),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            borderSide:
+                                BorderSide(color: Colors.grey[300]!, width: 1.0),
+                          ),
+                        ),
+                      ),
                     ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Colors.blueAccent,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide:
-                          BorderSide(color: Colors.blueAccent, width: 2.0),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide:
-                          BorderSide(color: Colors.grey[300]!, width: 1.0),
-                    ),
-                  ),
+                  ],
                 ),
                 if (_predictions.isNotEmpty)
                   Container(
-                    height: 200,
-                    child: ListView.builder(
-                      itemCount: _predictions.length,
-                      itemBuilder: (context, index) {
+                    margin: EdgeInsets.only(top: 8.0),
+                    padding: EdgeInsets.all(10.0),
+                    color: Colors.white,
+                    child: Column(
+                      children: _predictions.map((prediction) {
                         return ListTile(
-                          leading: Icon(
-                            Icons.location_on,
-                            color: Colors.red,
-                          ),
-                          title: Text(_predictions[index]['description']),
+                          title: Text(prediction['description']),
                           onTap: () {
-                            _selectPlace(_predictions[index]['place_id']);
+                            _selectPlace(prediction['place_id']);
                           },
                         );
-                      },
+                      }).toList(),
                     ),
                   ),
               ],
             ),
           ),
-          Expanded(
-            child: GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(
-                target: _center,
-                zoom: 11.0,
-              ),
-              markers: _markers,
-              polylines: _polylines,
-              onTap: (LatLng latLng) {
-                if (_markerCount < 2) {
-                  _addMarker(latLng);
-                }
-              },
-            ),
-          ),
-          Row(
-            mainAxisAlignment:
-                MainAxisAlignment.center, // Alinea los botones en el centro
-            children: [
-              Flexible(
-                child: ElevatedButton(
-                  onPressed: _resetMap,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Colors.blueAccent, // Color de fondo del botón
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(10.0), // Esquinas redondeadas
-                    ),
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 12.0), // Espaciado interno
-                    textStyle: TextStyle(
-                      fontSize: 16.0, // Tamaño del texto
-                      fontWeight: FontWeight.bold, // Negrita
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.refresh,
-                          color: Colors.white), // Icono del botón
-                      SizedBox(width: 8.0), // Espacio entre el icono y el texto
-                      Text('Reiniciar'),
-                    ],
-                  ),
+          Positioned(
+            bottom: 20.0,
+            left: 10.0,
+            right: 10.0,
+            child: ElevatedButton(
+              onPressed: _showRouteDetails,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                textStyle: TextStyle(
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              ElevatedButton(
-                onPressed: _markerCount == 2 && _connectivityService.isConnected
-                    ? () async {
-                        await _traceRoute();
-                        _showRouteDetails();
-                      }
-                    : null,
-                child: Text(_buttonText),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.search, color: Colors.white),
+                  SizedBox(width: 8.0),
+                  Text(_buttonText),
+                ],
               ),
-            ],
+            ),
           ),
         ],
       ),
