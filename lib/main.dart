@@ -19,19 +19,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Get.put(LogindriverGetx(loginDriverUsecase: usecaseConfig.loginDriverUsecase!));
   Get.put(GetDriverGetx(getDriverUsecase: usecaseConfig.getDriverUsecase!,connectivityService: connectivityService));
-  final deviceGetx = DeviceGetx(idDeviceUsecase: usecaseConfig.idDeviceUsecase!);
-  Get.put(deviceGetx);
+  Get.put(DeviceGetx(idDeviceUsecase: usecaseConfig.idDeviceUsecase!));
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('auth_token');
-
-  if (token != null && token.isNotEmpty) {
-    await deviceGetx.getDeviceId();
-  } else {
-    print("No se encontró Auth Token");
-  }
 
   runApp(MyApp(token: token));
 }
