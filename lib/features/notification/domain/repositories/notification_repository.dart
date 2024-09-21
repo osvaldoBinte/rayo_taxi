@@ -1,6 +1,11 @@
 import 'package:rayo_taxi/features/notification/domain/entities/device.dart';
+import 'package:rayo_taxi/features/notification/domain/entities/travel_alert.dart';
 
-abstract class NotificationRepository{
+import '../../data/models/travel_alert_model.dart';
+
+abstract class NotificationRepository {
   Future<void> updateIdDevice();
+ Future<List<TravelAlertModel>> getNotification(bool connection);
+  Future<List<TravelAlertModel>> getNotificationtravel(bool connection);
 
-}
+ }

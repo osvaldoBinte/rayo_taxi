@@ -1,9 +1,9 @@
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/clients/domain/entities/client.dart';
 import 'package:http/http.dart' as http;
+import 'package:rayo_taxi/features/notification/presentetion/getx/Device/device_getx.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import '../../../notification/presentetion/getx/Device/device_getx.dart';
 import '../models/client_model.dart';
 import 'dart:io';
 import 'dart:convert' as convert;
@@ -48,7 +48,7 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
             List<ClientModel> clients = [ClientModel.fromJson(data)];
 
             sharedPreferences.setString('clients', jsonEncode(clients));
-
+print("holaaa  aa");
             return clients;
           } else {
             throw Exception('Estructura de respuesta inesperada');

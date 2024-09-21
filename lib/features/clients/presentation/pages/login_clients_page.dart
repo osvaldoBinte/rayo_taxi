@@ -216,7 +216,7 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                                   ),
                                 ),
                                 obscureText:
-                                    _obscureText, // Controla la visibilidad de la contraseña
+                                    _obscureText, 
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return 'Por favor ingrese su contraseña';

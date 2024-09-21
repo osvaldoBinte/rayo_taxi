@@ -2,9 +2,12 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/get/get_client_getx.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/client.dart';
-import 'put_client_page.dart';
+import 'edit_porfile_modal.dart';
+import 'login_clients_page.dart';
 import 'dart:async';
+
 class GetClientPage extends StatefulWidget {
   const GetClientPage({super.key});
 
@@ -16,13 +19,20 @@ class _GetClientPage extends State<GetClientPage> {
   late StreamSubscription<ConnectivityResult> subscription;
   final GetClientGetx getClientGetx = Get.find<GetClientGetx>();
 
+  Future<void> _logout() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    Get.offAll(() => LoginClientsPage());
+  }
+
   @override
   void initState() {
     super.initState();
-
     getClientGetx.fetchCoDetails(FetchgetDetailsEvent());
 
-    subscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+    subscription = Connectivity()
+        .onConnectivityChanged
+        .listen((ConnectivityResult result) {
       if (result == ConnectivityResult.none) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -45,11 +55,17 @@ class _GetClientPage extends State<GetClientPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-    
-      body: SingleChildScrollView(
-        child: Container(
-          color: const Color.fromARGB(255, 255, 255, 255),
-          padding: const EdgeInsets.all(16.0),
+      body: Container(
+        constraints: BoxConstraints.expand(),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.white, Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
           child: Obx(() {
             final state = getClientGetx.state.value;
 
@@ -80,11 +96,20 @@ class _GetClientPage extends State<GetClientPage> {
 
               return Column(
                 children: [
+                  Container(
+                    alignment: Alignment.centerLeft,
+                    padding: EdgeInsets.all(16.0),
+                    child: IconButton(
+                      icon: Icon(Icons.logout, size: 30.0, color: Colors.red),
+                      onPressed: _logout,
+                    ),
+                  ),
                   Stack(
+                    alignment: Alignment.center,
                     children: [
                       CircleAvatar(
                         radius: 60,
-                        backgroundColor: const Color(0xFFEFC300),
+                        backgroundColor: Color.fromARGB(255, 243, 222, 33),
                         child: Text(
                           client.name?.substring(0, 1) ?? 'N',
                           style: const TextStyle(
@@ -94,30 +119,34 @@ class _GetClientPage extends State<GetClientPage> {
                           ),
                         ),
                       ),
+                      _buildIcon(
+                          Icons.edit, Color.fromARGB(255, 255, 255, 255), () {},
+                          bottom: 0, right: 0),
                     ],
                   ),
                   const SizedBox(height: 20),
                   Text(
                     client.name ?? 'Sin nombre',
                     style: const TextStyle(
-                      fontSize: 24,
+                      fontSize: 26,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 5),
                   Text(
                     client.email ?? 'Sin email',
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       color: Colors.grey,
                     ),
                   ),
                   const SizedBox(height: 20),
                   Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    elevation: 3,
+                    margin: const EdgeInsets.symmetric(vertical: 10.0),
+                    elevation: 5,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(15),
                     ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(
@@ -128,7 +157,7 @@ class _GetClientPage extends State<GetClientPage> {
                         'Edad: ${client.years_old ?? 'N/A'}',
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
-                          fontSize: 18,
+                          fontSize: 20,
                         ),
                       ),
                       trailing: const Icon(
@@ -147,7 +176,7 @@ class _GetClientPage extends State<GetClientPage> {
                         backgroundColor: Colors.transparent,
                         builder: (BuildContext context) {
                           return FractionallySizedBox(
-                            heightFactor: 0.6,
+                            heightFactor: 0.75,
                             child: ClipRRect(
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(20),
@@ -161,7 +190,11 @@ class _GetClientPage extends State<GetClientPage> {
                         },
                       );
                     },
-                    icon: const Icon(Icons.edit, color: Colors.white),
+                    icon: const Icon(
+                      Icons.edit,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     label: const Text(
                       'Editar Perfil',
                       style: TextStyle(
@@ -178,6 +211,7 @@ class _GetClientPage extends State<GetClientPage> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
+                  
                   ),
                 ],
               );
@@ -191,54 +225,16 @@ class _GetClientPage extends State<GetClientPage> {
   }
 }
 
-
-class EditProfileModal extends StatefulWidget {
-  final Client client;
-
-  const EditProfileModal({required this.client});
-
-  @override
-  _EditProfileModalState createState() => _EditProfileModalState();
-}
-
-class _EditProfileModalState extends State<EditProfileModal>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<Offset> _offsetAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-
-    _offsetAnimation = Tween<Offset>(
-      begin: const Offset(0.0, 1.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOut,
-    ));
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SlideTransition(
-      position: _offsetAnimation,
-      child: Padding(
-        padding: const EdgeInsets.all(30.0),
-        child: EditProfilePage(client: widget.client),
-      ),
-    );
-  }
+Widget _buildIcon(IconData icon, Color color, Function onPressed,
+    {double? top, double? right, double? bottom, double? left}) {
+  return Positioned(
+    top: top,
+    right: right,
+    bottom: bottom,
+    left: left,
+    child: IconButton(
+      icon: Icon(icon, color: color, size: 24),
+      onPressed: () async => await onPressed(),
+    ),
+  );
 }

@@ -8,8 +8,6 @@ import '../../../notification/presentetion/page/notification_page.dart';
 import '../../../travel/presentation/page/mapa.dart';
 import 'login_clients_page.dart';
 
-
-
 class HomePage extends StatefulWidget {
   @override
   _MyHomePageState createState() => _MyHomePageState();
@@ -21,47 +19,63 @@ class _MyHomePageState extends State<HomePage> {
     MapScreen(),
     GetClientPage(),
   ];
-  Future<void> _logout() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token'); 
-    Get.offAll(() => LoginClientsPage()); 
-  }
+
   int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
+    bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom != 0;
+
     return Scaffold(
-        appBar: AppBar(
-        title: Center(
-          child: const Text('Rayo_taxi'),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout), 
-            onPressed: () async {
-              await _logout();
-            },
+      extendBody: true,
+      body: Stack(
+        children: [
+          IndexedStack(
+            index: _selectedIndex,
+            children: _pages,
           ),
+          if (!isKeyboardVisible)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: CurvedNavigationBar(
+                backgroundColor: Colors.transparent,
+                color: Color(0xFF007BFF),
+                buttonBackgroundColor: Color.fromARGB(255, 255, 255, 255),
+                height: 75,
+                items: <Widget>[
+                  _buildIcon(Icons.notifications, 0),
+                  _buildIcon(Icons.car_rental, 1),
+                  _buildIcon(Icons.person, 2),
+                ],
+                animationDuration: const Duration(milliseconds: 700),
+                animationCurve: Curves.easeInOut,
+                onTap: (index) {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+                },
+                letIndexChange: (index) {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+                  return true;
+                },
+              ),
+            ),
         ],
       ),
-      body: _pages[_selectedIndex], 
-      bottomNavigationBar: CurvedNavigationBar(
-        backgroundColor: Colors.transparent,
-        color: const Color(0xFFEFC300), 
-        buttonBackgroundColor: Colors.orangeAccent,
-        height: 60,
-        items: const <Widget>[
-          Icon(Icons.notifications, size: 30, color: Colors.white),
-          Icon(Icons.car_rental, size: 30, color: Colors.white),
-          Icon(Icons.person, size: 30, color: Colors.white),
-        ],
-        animationDuration: const Duration(milliseconds: 300),
-        animationCurve: Curves.easeInOut,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+    );
+  }
+
+  Widget _buildIcon(IconData icon, int index) {
+    bool isSelected = _selectedIndex == index;
+    return Container(
+      margin: EdgeInsets.only(bottom: isSelected ? 4 : 0),
+      height: isSelected ? 40 : 60, 
+      child: Icon(
+        icon,
+        size: isSelected ? 30 : 40,
+        color: isSelected ? Colors.blueAccent : Colors.white, // Cambié el color negro por azul claro
       ),
     );
   }

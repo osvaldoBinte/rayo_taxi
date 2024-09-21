@@ -14,9 +14,9 @@ abstract class TravelLocalDataSource {
   double calculateDistance(LatLng start, LatLng end);
   double degreesToRadians(double degrees);
   Future<List<dynamic>> getPlacePredictions(String input);
-  Future<void> getPlaceDetailsAndMove(String placeId,
-      Function(LatLng) moveToLocation, Function(LatLng) addMarker);
+  Future<void> getPlaceDetailsAndMove(String placeId, Function(LatLng) moveToLocation, Function(LatLng) addMarker);
   Future<String> getEncodedPoints();
+  Future<Map<String, dynamic>> getPlaceDetails(String placeId); // Nueva función
 }
 
 class TravelLocalDataSourceImp implements TravelLocalDataSource {
@@ -24,6 +24,7 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
   String? _encodedPoints;
   final String _baseUrl =
       'https://developer.binteapi.com:3009/api/app_clients/travels';
+
   @override
   Future<void> getRoute(LatLng startLocation, LatLng endLocation) async {
     final String url =
@@ -133,6 +134,25 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
       throw Exception('Encoded points no disponibles');
     }
   }
+
+@override
+Future<Map<String, dynamic>> getPlaceDetails(String placeId) async {
+  final String url =
+      'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$_apiKey';
+
+  final response = await http.get(Uri.parse(url));
+  if (response.statusCode == 200) {
+    final result = json.decode(response.body)['result'];
+     return {
+      'name': result['name'],  
+      'lat': result['geometry']['location']['lat'],
+      'lng': result['geometry']['location']['lng'],
+    };
+  } else {
+    throw Exception('Error obteniendo detalles del lugar');
+  }
+}
+
 
   Future<String?> _getToken() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
