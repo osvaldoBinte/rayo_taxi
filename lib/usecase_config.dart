@@ -5,6 +5,8 @@ import 'package:rayo_taxi/features/driver/domain/usecases/login_driver_usecase.d
 import 'package:rayo_taxi/features/notification/data/datasources/notification_local_data_source.dart';
 import 'package:rayo_taxi/features/notification/data/repositories/notification_repository_imp.dart';
 import 'package:rayo_taxi/features/notification/domain/usecases/id_device_usecase.dart';
+import 'package:rayo_taxi/features/notification/domain/usecases/travel_alert_usecase.dart';
+import 'package:rayo_taxi/features/notification/domain/usecases/travels_alert_usecase.dart';
 
 class UsecaseConfig {
   DriverLocalDataSourceImp? driverLocalDataSourceImp;
@@ -16,6 +18,8 @@ class UsecaseConfig {
   GetDriverUsecase? getDriverUsecase;
   IdDeviceUsecase? idDeviceUsecase;
 
+  TravelsAlertUsecase? travelsAlertUsecase;
+  TravelAlertUsecase? travelAlertUsecase;  
   UsecaseConfig() {
     driverLocalDataSourceImp = DriverLocalDataSourceImp();
     notificationLocalDataSourceImp = NotificationLocalDataSourceImp();
@@ -24,5 +28,7 @@ class UsecaseConfig {
     loginDriverUsecase = LoginDriverUsecase(driverRepository: driverRepositoryImp!);
     getDriverUsecase = GetDriverUsecase(driverRepository: driverRepositoryImp!);
     idDeviceUsecase = IdDeviceUsecase(notificationRepository: notificationRepositoryImp!);
+    travelAlertUsecase = TravelAlertUsecase(notificationRepository: notificationRepositoryImp!);
+    travelsAlertUsecase = TravelsAlertUsecase(notificationRepository: notificationRepositoryImp!);
   }
 }

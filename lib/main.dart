@@ -2,6 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/driver/presentation/getxs/login/logindriver_getx.dart';
+import 'package:rayo_taxi/features/notification/presentetion/getx/TravelAlert/travel_alert_getx.dart';
+import 'package:rayo_taxi/features/notification/presentetion/getx/TravelsAlert/travels_alert_getx.dart';
 import 'package:rayo_taxi/firebase_options.dart';
 import 'package:rayo_taxi/usecase_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,6 +22,9 @@ void main() async {
   Get.put(LogindriverGetx(loginDriverUsecase: usecaseConfig.loginDriverUsecase!));
   Get.put(GetDriverGetx(getDriverUsecase: usecaseConfig.getDriverUsecase!,connectivityService: connectivityService));
   Get.put(DeviceGetx(idDeviceUsecase: usecaseConfig.idDeviceUsecase!));
+
+  Get.put(TravelsAlertGetx(travelsAlertUsecase: usecaseConfig.travelsAlertUsecase!, connectivityService: connectivityService));
+  Get.put(TravelAlertGetx(travelAlertUsecase: usecaseConfig.travelAlertUsecase!, connectivityService: connectivityService));
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
