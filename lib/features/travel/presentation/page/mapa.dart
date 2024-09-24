@@ -275,7 +275,6 @@ class _MapScreenState extends State<MapScreen> {
             ),
             markers: _markers,
             polylines: _polylines,
-            onTap: null,
           ),
           Positioned(
             top: 20.0,
@@ -284,7 +283,7 @@ class _MapScreenState extends State<MapScreen> {
             child: Column(
               children: [
                 TextField(
-                  focusNode: _startFocusNode, // Asignar FocusNode
+                  focusNode: _startFocusNode,
                   controller: _startController,
                   decoration: InputDecoration(
                     labelText: 'Buscar lugar de inicio',
@@ -293,9 +292,6 @@ class _MapScreenState extends State<MapScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                     hintText: 'Escribe una dirección de inicio',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[600],
-                    ),
                     prefixIcon: Icon(
                       Icons.search,
                       color: Colors.blueAccent,
@@ -307,33 +303,20 @@ class _MapScreenState extends State<MapScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10.0),
                       borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide:
-                          BorderSide(color: Colors.blueAccent, width: 2.0),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide:
-                          BorderSide(color: Colors.grey[300]!, width: 1.0),
                     ),
                   ),
                 ),
                 SizedBox(height: 10.0),
                 TextField(
-                  focusNode: _endFocusNode, // Asignar FocusNode
+                  focusNode: _endFocusNode,
                   controller: _endController,
                   decoration: InputDecoration(
-                    labelText: 'Buscar lugar destino',
+                    labelText: 'Buscar lugar de destino',
                     labelStyle: TextStyle(
                       color: Colors.blueAccent,
                       fontWeight: FontWeight.bold,
                     ),
                     hintText: 'Escribe una dirección de destino',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[600],
-                    ),
                     prefixIcon: Icon(
                       Icons.search,
                       color: Colors.blueAccent,
@@ -345,75 +328,6 @@ class _MapScreenState extends State<MapScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10.0),
                       borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide:
-                          BorderSide(color: Colors.blueAccent, width: 2.0),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide:
-                          BorderSide(color: Colors.grey[300]!, width: 1.0),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 10.0),
-                Positioned(
-                  bottom: 80.0,
-                  left:
-                      20.0, // Márgenes laterales más amplios para un mejor diseño
-                  right: 20.0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(25.0),
-                      gradient: LinearGradient(
-                        colors: [
-                          Color(0xFF4caf50),
-                          Color(0xFF1e88e5),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26, // Sombra más marcada
-                          blurRadius: 15.0, // Difusión de la sombra
-                          offset: Offset(0, 8), // Desplazamiento vertical
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: _showRouteDetails,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors
-                            .transparent, // Fondo transparente para que el gradiente de Container se muestre
-                        shadowColor: Colors
-                            .transparent, // Quitar sombra del botón para no interferir
-                        padding: EdgeInsets.symmetric(vertical: 18.0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25.0),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.directions,
-                            color: Colors.white,
-                          ),
-                          SizedBox(width: 10.0),
-                          Text(
-                            _buttonText,
-                            style: TextStyle(
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 255, 255,
-                                  255), // Color blanco para contraste con el gradiente
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ),
@@ -428,7 +342,7 @@ class _MapScreenState extends State<MapScreen> {
                       borderRadius: BorderRadius.circular(15.0),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black12,
+                          color:Colors.white,
                           blurRadius: 10.0,
                           offset: Offset(0, 4),
                         ),
@@ -449,15 +363,10 @@ class _MapScreenState extends State<MapScreen> {
 
                             FocusScope.of(context).unfocus();
                           },
-                          child: Card(
-                            elevation: 1,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
-                            child: ListTile(
+                          child: ListTile(
                               leading: Icon(
                                 Icons.location_on,
-                                color: Color.fromARGB(255, 240, 34, 34),
+                                color: Colors.blueAccent.withOpacity(0.8),
                               ),
                               title: Text(
                                 prediction['description'],
@@ -468,12 +377,70 @@ class _MapScreenState extends State<MapScreen> {
                                 ),
                               ),
                             ),
-                          ),
+                          
+                          
                         );
                       }).toList(),
                     ),
                   )
               ],
+            ),
+          ),
+          Positioned(
+            bottom: 80.0,
+            left: 20.0,
+            right: 20.0,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25.0),
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF4caf50),
+                    Color(0xFF1e88e5),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26, // Sombra más marcada
+                    blurRadius: 15.0, // Difusión de la sombra
+                    offset: Offset(0, 8), // Desplazamiento vertical
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: _showRouteDetails,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors
+                      .transparent, // Fondo transparente para que el gradiente de Container se muestre
+                  shadowColor: Colors
+                      .transparent, // Quitar sombra del botón para no interferir
+                  padding: EdgeInsets.symmetric(vertical: 18.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25.0),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.directions,
+                      color: Colors.white,
+                    ),
+                    SizedBox(width: 10.0),
+                    Text(
+                      _buttonText,
+                      style: TextStyle(
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 255, 255,
+                            255), // Color blanco para contraste con el gradiente
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

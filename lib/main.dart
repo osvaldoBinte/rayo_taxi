@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:rayo_taxi/features/clients/presentation/getxs/calculateAge/calculateAge_getx.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/update/Update_getx.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/home_page.dart';
 import 'package:rayo_taxi/features/notification/presentetion/getx/Device/device_getx.dart';
@@ -7,6 +8,7 @@ import 'package:rayo_taxi/features/notification/presentetion/getx/TravelAlert/tr
 import 'package:rayo_taxi/features/notification/presentetion/getx/TravelsAlert/travels_alert_getx.dart';
 import 'package:rayo_taxi/features/notification/presentetion/page/notification_page.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/mapa.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/login_clients_page.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/client/client_getx.dart';
@@ -37,6 +39,7 @@ void main() async {
   Get.put(TravelGetx(poshTravelUsecase: usecaseConfig.poshTravelUsecase!));
   Get.put(TravelsAlertGetx(travelsAlertUsecase: usecaseConfig.travelsAlertUsecase!, connectivityService: connectivityService));
   Get.put(TravelAlertGetx(travelAlertUsecase: usecaseConfig.travelAlertUsecase!, connectivityService: connectivityService));
+  Get.put(CalculateAgeGetx(calculateAgeUsecase: usecaseConfig.calculateAgeUsecase!));
   runApp(MyApp(authToken: authToken));
 }
 

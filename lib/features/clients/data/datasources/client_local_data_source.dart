@@ -7,6 +7,7 @@ import 'dart:convert';
 import '../models/client_model.dart';
 import 'dart:io';
 import 'dart:convert' as convert;
+import 'package:intl/intl.dart';
 
 abstract class ClientLocalDataSource {
   Future<void> createClient(Client client);
@@ -15,11 +16,33 @@ abstract class ClientLocalDataSource {
   Future<bool> verifyToken();
   Future<String?> getDeviceId();
   Future<List<ClientModel>> getClient(bool conection);
+  int calcularEdad(String birthdate);
 }
 
 class ClientLocalDataSourceImp implements ClientLocalDataSource {
   final String _baseUrl =
       'https://developer.binteapi.com:3009/api/app_clients/users';
+
+  @override
+  int calcularEdad(String birthdate) {
+    try {
+      final DateTime fechaNacimiento =
+          DateFormat('dd/MM/yyyy').parse(birthdate);
+      final DateTime hoy = DateTime.now();
+      int edad = hoy.year - fechaNacimiento.year;
+
+      if (hoy.month < fechaNacimiento.month ||
+          (hoy.month == fechaNacimiento.month &&
+              hoy.day < fechaNacimiento.day)) {
+        edad--;
+      }
+
+      return edad;
+    } catch (e) {
+      return 0; // Retorna 0 si no se puede calcular la edad
+    }
+  }
+
   @override
   Future<List<ClientModel>> getClient(bool connection) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
@@ -48,7 +71,7 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
             List<ClientModel> clients = [ClientModel.fromJson(data)];
 
             sharedPreferences.setString('clients', jsonEncode(clients));
-print("holaaa  aa");
+            print("holaaa  aa");
             return clients;
           } else {
             throw Exception('Estructura de respuesta inesperada');
@@ -77,8 +100,6 @@ print("holaaa  aa");
       throw Exception('No hay clientes almacenados localmente.');
     }
   }
-
- 
 
   @override
   Future<bool> verifyToken() async {
@@ -113,7 +134,7 @@ print("holaaa  aa");
 
   @override
   Future<void> loginClient(Client client) async {
-          final DeviceGetx _driverGetx = Get.find<DeviceGetx>();
+    final DeviceGetx _driverGetx = Get.find<DeviceGetx>();
 
     var response = await http.post(
       Uri.parse('$_baseUrl/auth/login'),
@@ -137,7 +158,7 @@ print("holaaa  aa");
         print('Token guardado correctamente: $token');
         String? savedToken = prefs.getString('auth_token');
         print('Token recuperado de SharedPreferences: $savedToken');
-              await _driverGetx.getDeviceId();  
+        await _driverGetx.getDeviceId();
       } else {
         print('Error al guardar el token');
       }
@@ -203,7 +224,7 @@ print("holaaa  aa");
       throw Exception(message);
     }
   }
-  
+
   @override
   Future<String?> getDeviceId() {
     // TODO: implement getDeviceId

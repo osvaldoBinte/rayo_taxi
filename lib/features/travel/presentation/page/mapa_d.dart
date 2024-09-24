@@ -248,19 +248,14 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       if (isStartPlace) {
         _startPredictions = [];
-        // Asignar el texto seleccionado al controlador
-        // Puedes obtener el 'description' desde la predicción si lo tienes disponible
-        // _startController.text = prediction['description'];
       } else {
         _endPredictions = [];
-        // _endController.text = prediction['description'];
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Determinar cuál lista de predicciones mostrar
     List<dynamic> currentPredictions =
         _currentInputField == 'start' ? _startPredictions : _endPredictions;
 
@@ -275,7 +270,6 @@ class _MapScreenState extends State<MapScreen> {
             ),
             markers: _markers,
             polylines: _polylines,
-            onTap: null,
           ),
           Positioned(
             top: 20.0,
@@ -284,7 +278,7 @@ class _MapScreenState extends State<MapScreen> {
             child: Column(
               children: [
                 TextField(
-                  focusNode: _startFocusNode, // Asignar FocusNode
+                  focusNode: _startFocusNode,
                   controller: _startController,
                   decoration: InputDecoration(
                     labelText: 'Buscar lugar de inicio',
@@ -293,191 +287,139 @@ class _MapScreenState extends State<MapScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                     hintText: 'Escribe una dirección de inicio',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[600],
-                    ),
                     prefixIcon: Icon(
                       Icons.search,
                       color: Colors.blueAccent,
                     ),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10.0),
                       borderSide: BorderSide.none,
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide:
-                          BorderSide(color: Colors.blueAccent, width: 2.0),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide:
-                          BorderSide(color: Colors.grey[300]!, width: 1.0),
-                    ),
                   ),
                 ),
+                if (currentPredictions.isNotEmpty && _currentInputField == 'start')
+                  _buildPredictionList(currentPredictions, true),
                 SizedBox(height: 10.0),
                 TextField(
-                  focusNode: _endFocusNode, // Asignar FocusNode
+                  focusNode: _endFocusNode,
                   controller: _endController,
                   decoration: InputDecoration(
-                    labelText: 'Buscar lugar destino',
+                    labelText: 'Buscar lugar de destino',
                     labelStyle: TextStyle(
                       color: Colors.blueAccent,
                       fontWeight: FontWeight.bold,
                     ),
                     hintText: 'Escribe una dirección de destino',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[600],
-                    ),
                     prefixIcon: Icon(
                       Icons.search,
                       color: Colors.blueAccent,
                     ),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10.0),
                       borderSide: BorderSide.none,
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide:
-                          BorderSide(color: Colors.blueAccent, width: 2.0),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide:
-                          BorderSide(color: Colors.grey[300]!, width: 1.0),
-                    ),
                   ),
                 ),
+                if (currentPredictions.isNotEmpty && _currentInputField == 'end')
+                  _buildPredictionList(currentPredictions, false),
                 SizedBox(height: 10.0),
-                Positioned(
-                  bottom: 80.0,
-                  left:
-                      20.0, // Márgenes laterales más amplios para un mejor diseño
-                  right: 20.0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(25.0),
-                      gradient: LinearGradient(
-                        colors: [
-                          Color(0xFF4caf50),
-                          Color(0xFF1e88e5),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26, // Sombra más marcada
-                          blurRadius: 15.0, // Difusión de la sombra
-                          offset: Offset(0, 8), // Desplazamiento vertical
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      onPressed: _showRouteDetails,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors
-                            .transparent, // Fondo transparente para que el gradiente de Container se muestre
-                        shadowColor: Colors
-                            .transparent, // Quitar sombra del botón para no interferir
-                        padding: EdgeInsets.symmetric(vertical: 18.0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25.0),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.directions,
-                            color: Colors.white,
-                          ),
-                          SizedBox(width: 10.0),
-                          Text(
-                            _buttonText,
-                            style: TextStyle(
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 255, 255,
-                                  255), // Color blanco para contraste con el gradiente
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                if (_startController.text.isNotEmpty &&
-                    currentPredictions.isNotEmpty)
-                  Container(
-                    margin: EdgeInsets.only(top: 8.0, left: 16.0, right: 16.0),
-                    padding:
-                        EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 10.0,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: currentPredictions.map((prediction) {
-                        return GestureDetector(
-                          onTap: () {
-                            bool isStartPlace = _currentInputField == 'start';
-                            _selectPlace(prediction['place_id'], isStartPlace);
-
-                            if (isStartPlace) {
-                              _startController.text = prediction['description'];
-                            } else {
-                              _endController.text = prediction['description'];
-                            }
-
-                            FocusScope.of(context).unfocus();
-                          },
-                          child: Card(
-                            elevation: 1,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
-                            child: ListTile(
-                              leading: Icon(
-                                Icons.location_on,
-                                color: Color.fromARGB(255, 240, 34, 34),
-                              ),
-                              title: Text(
-                                prediction['description'],
-                                style: TextStyle(
-                                  fontSize: 16.0,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  )
               ],
+            ),
+          ),
+          Positioned(
+            bottom: 16.0,
+            left: 10.0,
+            right: 10.0,
+            child: ElevatedButton(
+              onPressed: _showRouteDetails,
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.all(16.0),
+                backgroundColor: Colors.blueAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              child: Text(
+                _buttonText,
+                style: TextStyle(fontSize: 18.0, color: Colors.white),
+              ),
             ),
           ),
         ],
       ),
     );
-  }
+  }Widget _buildPredictionList(List<dynamic> predictions, bool isStartPlace) {
+  return Container(
+    margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+    padding: EdgeInsets.all(8.0),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(15.0),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black12.withOpacity(0.3),
+          spreadRadius: 3,
+          blurRadius: 7,
+          offset: Offset(0, 3),
+        ),
+      ],
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(15.0),
+      child: ListView.builder(
+        shrinkWrap: true, // Para que se ajuste al contenido
+        itemCount: predictions.length,
+        itemBuilder: (context, index) {
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                _selectPlace(predictions[index]['place_id'], isStartPlace);
+              },
+              splashColor: Colors.blueAccent.withOpacity(0.2), // Efecto al presionar
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: index == predictions.length - 1
+                          ? Colors.transparent
+                          : Colors.grey.withOpacity(0.2),
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.place,
+                      color: Colors.blueAccent.withOpacity(0.8),
+                    ),
+                    SizedBox(width: 10.0),
+                    Expanded(
+                      child: Text(
+                        predictions[index]['description'],
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[800],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    ),
+  );
+}
 }

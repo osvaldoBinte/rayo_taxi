@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rayo_taxi/features/clients/data/datasources/client_local_data_source.dart';
 import 'package:rayo_taxi/features/clients/data/repositories/client_repository_impl.dart';
+import 'package:rayo_taxi/features/clients/domain/usecases/calculate_age_usecase.dart';
 import 'package:rayo_taxi/features/clients/domain/usecases/create_client_usecase.dart';
 import 'package:rayo_taxi/features/clients/domain/usecases/device_cient_usecase.dart';
 import 'package:rayo_taxi/features/clients/domain/usecases/get_client_usecase.dart';
@@ -30,6 +31,7 @@ class UsecaseConfig {
   DeviceCientUsecase? deviceCientUsecase;
   GetClientUsecase? getClientUsecase;
   UpdateClientUsecase? updateClientUsecase;
+  CalculateAgeUsecase? calculateAgeUsecase;
 
   PoshTravelUsecase? poshTravelUsecase;
   
@@ -51,11 +53,13 @@ class UsecaseConfig {
     deviceCientUsecase =DeviceCientUsecase(clientRepository: clientRepositoryImpl!);
     getClientUsecase = GetClientUsecase(clientRepository: clientRepositoryImpl!);
     updateClientUsecase = UpdateClientUsecase(clientRepository: clientRepositoryImpl!);
+    calculateAgeUsecase = CalculateAgeUsecase(clientRepository: clientRepositoryImpl!);
    
     poshTravelUsecase = PoshTravelUsecase(travelRepository: travelRepositoryImp!);
 
     idDeviceUsecase = IdDeviceUsecase(notificationRepository: notificationRepositoryImp!);
     travelsAlertUsecase = TravelsAlertUsecase(notificationRepository: notificationRepositoryImp!);
 travelAlertUsecase = TravelAlertUsecase(notificationRepository: notificationRepositoryImp!);
+
   }
 }

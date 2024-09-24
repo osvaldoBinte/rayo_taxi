@@ -4,10 +4,12 @@ import 'package:get/get.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/get/get_client_getx.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/client.dart';
+import '../../domain/usecases/calculate_age_usecase.dart';
+import '../getxs/calculateAge/calculateAge_getx.dart';
 import 'edit_porfile_modal.dart';
 import 'login_clients_page.dart';
 import 'dart:async';
-
+import 'package:intl/intl.dart';
 class GetClientPage extends StatefulWidget {
   const GetClientPage({super.key});
 
@@ -17,6 +19,9 @@ class GetClientPage extends StatefulWidget {
 
 class _GetClientPage extends State<GetClientPage> {
   late StreamSubscription<ConnectivityResult> subscription;
+
+
+  final CalculateAgeGetx calculateAgeGetx = Get.find<CalculateAgeGetx>();
   final GetClientGetx getClientGetx = Get.find<GetClientGetx>();
 
   Future<void> _logout() async {
@@ -94,6 +99,10 @@ class _GetClientPage extends State<GetClientPage> {
                 );
               }
 
+              if (client.birthdate != null) {
+                calculateAgeGetx.calculateAge(client.birthdate!);
+              }
+
               return Column(
                 children: [
                   Container(
@@ -154,12 +163,48 @@ class _GetClientPage extends State<GetClientPage> {
                         horizontal: 16.0,
                       ),
                       title: Text(
-                        'Edad: ${client.years_old ?? 'N/A'}',
+                        'Fecha de nacimiento: ${client.birthdate ?? 'No especificada'}',
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 20,
                         ),
                       ),
+                      subtitle: Obx(() {
+                        final ageState = calculateAgeGetx.state.value;
+                        if (ageState is CalculateAgeLoading) {
+                          return const Text(
+                            'Calculando edad...',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                            ),
+                          );
+                        } else if (ageState is CalculateAgeSuccessfully) {
+                          return Text(
+                            'Edad: ${ageState.age} años',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                            ),
+                          );
+                        } else if (ageState is CalculateAgeFailure) {
+                          return Text(
+                            'Error: ${ageState.error}',
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 16,
+                            ),
+                          );
+                        } else {
+                          return const Text(
+                            'Edad no disponible',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                            ),
+                          );
+                        }
+                      }),
                       trailing: const Icon(
                         Icons.cake,
                         color: Color(0xFFEFC300),
@@ -211,7 +256,6 @@ class _GetClientPage extends State<GetClientPage> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
-                  
                   ),
                 ],
               );

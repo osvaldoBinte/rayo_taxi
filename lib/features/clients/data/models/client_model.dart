@@ -8,6 +8,7 @@ class ClientModel extends Client {
      String? password,
      int? years_old,
     int? id_company,
+      String? birthdate,
     String? token,
   }) : super(
             id: id,
@@ -16,7 +17,7 @@ class ClientModel extends Client {
             password: password,
             years_old: years_old,
             id_company: id_company,
-            token: token);
+            token: token , birthdate: birthdate);
   factory ClientModel.fromJson(Map<String, dynamic> json) {
     return ClientModel(
       id: json['id'] ?? '',
@@ -26,6 +27,8 @@ class ClientModel extends Client {
       years_old: json['years_old'] ?? '',
       id_company: json['id_company'] ?? '',
       token: json['token'] ?? '',
+            birthdate: json['birthdate'] ?? '',
+
     );
   }
 
@@ -38,6 +41,7 @@ class ClientModel extends Client {
       years_old: client.years_old,
       id_company: client.id_company,
       token: client.token,
+      birthdate:client.birthdate
     );
   }
 
@@ -50,6 +54,7 @@ class ClientModel extends Client {
       'years_old': years_old,
       'id_company': id_company,
       'token': token,
+      'birthdate':birthdate
     };
   }
 }

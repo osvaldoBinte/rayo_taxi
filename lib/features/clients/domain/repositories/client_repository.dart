@@ -8,5 +8,5 @@ abstract class ClientRepository {
   Future<void> loginClient(Client client);
   Future<bool> verifyToken();
   Future<String?> getDeviceId();
-  
+  int calcularEdad(String birthdate);
 }
