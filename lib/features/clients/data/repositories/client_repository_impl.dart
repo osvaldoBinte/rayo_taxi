@@ -27,10 +27,6 @@ class ClientRepositoryImpl implements ClientRepository {
     return await clientLocalDataSource.verifyToken();
   }
 
-  @override
-  Future<String?> getDeviceId() async {
-    return await clientLocalDataSource.getDeviceId();
-  }
 
   @override
   Future<void> updateClient(Client client) async {

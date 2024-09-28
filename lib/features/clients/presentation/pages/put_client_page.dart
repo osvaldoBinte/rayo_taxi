@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../domain/entities/client.dart';
@@ -74,7 +73,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
-                  focusNode: _focusNodeName, // Añade el FocusNode aquí
+                  focusNode: _focusNodeName,
                   controller: _nameController,
                   decoration: InputDecoration(
                     labelText: 'Nombre',
@@ -114,11 +113,35 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                   readOnly: true,
                   onTap: () async {
+                    DateTime today = DateTime.now();
+                    DateTime eighteenYearsAgo = DateTime(
+                      today.year - 18,
+                      today.month,
+                      today.day,
+                    );
+
                     DateTime? pickedDate = await showDatePicker(
                       context: context,
-                      initialDate: DateTime.now(),
+                      initialDate: eighteenYearsAgo,
                       firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
+                      lastDate: eighteenYearsAgo,
+                      builder: (BuildContext context, Widget? child) {
+                        return Theme(
+                          data: ThemeData.light().copyWith(
+                            colorScheme: ColorScheme.light(
+                              primary:
+                                  Color(0xFFEFC300), // Color del encabezado
+                              onPrimary: Colors
+                                  .white, // Color del texto del encabezado
+                              onSurface: Colors
+                                  .black, // Color del texto del calendario
+                            ),
+                            dialogBackgroundColor:
+                                Colors.white, // Color de fondo del diálogo
+                          ),
+                          child: child!,
+                        );
+                      },
                     );
 
                     if (pickedDate != null) {
@@ -133,19 +156,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     if (value == null || value.isEmpty) {
                       return 'La fecha de nacimiento es requerida';
                     }
-
-                    final birthdate = DateFormat('dd/MM/yyyy').parse(value);
-                    final today = DateTime.now();
-                    final age = today.year - birthdate.year;
-
-                    if (age < 18 ||
-                        (age == 18 &&
-                            today.isBefore(DateTime(
-                                today.year, birthdate.month, birthdate.day)))) {
-                      return 'Debes tener al menos 18 años';
-                    }
-
-                    return null;
+                    return null; // Ya no es necesario validar la edad aquí
                   },
                 ),
                 const SizedBox(height: 16),

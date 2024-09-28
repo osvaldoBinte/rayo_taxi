@@ -19,7 +19,7 @@ class TravelAlertGetx extends GetxController {
   TravelAlertGetx(
       {required this.travelAlertUsecase, required this.connectivityService});                                                                                 
 
-  fetchCoDetails(FetchgetDetailsEvent fetchSongDetailsEvent) async {
+  fetchCoDetails(FetchgetDetailsssEvent fetchSongDetailsEvent) async {
     state.value = TravelAlertLoading();
     try {
       bool isConnected = connectivityService.isConnected;

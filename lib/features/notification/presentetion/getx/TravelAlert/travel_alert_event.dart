@@ -3,7 +3,7 @@ part of 'travel_alert_getx.dart';
 @immutable
 abstract class TravelAlertEvent {}
 
-class FetchgetDetailsEvent {
+class FetchgetDetailsssEvent {
    
-  FetchgetDetailsEvent();
+  FetchgetDetailsssEvent();
 }

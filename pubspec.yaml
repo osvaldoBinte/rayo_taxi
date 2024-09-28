@@ -45,8 +45,15 @@ dependencies:
   eva_icons_flutter: ^3.1.0
   intl: ^0.17.0 
 
+flutter_native_splash:
+  color: "#ffffff"  
+  image: assets/images/rayo_taxi.png
+  android: true
+  ios: true
+
 dev_dependencies:
   change_app_package_name: ^1.1.0
+  flutter_native_splash: ^2.0.8
 
   flutter_test:
     sdk: flutter

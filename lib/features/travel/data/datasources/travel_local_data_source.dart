@@ -9,12 +9,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class TravelLocalDataSource {
   Future<void> poshTravel(Travel travel);
+  Future<void> deleteTravel(String id, bool connection);
   Future<void> getRoute(LatLng startLocation, LatLng endLocation);
   List<LatLng> decodePolyline(String encoded);
   double calculateDistance(LatLng start, LatLng end);
   double degreesToRadians(double degrees);
   Future<List<dynamic>> getPlacePredictions(String input);
-  Future<void> getPlaceDetailsAndMove(String placeId, Function(LatLng) moveToLocation, Function(LatLng) addMarker);
+  Future<void> getPlaceDetailsAndMove(String placeId,
+      Function(LatLng) moveToLocation, Function(LatLng) addMarker);
   Future<String> getEncodedPoints();
   Future<Map<String, dynamic>> getPlaceDetails(String placeId); // Nueva función
 }
@@ -23,7 +25,7 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
   final String _apiKey = 'AIzaSyDUVS-wh25ShrtIHnuXW0J8MuBRz9KC7ak';
   String? _encodedPoints;
   final String _baseUrl =
-      'https://developer.binteapi.com:3009/api/app_clients/travels';
+      'https://developer.binteapi.com:3009/api/app_clients/travels/travels';
 
   @override
   Future<void> getRoute(LatLng startLocation, LatLng endLocation) async {
@@ -135,24 +137,23 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
     }
   }
 
-@override
-Future<Map<String, dynamic>> getPlaceDetails(String placeId) async {
-  final String url =
-      'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$_apiKey';
+  @override
+  Future<Map<String, dynamic>> getPlaceDetails(String placeId) async {
+    final String url =
+        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$_apiKey';
 
-  final response = await http.get(Uri.parse(url));
-  if (response.statusCode == 200) {
-    final result = json.decode(response.body)['result'];
-     return {
-      'name': result['name'],  
-      'lat': result['geometry']['location']['lat'],
-      'lng': result['geometry']['location']['lng'],
-    };
-  } else {
-    throw Exception('Error obteniendo detalles del lugar');
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final result = json.decode(response.body)['result'];
+      return {
+        'name': result['name'],
+        'lat': result['geometry']['location']['lat'],
+        'lng': result['geometry']['location']['lng'],
+      };
+    } else {
+      throw Exception('Error obteniendo detalles del lugar');
+    }
   }
-}
-
 
   Future<String?> _getToken() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -164,7 +165,7 @@ Future<Map<String, dynamic>> getPlaceDetails(String placeId) async {
     String? savedToken = await _getToken();
 
     var response = await http.post(
-      Uri.parse('$_baseUrl/travels'),
+      Uri.parse('$_baseUrl'),
       headers: {
         'Content-Type': 'application/json',
         'x-token': savedToken ?? '',
@@ -178,10 +179,87 @@ Future<Map<String, dynamic>> getPlaceDetails(String placeId) async {
     if (response.statusCode == 200) {
       String message = body['message'].toString();
       print(message);
+      if (body['data'] != null && body['data'] is int) {
+      int newTravelId = body['data'];
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('current_travel_id', newTravelId);
+      print('Nuevo ID de viaje guardado en SharedPreferences: $newTravelId');
+    } else {
+      print('El ID del viaje no se encontró en la respuesta del servidor.');
+      throw Exception('El ID del viaje no se encontró en la respuesta del servidor.');
+    }
     } else {
       String message = body['message'].toString();
       print(body);
       throw Exception(message);
+    }
+  }
+
+  Future<void> _sendPendingDeletions() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      List<String>? storedData = prefs.getStringList('pendingDeletions');
+      if (storedData != null && storedData.isNotEmpty) {
+        for (String id in storedData) {
+          await http.delete(
+            Uri.parse('$_baseUrl/Student/$id'),
+          );
+        }
+
+        // Borra las operaciones pendientes después de enviarlas
+        await prefs.remove('pendingDeletions');
+        print('Pending deletions sent successfully');
+      }
+    } catch (error) {
+      print('Error sending pending deletions: $error');
+      // Puedes manejar el error según tus necesidades
+    }
+  }
+
+  @override
+  Future<void> deleteTravel(String id, bool connection) async {
+    String? savedToken = await _getToken();
+
+    if (connection) {
+      try {
+        final http.Response response = await http.put(
+          Uri.parse('$_baseUrl/cancel/$id'),
+          headers: {
+            'Content-Type': 'application/json',
+            'x-token': savedToken ?? '',
+          },
+        );
+
+        if (response.statusCode != 200) {
+          print(response);
+          print("error a update travel");
+          throw Exception('Failed to delete user');
+        } else {
+          print(response);
+
+          print("update bien travel");
+        }
+
+        await _sendPendingDeletions();
+      } catch (e) {
+        print('Error during network call: $e');
+        throw Exception('Network error');
+      }
+    } else {
+      try {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        List<String>? storedData = prefs.getStringList('pendingDeletions');
+        if (storedData == null) {
+          storedData = [];
+        }
+
+        storedData.add(id);
+
+        await prefs.setStringList('pendingDeletions', storedData);
+        print('Delete operation saved to SharedPreferences');
+      } catch (error) {
+        print('Error saving delete operation to SharedPreferences: $error');
+      }
     }
   }
 }

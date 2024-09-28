@@ -2,6 +2,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/get/get_client_getx.dart';
+import 'package:rayo_taxi/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/client.dart';
 import '../../domain/usecases/calculate_age_usecase.dart';
@@ -10,6 +11,7 @@ import 'edit_porfile_modal.dart';
 import 'login_clients_page.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
+
 class GetClientPage extends StatefulWidget {
   const GetClientPage({super.key});
 
@@ -19,7 +21,6 @@ class GetClientPage extends StatefulWidget {
 
 class _GetClientPage extends State<GetClientPage> {
   late StreamSubscription<ConnectivityResult> subscription;
-
 
   final CalculateAgeGetx calculateAgeGetx = Get.find<CalculateAgeGetx>();
   final GetClientGetx getClientGetx = Get.find<GetClientGetx>();
@@ -56,7 +57,7 @@ class _GetClientPage extends State<GetClientPage> {
     subscription.cancel();
     super.dispose();
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,7 +65,10 @@ class _GetClientPage extends State<GetClientPage> {
         constraints: BoxConstraints.expand(),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.white, Colors.white],
+            colors: [
+              Theme.of(context).scaffoldBackgroundColor,
+              Theme.of(context).scaffoldBackgroundColor
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -80,7 +84,9 @@ class _GetClientPage extends State<GetClientPage> {
               return Center(
                 child: Text(
                   state.error,
-                  style: const TextStyle(color: Colors.redAccent, fontSize: 18),
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.iconred,
+                      fontSize: 18),
                 ),
               );
             } else if (state is GetClientLoaded) {
@@ -109,7 +115,9 @@ class _GetClientPage extends State<GetClientPage> {
                     alignment: Alignment.centerLeft,
                     padding: EdgeInsets.all(16.0),
                     child: IconButton(
-                      icon: Icon(Icons.logout, size: 30.0, color: Colors.red),
+                      icon: Icon(Icons.logout,
+                          size: 30.0,
+                          color: Theme.of(context).colorScheme.iconred),
                       onPressed: _logout,
                     ),
                   ),
@@ -118,18 +126,15 @@ class _GetClientPage extends State<GetClientPage> {
                     children: [
                       CircleAvatar(
                         radius: 60,
-                        backgroundColor: Color.fromARGB(255, 243, 222, 33),
+                        backgroundColor:
+                            Theme.of(context).colorScheme.buttonColor,
                         child: Text(
                           client.name?.substring(0, 1) ?? 'N',
-                          style: const TextStyle(
-                            fontSize: 40,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.displayLarge,
                         ),
                       ),
                       _buildIcon(
-                          Icons.edit, Color.fromARGB(255, 255, 255, 255), () {},
+                          Icons.edit,Theme.of(context).colorScheme.iconwhite, () {},
                           bottom: 0, right: 0),
                     ],
                   ),
@@ -190,8 +195,8 @@ class _GetClientPage extends State<GetClientPage> {
                         } else if (ageState is CalculateAgeFailure) {
                           return Text(
                             'Error: ${ageState.error}',
-                            style: const TextStyle(
-                              color: Colors.red,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.iconred,
                               fontSize: 16,
                             ),
                           );
@@ -205,9 +210,9 @@ class _GetClientPage extends State<GetClientPage> {
                           );
                         }
                       }),
-                      trailing: const Icon(
+                      trailing: Icon(
                         Icons.cake,
-                        color: Color(0xFFEFC300),
+                        color: Theme.of(context).colorScheme.buttonColor,
                         size: 30,
                       ),
                     ),
@@ -247,7 +252,8 @@ class _GetClientPage extends State<GetClientPage> {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEFC300),
+                      backgroundColor:
+                          Theme.of(context).colorScheme.buttonColor,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 30,
                         vertical: 15,

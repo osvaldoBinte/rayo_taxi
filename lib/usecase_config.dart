@@ -3,7 +3,6 @@ import 'package:rayo_taxi/features/clients/data/datasources/client_local_data_so
 import 'package:rayo_taxi/features/clients/data/repositories/client_repository_impl.dart';
 import 'package:rayo_taxi/features/clients/domain/usecases/calculate_age_usecase.dart';
 import 'package:rayo_taxi/features/clients/domain/usecases/create_client_usecase.dart';
-import 'package:rayo_taxi/features/clients/domain/usecases/device_cient_usecase.dart';
 import 'package:rayo_taxi/features/clients/domain/usecases/get_client_usecase.dart';
 import 'package:rayo_taxi/features/clients/domain/usecases/login_client_usecase.dart';
 import 'package:rayo_taxi/features/clients/domain/usecases/update_client_usecase.dart';
@@ -14,6 +13,7 @@ import 'package:rayo_taxi/features/notification/domain/usecases/travel_alert_use
 import 'package:rayo_taxi/features/notification/domain/usecases/travels_alert_usecase.dart';
 import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
 import 'package:rayo_taxi/features/travel/data/repositories/travel_repository_Imp.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/delete_travel_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/posh_travel_usecase.dart';
 import 'features/clients/domain/usecases/tokenclient_usecase.dart';
 
@@ -28,7 +28,6 @@ class UsecaseConfig {
   CreateClientUsecase? createClientUsecase;
   LoginClientUsecase? loginClientUsecase;
   TokenclientUsecase? tokenclientUsecase;
-  DeviceCientUsecase? deviceCientUsecase;
   GetClientUsecase? getClientUsecase;
   UpdateClientUsecase? updateClientUsecase;
   CalculateAgeUsecase? calculateAgeUsecase;
@@ -38,6 +37,7 @@ class UsecaseConfig {
   IdDeviceUsecase? idDeviceUsecase;
   TravelsAlertUsecase? travelsAlertUsecase;
   TravelAlertUsecase? travelAlertUsecase;
+  DeleteTravelUsecase? deleteTravelUsecase;
   UsecaseConfig() {
     clientLocalDataSourceImp = ClientLocalDataSourceImp();
     travelLocalDataSourceImp = TravelLocalDataSourceImp();
@@ -50,12 +50,12 @@ class UsecaseConfig {
     createClientUsecase = CreateClientUsecase(clientRepositoryImpl!);
     loginClientUsecase = LoginClientUsecase(clientRepositoryImpl!);
     tokenclientUsecase = TokenclientUsecase(clientRepositoryImpl!);
-    deviceCientUsecase =DeviceCientUsecase(clientRepository: clientRepositoryImpl!);
     getClientUsecase = GetClientUsecase(clientRepository: clientRepositoryImpl!);
     updateClientUsecase = UpdateClientUsecase(clientRepository: clientRepositoryImpl!);
     calculateAgeUsecase = CalculateAgeUsecase(clientRepository: clientRepositoryImpl!);
    
     poshTravelUsecase = PoshTravelUsecase(travelRepository: travelRepositoryImp!);
+    deleteTravelUsecase = DeleteTravelUsecase(travelRepository: travelRepositoryImp!);
 
     idDeviceUsecase = IdDeviceUsecase(notificationRepository: notificationRepositoryImp!);
     travelsAlertUsecase = TravelsAlertUsecase(notificationRepository: notificationRepositoryImp!);

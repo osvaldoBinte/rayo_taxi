@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:rayo_taxi/features/clients/presentation/pages/get_client_page.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/home_page.dart';
+import 'package:rayo_taxi/main.dart';
 
 import '../../domain/entities/client.dart';
 import '../getxs/login/loginclient_getx.dart';
@@ -38,14 +38,11 @@ class _LoginClientsPage extends State<LoginClientsPage> {
 
   void _login() {
     if (_formKey.currentState!.validate()) {
-      print('Email: ${_emailController.text}');
-      print('Password: ${_passwordController.text}');
-
       String password = _passwordController.text;
       String email = _emailController.text;
-      final post = Client(email: email, password: password);
+      final client = Client(email: email, password: password);
 
-      _clientGetx.createClient(LoginClientEvent(post));
+      _clientGetx.createClient(LoginClientEvent(client));
     }
   }
 
@@ -54,10 +51,12 @@ class _LoginClientsPage extends State<LoginClientsPage> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
+      
       body: Stack(
         children: <Widget>[
           Container(
-            color: Color(0xFFEFC300),
+            color: Theme.of(context).colorScheme.backgroundColor,
             child: Align(
               alignment: Alignment.topCenter,
               child: Padding(
@@ -71,85 +70,76 @@ class _LoginClientsPage extends State<LoginClientsPage> {
               ),
             ),
           ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: ClipRRect(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+          SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: screenHeight * 0.35,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
               ),
-              child: Container(
-                color: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0, vertical: 20.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Text(
-                      'LOGIN',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 20),
-                    Obx(() {
-                      if (_clientGetx.state.value is LoginclientSuccessfully) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => HomePage()),
-                          );
-                        });
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Text(
-                            'Exitoso',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
+              child: ClipRRect(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+                child: Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 20.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        'INICIAR SESIÓN',
+                        style: TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 20),
+                      Obx(() {
+                        if (_clientGetx.state.value
+                            is LoginclientSuccessfully) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => HomePage()),
+                            );
+                          });
+                          return Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Text(
+                              'Inicio de sesión exitoso',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                        );
-                      } else if (_clientGetx.state.value
-                          is LoginclientFailure) {
-                        final failureState =
-                            _clientGetx.state.value as LoginclientFailure;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Text(
-                            failureState.error,
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        );
-                      }
-                      return SizedBox.shrink();
-                    }),
-                    SizedBox(height: 20),
-                    Form(
-                      key: _formKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          if (!_isEmailEntered) ...[
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: TextFormField(
+                          );
+                        } else if (_clientGetx.state.value
+                            is LoginclientFailure) {
+                          final failureState =
+                              _clientGetx.state.value as LoginclientFailure;
+                          return Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Text(
+                              failureState.error,
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          );
+                        }
+                        return SizedBox.shrink();
+                      }),
+                      SizedBox(height: 20),
+                      Form(
+                        key: _formKey,
+                        child: Column(
+                          children: <Widget>[
+                            if (!_isEmailEntered) ...[
+                              _buildTextFormField(
                                 controller: _emailController,
-                                decoration: InputDecoration(
-                                  labelText: 'Correo electrónico',
-                                  labelStyle:
-                                      TextStyle(color: Color(0xFF545454)),
-                                  filled: true,
-                                  fillColor: Color(0xFFD9D9D9),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8.0),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                ),
+                                label: 'Correo electrónico',
+                                icon: Icons.email,
                                 keyboardType: TextInputType.emailAddress,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -162,12 +152,8 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                                   return null;
                                 },
                               ),
-                            ),
-                            SizedBox(height: 20),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: ElevatedButton(
+                              SizedBox(height: 20),
+                              ElevatedButton(
                                 onPressed: _nextStep,
                                 child: Text(
                                   'Siguiente',
@@ -181,42 +167,42 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                                   minimumSize: Size(double.infinity, 50),
                                 ),
                               ),
-                            ),
-                          ] else ...[
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: Text(
-                                  'Correo electrónico: ${_emailController.text}'),
-                            ),
-                            SizedBox(height: 20),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: TextFormField(
-                                controller: _passwordController,
-                                decoration: InputDecoration(
-                                  labelText: 'Contraseña',
-                                  labelStyle:
-                                      TextStyle(color: Color(0xFF545454)),
-                                  filled: true,
-                                  fillColor: Color(0xFFD9D9D9),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8.0),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscureText
-                                          ? Icons.visibility
-                                          : Icons.visibility_off,
-                                      color: Color(0xFF545454),
+                            ] else ...[
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Correo electrónico: ${_emailController.text}',
+                                      style: TextStyle(fontSize: 16),
                                     ),
-                                    onPressed: _togglePasswordVisibility,
                                   ),
+                                  IconButton(
+                                    icon: Icon(Icons.edit, color: Colors.grey),
+                                    onPressed: () {
+                                      setState(() {
+                                        _isEmailEntered = false;
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 20),
+                              _buildTextFormField(
+                                controller: _passwordController,
+                                label: 'Contraseña',
+                                icon: Icons.lock,
+                                obscureText: _obscureText,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureText
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                    color: Colors.grey[600],
+                                  ),
+                                  onPressed: _togglePasswordVisibility,
                                 ),
-                                obscureText:
-                                    _obscureText, 
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return 'Por favor ingrese su contraseña';
@@ -224,12 +210,8 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                                   return null;
                                 },
                               ),
-                            ),
-                            SizedBox(height: 20),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: ElevatedButton(
+                              SizedBox(height: 20),
+                              ElevatedButton(
                                 onPressed: _login,
                                 child: Text(
                                   'Iniciar Sesión',
@@ -239,37 +221,36 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                                   ),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Color(0xFFEFC300),
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.buttonColor,
                                   minimumSize: Size(double.infinity, 50),
                                 ),
                               ),
-                            ),
-                          ],
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: Divider(
-                                  color: Colors.black,
-                                  height: 36,
-                                ),
-                              ),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Text("o"),
-                              ),
-                              Expanded(
-                                child: Divider(
-                                  color: Colors.black,
-                                  height: 36,
-                                ),
-                              ),
                             ],
-                          ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: ElevatedButton(
+                            SizedBox(height: 20),
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: Divider(
+                                    color: Colors.black,
+                                    height: 36,
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
+                                  child: Text("o"),
+                                ),
+                                Expanded(
+                                  child: Divider(
+                                    color: Colors.black,
+                                    height: 36,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 20),
+                            ElevatedButton(
                               onPressed: () {
                                 Navigator.push(
                                   context,
@@ -286,32 +267,28 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                                 ),
                               ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFFEFC300),
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.buttonColor,
                                 minimumSize: Size(double.infinity, 50),
                               ),
                             ),
-                          ),
-                          SizedBox(height: 20),
-                          _buildSocialLoginButton(
-                            imagePath: 'assets/images/google.png',
-                            text: 'Iniciar sesión con Google',
-                          ),
-                          SizedBox(height: 20),
-                          _buildSocialLoginButton(
-                            icon: Icons.facebook,
-                            text: 'Iniciar sesión con Facebook',
-                            color: Colors.blue,
-                          ),
-                          SizedBox(height: 20),
-                          _buildSocialLoginButton(
-                            icon: Icons.apple,
-                            text: 'Iniciar sesión con Apple',
-                            color: Colors.black,
-                          ),
-                        ],
+                            SizedBox(height: 20),
+                            _buildSocialLoginButton(
+                              imagePath: 'assets/images/google.png',
+                              text: 'Iniciar sesión con Google',
+                            ),
+                         
+                            SizedBox(height: 20),
+                            _buildSocialLoginButton(
+                              icon: Icons.apple,
+                              text: 'Iniciar sesión con Apple',
+                              color: Colors.black,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -321,7 +298,41 @@ class _LoginClientsPage extends State<LoginClientsPage> {
     );
   }
 
-  Widget _buildSocialLoginButton({String? imagePath, IconData? icon, required String text, Color? color}) {
+  Widget _buildTextFormField({
+    required TextEditingController controller,
+    required String label,
+    IconData? icon,
+    Widget? suffixIcon,
+    bool obscureText = false,
+    TextInputType keyboardType = TextInputType.text,
+    required String? Function(String?) validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.black.withOpacity(0.7)),
+        prefixIcon: icon != null ? Icon(icon, color: Colors.grey[600]) : null,
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: Colors.grey[200],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
+        ),
+      ),
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      validator: validator,
+    );
+  }
+
+  Widget _buildSocialLoginButton({
+    String? imagePath,
+    IconData? icon,
+    required String text,
+    Color? color,
+  }) {
     return Container(
       width: 300,
       height: 50,

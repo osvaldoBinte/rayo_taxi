@@ -8,8 +8,8 @@ class TravelAlertInitial extends TravelAlertState {}
 class TravelAlertLoading extends TravelAlertState {}
 
 class TravelAlertLoaded extends TravelAlertState {
-  final List<TravelAlertModel> travels;
-  TravelAlertLoaded(this.travels);
+  final List<TravelAlertModel> travel;
+  TravelAlertLoaded(this.travel);
 }
 
 class TravelAlertFailure extends TravelAlertState {

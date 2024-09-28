@@ -7,7 +7,9 @@ import 'package:rayo_taxi/features/notification/presentetion/getx/Device/device_
 import 'package:rayo_taxi/features/notification/presentetion/getx/TravelAlert/travel_alert_getx.dart';
 import 'package:rayo_taxi/features/notification/presentetion/getx/TravelsAlert/travels_alert_getx.dart';
 import 'package:rayo_taxi/features/notification/presentetion/page/notification_page.dart';
+import 'package:rayo_taxi/features/travel/presentation/getx/delete/delete_travel_getx.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/TravelListScreen.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/mapa.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/login_clients_page.dart';
@@ -33,13 +35,22 @@ void main() async {
 
   Get.put(DeviceGetx(idDeviceUsecase: usecaseConfig.idDeviceUsecase!));
   Get.put(ClientGetx(createClientUsecase: usecaseConfig.createClientUsecase!));
-  Get.put(LoginclientGetx(loginClientUsecase: usecaseConfig.loginClientUsecase!));
-  Get.put(GetClientGetx(getClientUsecase: usecaseConfig.getClientUsecase!,connectivityService: connectivityService));
+  Get.put(
+      LoginclientGetx(loginClientUsecase: usecaseConfig.loginClientUsecase!));
+  Get.put(GetClientGetx(
+      getClientUsecase: usecaseConfig.getClientUsecase!,
+      connectivityService: connectivityService));
   Get.put(UpdateGetx(updateClientUsecase: usecaseConfig.updateClientUsecase!));
   Get.put(TravelGetx(poshTravelUsecase: usecaseConfig.poshTravelUsecase!));
-  Get.put(TravelsAlertGetx(travelsAlertUsecase: usecaseConfig.travelsAlertUsecase!, connectivityService: connectivityService));
-  Get.put(TravelAlertGetx(travelAlertUsecase: usecaseConfig.travelAlertUsecase!, connectivityService: connectivityService));
-  Get.put(CalculateAgeGetx(calculateAgeUsecase: usecaseConfig.calculateAgeUsecase!));
+  Get.put(TravelsAlertGetx(
+      travelsAlertUsecase: usecaseConfig.travelsAlertUsecase!,
+      connectivityService: connectivityService));
+  Get.put(TravelAlertGetx(
+      travelAlertUsecase: usecaseConfig.travelAlertUsecase!,
+      connectivityService: connectivityService));
+  Get.put(CalculateAgeGetx(
+      calculateAgeUsecase: usecaseConfig.calculateAgeUsecase!));
+  Get.put(DeleteTravelGetx(deleteTravelUsecase: usecaseConfig.deleteTravelUsecase!, connectivityService: connectivityService));
   runApp(MyApp(authToken: authToken));
 }
 
@@ -50,8 +61,43 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colorScheme = ColorScheme.fromSwatch().copyWith(
+      primary: Color(0xFF007BFF),
+      secondary: Color(0xFF00A8FF),
+    );
+
     return GetMaterialApp(
-      home: authToken != null ? HomePage() : LoginClientsPage(),
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primaryColor: Color(0xFF007BFF),
+        colorScheme: colorScheme,
+        scaffoldBackgroundColor: Colors.white,
+        textTheme: TextTheme(
+            displayLarge: TextStyle(
+                fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+            titleMedium: TextStyle(fontSize: 18, color: Color(0xFF333333)),
+            bodyLarge: TextStyle(fontSize: 16, color: Colors.black87),
+            bodyMedium: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            bodySmall: TextStyle( color: Colors.blueAccent, fontWeight: FontWeight.bold,)),
+      ),
+      home: authToken != null ? MapScreen22() : LoginClientsPage(),
     );
   }
+}
+
+extension CustomColorScheme on ColorScheme {
+  Color get buttonColor => Color(0xFFEFC300);
+  Color get iconred => Colors.red;
+  Color get icongreen => Colors.green;
+  Color get iconorange => Colors.orange;
+  Color get iconblue => Colors.blue;
+  Color get icongrey => Colors.grey;
+  Color get iconwhite => Colors.white;
+  Color get buttonColormap => Color(0xFF4caf50);
+  Color get buttonColormap2 => Color(0xFF1e88e5);
+  Color get blueAccent => Colors.blueAccent;
+  Color get backgroundColor => Color(0xFFEFC300);
+  Color get CurvedNavigationIcono => Colors.blueAccent;
+  Color get CurvedNavigationIcono2 => Colors.white;
+
 }

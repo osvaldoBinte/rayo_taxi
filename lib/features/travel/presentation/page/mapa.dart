@@ -5,6 +5,23 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:rayo_taxi/features/clients/presentation/getxs/get/get_client_getx.dart';
+import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/travel.dart';
+import 'package:rayo_taxi/features/travel/presentation/getx/delete/delete_travel_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/mapa_page.dart';
+import 'package:rayo_taxi/main.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../connectivity_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
+
+import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/travel.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.dart';
@@ -19,9 +36,11 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   late GoogleMapController _mapController;
   final TravelGetx _travelGetx = Get.find<TravelGetx>();
+  final DeleteTravelGetx _deleteTravelGetx = Get.find<DeleteTravelGetx>();
+  final GetClientGetx getClientGetx = Get.find<GetClientGetx>();
+
   Set<gmaps.Marker> _markers = {};
   Set<Polyline> _polylines = {};
-  int _markerCount = 0;
   LatLng? _startLocation;
   LatLng? _endLocation;
   LatLng _center = const LatLng(20.676666666667, -103.39182);
@@ -36,7 +55,7 @@ class _MapScreenState extends State<MapScreen> {
 
   final FocusNode _startFocusNode = FocusNode();
   final FocusNode _endFocusNode = FocusNode();
-  String _currentInputField = 'start'; // 'start' o 'end'
+  String _currentInputField = 'start';
 
   @override
   void initState() {
@@ -55,7 +74,6 @@ class _MapScreenState extends State<MapScreen> {
       }
     });
 
-    // Escuchar cambios en la conectividad
     Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
       setState(() {
         if (result == ConnectivityResult.none) {
@@ -69,7 +87,6 @@ class _MapScreenState extends State<MapScreen> {
       });
     });
 
-    // Escuchar cambios de foco
     _startFocusNode.addListener(() {
       if (_startFocusNode.hasFocus) {
         setState(() {
@@ -100,10 +117,10 @@ class _MapScreenState extends State<MapScreen> {
     _mapController = controller;
   }
 
-  void _addMarker(LatLng latLng) {
+  void _addMarker(LatLng latLng, bool isStartPlace) {
     setState(() {
-      if (_markerCount == 0) {
-        // Marcador de inicio
+      if (isStartPlace) {
+        _markers.removeWhere((m) => m.markerId.value == 'start');
         _markers.add(
           gmaps.Marker(
             markerId: MarkerId('start'),
@@ -112,8 +129,8 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
         _startLocation = latLng;
-      } else if (_markerCount == 1) {
-        // Marcador de destino
+      } else {
+        _markers.removeWhere((m) => m.markerId.value == 'destination');
         _markers.add(
           gmaps.Marker(
             markerId: MarkerId('destination'),
@@ -122,10 +139,17 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
         _endLocation = latLng;
+      }
+
+      if (_startLocation != null && _endLocation != null) {
         _traceRoute();
       }
-      _markerCount++;
     });
+  }
+
+  Future<int?> _getSavedTravelId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('current_travel_id');
   }
 
   Future<void> _traceRoute() async {
@@ -136,6 +160,7 @@ class _MapScreenState extends State<MapScreen> {
         List<LatLng> polylineCoordinates =
             _travelLocalDataSource.decodePolyline(encodedPoints);
         setState(() {
+          _polylines.clear();
           _polylines.add(Polyline(
             polylineId: PolylineId('route'),
             points: polylineCoordinates,
@@ -149,7 +174,7 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  void _showRouteDetails() {
+  void _showRouteDetails() async {
     if (_startLocation != null && _endLocation != null) {
       double distance = _travelLocalDataSource.calculateDistance(
           _startLocation!, _endLocation!);
@@ -165,7 +190,7 @@ class _MapScreenState extends State<MapScreen> {
         kilometers: distance.toStringAsFixed(2),
       );
 
-      _travelGetx.poshTravel(CreateTravelEvent(post));
+      await _travelGetx.poshTravel(CreateTravelEvent(post));
 
       showModalBottomSheet(
         context: context,
@@ -200,6 +225,28 @@ class _MapScreenState extends State<MapScreen> {
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () async {
+                          int? savedTravelId = await _getSavedTravelId();
+
+                          if (savedTravelId != null) {
+                            print('ID del viaje a cancelar: $savedTravelId');
+
+                            await _deleteTravelGetx.deleteTravel(
+                                DeleteTravelEvent(savedTravelId.toString()));
+
+                            Navigator.of(context).pop();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      'No se encontró un ID de viaje válido')),
+                            );
+                          }
+                        },
+                        child: Text('Cancelar viaje'),
+                      ),
                     ],
                   ),
                 ),
@@ -207,6 +254,13 @@ class _MapScreenState extends State<MapScreen> {
             ),
           );
         },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Por favor, ingresa la dirección de inicio y destino.'),
+          duration: Duration(seconds: 3),
+        ),
       );
     }
   }
@@ -241,132 +295,183 @@ class _MapScreenState extends State<MapScreen> {
         _mapController.moveCamera(CameraUpdate.newLatLng(location));
       },
       (LatLng location) {
-        _addMarker(location);
+        _addMarker(location, isStartPlace);
       },
     );
 
     setState(() {
       if (isStartPlace) {
         _startPredictions = [];
-        // Asignar el texto seleccionado al controlador
-        // Puedes obtener el 'description' desde la predicción si lo tienes disponible
-        // _startController.text = prediction['description'];
       } else {
         _endPredictions = [];
-        // _endController.text = prediction['description'];
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Determinar cuál lista de predicciones mostrar
+    TextEditingController currentController =
+        _currentInputField == 'start' ? _startController : _endController;
     List<dynamic> currentPredictions =
         _currentInputField == 'start' ? _startPredictions : _endPredictions;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          GoogleMap(
-            onMapCreated: _onMapCreated,
-            initialCameraPosition: CameraPosition(
-              target: _center,
-              zoom: 11.0,
+      body: SafeArea(
+        child: Stack(
+          children: [
+             MapWidget(
+              markers: _markers,
+              polylines: _polylines,
+              center: _center,
+              onMapCreated: _onMapCreated,
             ),
-            markers: _markers,
-            polylines: _polylines,
-          ),
-          Positioned(
-            top: 20.0,
-            left: 10.0,
-            right: 10.0,
-            child: Column(
-              children: [
-                TextField(
-                  focusNode: _startFocusNode,
-                  controller: _startController,
-                  decoration: InputDecoration(
-                    labelText: 'Buscar lugar de inicio',
-                    labelStyle: TextStyle(
-                      color: Colors.blueAccent,
-                      fontWeight: FontWeight.bold,
+            Positioned(
+              bottom: 80.0,
+              left: 20.0,
+              right: 20.0,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(25.0),
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.buttonColormap,
+                      Theme.of(context).colorScheme.buttonColormap2
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 15.0,
+                      offset: Offset(0, 8),
                     ),
-                    hintText: 'Escribe una dirección de inicio',
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Colors.blueAccent,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: BorderSide.none,
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: _showRouteDetails,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: EdgeInsets.symmetric(vertical: 18.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25.0),
                     ),
                   ),
-                ),
-                SizedBox(height: 10.0),
-                TextField(
-                  focusNode: _endFocusNode,
-                  controller: _endController,
-                  decoration: InputDecoration(
-                    labelText: 'Buscar lugar de destino',
-                    labelStyle: TextStyle(
-                      color: Colors.blueAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    hintText: 'Escribe una dirección de destino',
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Colors.blueAccent,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      borderSide: BorderSide.none,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.directions,
+                        color: Theme.of(context).colorScheme.iconwhite,
+                      ),
+                      SizedBox(width: 10.0),
+                      Text(
+                        _buttonText,
+                        style: Theme.of(context)
+                            .textTheme
+                            .displayLarge
+                            ?.copyWith(fontSize: 18.0),
+                      ),
+                    ],
                   ),
                 ),
-                if (_startController.text.isNotEmpty &&
-                    currentPredictions.isNotEmpty)
-                  Container(
-                    margin: EdgeInsets.only(top: 8.0, left: 16.0, right: 16.0),
-                    padding:
-                        EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color:Colors.white,
-                          blurRadius: 10.0,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
+              ),
+            ),
+            Positioned(
+              top: 20.0,
+              left: 10.0,
+              right: 10.0,
+              child: Column(
+                children: [
+                  TextField(
+                    focusNode: _startFocusNode,
+                    controller: _startController,
+                    decoration: InputDecoration(
+                      labelText: 'Buscar lugar de inicio',
+                      labelStyle: Theme.of(context).textTheme.bodySmall,
+                      hintText: 'Escribe una dirección de inicio',
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Theme.of(context).colorScheme.blueAccent,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 14.0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
-                    child: Column(
-                      children: currentPredictions.map((prediction) {
-                        return GestureDetector(
-                          onTap: () {
-                            bool isStartPlace = _currentInputField == 'start';
-                            _selectPlace(prediction['place_id'], isStartPlace);
+                  ),
+                  SizedBox(height: 10.0),
+                  TextField(
+                    focusNode: _endFocusNode,
+                    controller: _endController,
+                    decoration: InputDecoration(
+                      labelText: 'Buscar lugar de destino',
+                      labelStyle: Theme.of(context).textTheme.bodySmall,
+                      hintText: 'Escribe una dirección de destino',
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Theme.of(context).colorScheme.blueAccent,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 14.0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  if (currentController.text.isNotEmpty &&
+                      currentPredictions.isNotEmpty)
+                    Container(
+                      height: MediaQuery.of(context).size.height * 0.4,
+                      margin:
+                          EdgeInsets.only(top: 8.0, left: 16.0, right: 16.0),
+                      padding: EdgeInsets.symmetric(
+                          vertical: 10.0, horizontal: 16.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.5),
+                            blurRadius: 10.0,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ListView.builder(
+                        itemCount: currentPredictions.length,
+                        itemBuilder: (context, index) {
+                          var prediction = currentPredictions[index];
+                          return GestureDetector(
+                            onTap: () {
+                              bool isStartPlace = _currentInputField == 'start';
+                              _selectPlace(
+                                  prediction['place_id'], isStartPlace);
 
-                            if (isStartPlace) {
-                              _startController.text = prediction['description'];
-                            } else {
-                              _endController.text = prediction['description'];
-                            }
+                              if (isStartPlace) {
+                                _startController.text =
+                                    prediction['description'];
+                              } else {
+                                _endController.text = prediction['description'];
+                              }
 
-                            FocusScope.of(context).unfocus();
-                          },
-                          child: ListTile(
+                              FocusScope.of(context).unfocus();
+                            },
+                            child: ListTile(
                               leading: Icon(
                                 Icons.location_on,
-                                color: Colors.blueAccent.withOpacity(0.8),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .blueAccent
+                                    .withOpacity(0.8),
                               ),
                               title: Text(
                                 prediction['description'],
@@ -377,73 +482,15 @@ class _MapScreenState extends State<MapScreen> {
                                 ),
                               ),
                             ),
-                          
-                          
-                        );
-                      }).toList(),
-                    ),
-                  )
-              ],
-            ),
-          ),
-          Positioned(
-            bottom: 80.0,
-            left: 20.0,
-            right: 20.0,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(25.0),
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF4caf50),
-                    Color(0xFF1e88e5),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26, // Sombra más marcada
-                    blurRadius: 15.0, // Difusión de la sombra
-                    offset: Offset(0, 8), // Desplazamiento vertical
-                  ),
-                ],
-              ),
-              child: ElevatedButton(
-                onPressed: _showRouteDetails,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors
-                      .transparent, // Fondo transparente para que el gradiente de Container se muestre
-                  shadowColor: Colors
-                      .transparent, // Quitar sombra del botón para no interferir
-                  padding: EdgeInsets.symmetric(vertical: 18.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25.0),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.directions,
-                      color: Colors.white,
-                    ),
-                    SizedBox(width: 10.0),
-                    Text(
-                      _buttonText,
-                      style: TextStyle(
-                        fontSize: 18.0,
-                        fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(255, 255, 255,
-                            255), // Color blanco para contraste con el gradiente
+                          );
+                        },
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

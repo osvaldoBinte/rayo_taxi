@@ -7,6 +7,5 @@ abstract class ClientRepository {
   Future<void> updateClient(Client client);
   Future<void> loginClient(Client client);
   Future<bool> verifyToken();
-  Future<String?> getDeviceId();
   int calcularEdad(String birthdate);
 }

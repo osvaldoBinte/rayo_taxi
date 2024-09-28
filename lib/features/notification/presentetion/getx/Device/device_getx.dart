@@ -1,6 +1,5 @@
 import 'package:meta/meta.dart';
 import 'package:get/get.dart';
-import 'package:rayo_taxi/features/clients/domain/usecases/device_cient_usecase.dart';
 
 import '../../../domain/usecases/id_device_usecase.dart';
 

@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 abstract class TravelRepository {
   Future<void> poshTravel(Travel travel);
+ Future<void> deleteTravel(String id, bool connection);
   Future<void> getRoute(LatLng startLocation, LatLng endLocation);
   List<LatLng> decodePolyline(String encoded);
   double calculateDistance(LatLng start, LatLng end);

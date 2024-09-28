@@ -10,14 +10,19 @@ class TravelGetx extends GetxController {
   final PoshTravelUsecase poshTravelUsecase;
   var state = Rx<TravelState>(TravelInitial());
   TravelGetx({required this.poshTravelUsecase});
+
   poshTravel(CreateTravelEvent event) async {
+    print("TravelGetx.poshTravel: Start");
     state.value = TravelLoading();
     try {
       await poshTravelUsecase.execute(event.travel);
+      print("TravelGetx.poshTravel: After execute");
       print("object");
       state.value = TravelCreatedSuccessfully();
     } catch (e) {
+      print("TravelGetx.poshTravel: Exception - $e");
       state.value = TravelCreationFailure(e.toString());
     }
+    print("TravelGetx.poshTravel: End");
   }
 }

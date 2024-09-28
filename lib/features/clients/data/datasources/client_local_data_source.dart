@@ -14,7 +14,6 @@ abstract class ClientLocalDataSource {
   Future<void> updateClient(Client client);
   Future<void> loginClient(Client client);
   Future<bool> verifyToken();
-  Future<String?> getDeviceId();
   Future<List<ClientModel>> getClient(bool conection);
   int calcularEdad(String birthdate);
 }
@@ -225,9 +224,5 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
     }
   }
 
-  @override
-  Future<String?> getDeviceId() {
-    // TODO: implement getDeviceId
-    throw UnimplementedError();
-  }
+
 }

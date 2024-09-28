@@ -46,5 +46,10 @@ class TravelRepositoryImp implements TravelRepository{
   Future<void> poshTravel(Travel travel) async {
     return await travelLocalDataSource.poshTravel(travel);
   }
+  
+  @override
+ Future<void> deleteTravel(String id, bool connection) async {
+    return await travelLocalDataSource.deleteTravel(id,connection);
+  }
 
 }
