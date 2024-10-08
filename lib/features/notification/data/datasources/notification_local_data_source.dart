@@ -199,12 +199,13 @@ class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
 
             print(
                 'ID del viaje guardado en SharedPreferences: ${travelAlert.id}');
+                print("ultimo viaje 200");
             return [travelAlert];
           } else {
-            throw Exception('Estructura de respuesta inesperada');
+            throw Exception('Estructura de respuesta inesperada  ultimo viaje');
           }
         } else {
-          throw Exception('Error en la petición: ${response.statusCode}');
+          throw Exception('Error en la petición de ultimo viaje: ${response.statusCode}');
         }
       } catch (e) {
         print('Error capturado: $e');

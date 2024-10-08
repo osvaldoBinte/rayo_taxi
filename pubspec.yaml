@@ -44,6 +44,14 @@ dependencies:
   lottie: ^2.2.0
   eva_icons_flutter: ^3.1.0
   intl: ^0.17.0 
+  image_picker: ^1.1.2
+  flutter_credit_card: ^4.0.1
+  credit_card_form: ^0.0.7
+  app_color: ^1.0.1
+  geolocator: ^13.0.1
+  geocoding: ^2.0.4
+  cool_alert: ^2.0.1
+  quickalert: ^1.1.0
 
 flutter_native_splash:
   color: "#ffffff"  
@@ -74,6 +82,10 @@ flutter:
      - assets/images/rayo_taxi.png
      - assets/images/google.png
      - assets/images/Animation.gif
+     - assets/images/credit_card.png
+     - assets/images/images.png
+     - assets/images/Blue-Light.png
+
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

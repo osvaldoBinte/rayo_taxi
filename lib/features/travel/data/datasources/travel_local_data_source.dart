@@ -14,7 +14,7 @@ abstract class TravelLocalDataSource {
   List<LatLng> decodePolyline(String encoded);
   double calculateDistance(LatLng start, LatLng end);
   double degreesToRadians(double degrees);
-  Future<List<dynamic>> getPlacePredictions(String input);
+  Future<List<dynamic>> getPlacePredictions(String input, {LatLng? location});
   Future<void> getPlaceDetailsAndMove(String placeId,
       Function(LatLng) moveToLocation, Function(LatLng) addMarker);
   Future<String> getEncodedPoints();
@@ -93,20 +93,38 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
   double degreesToRadians(double degrees) {
     return degrees * pi / 180;
   }
-
-  @override
-  Future<List<dynamic>> getPlacePredictions(String input) async {
+ @override
+  Future<List<dynamic>> getPlacePredictions(String input, {LatLng? location}) async {
     if (input.isEmpty) return [];
 
-    final String url =
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$_apiKey';
+    try {
+      // Codificar el input para manejar caracteres especiales y espacios
+      String encodedInput = Uri.encodeComponent(input);
 
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final predictions = json.decode(response.body)['predictions'];
-      return predictions;
-    } else {
-      throw Exception('Error obteniendo predicciones');
+      // Construir la URL base
+      String url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json'
+          '?input=$encodedInput'
+          '&key=$_apiKey';
+
+      // Si la ubicación está disponible, agregar parámetros de ubicación y radio
+      if (location != null) {
+        url += '&location=${location.latitude},${location.longitude}'
+               '&radius=500'; // Radio en metros
+      }
+
+      // Realizar la solicitud HTTP GET
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final predictions = json.decode(response.body)['predictions'];
+        return predictions;
+      } else {
+        print('Error en la respuesta de la API: ${response.body}');
+        throw Exception('Error obteniendo predicciones: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('Excepción al obtener predicciones: $e');
+      throw Exception('Excepción al obtener predicciones: $e');
     }
   }
 

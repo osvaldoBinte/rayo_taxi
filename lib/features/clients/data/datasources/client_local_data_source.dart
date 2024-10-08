@@ -8,7 +8,7 @@ import '../models/client_model.dart';
 import 'dart:io';
 import 'dart:convert' as convert;
 import 'package:intl/intl.dart';
-
+import 'package:flutter/material.dart';
 abstract class ClientLocalDataSource {
   Future<void> createClient(Client client);
   Future<void> updateClient(Client client);
@@ -198,31 +198,59 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
     return prefs.getString('auth_token');
   }
 
-  @override
-  Future<void> updateClient(Client client) async {
-    String? savedToken = await _getToken();
+@override
+Future<void> updateClient(Client client) async {
+  String? savedToken = await _getToken();
 
-    var response = await http.put(
-      Uri.parse('$_baseUrl/clients'),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-token': savedToken ?? '',
-      },
-      body: jsonEncode(ClientModel.fromEntity(client).toJson()),
+  var uri = Uri.parse('$_baseUrl/clients');
+  var request = http.MultipartRequest('PUT', uri);
+
+  request.headers['x-token'] = savedToken ?? '';
+
+  request.fields['name'] = client.name ?? '';
+  request.fields['birthdate'] = client.birthdate ?? '';
+  request.fields['new_password'] = client.new_password ?? '';
+  request.fields['current_password'] = client.current_password ?? '';
+
+  if (client.photo_profile != null && client.photo_profile!.isNotEmpty) {
+    File imageFile = File(client.photo_profile!);
+    request.files.add(
+      await http.MultipartFile.fromPath('photo_profile', imageFile.path),
     );
-
-    dynamic body = jsonDecode(response.body);
-    print(body);
-    print(response.statusCode);
-    if (response.statusCode == 200) {
-      String message = body['message'].toString();
-      print(message);
-    } else {
-      String message = body['message'].toString();
-      print(body);
-      throw Exception(message);
-    }
   }
 
+  try {
+    var response = await request.send();
+
+    // Transformar la respuesta
+    var responseData = await http.Response.fromStream(response);
+    if (response.statusCode == 200) {
+      dynamic body = jsonDecode(responseData.body);
+      print(body);
+
+      if (body['ok'] == true) {
+        if (body.containsKey('password')) {
+          var passwordStatus = body['password'][0];
+          if (!passwordStatus) {
+            String passwordErrorMessage = body['password'][1]['message'];
+            Get.snackbar('Error de Contraseña', passwordErrorMessage, snackPosition: SnackPosition.BOTTOM, backgroundColor:Colors.red , colorText: Colors.white);
+          } else {
+            Get.snackbar('Éxito ', 'Perfil actualizado correctamente', snackPosition: SnackPosition.BOTTOM,backgroundColor:Colors.green , colorText: Colors.white);
+          }
+        } else {
+          
+          Get.snackbar('Éxito ', 'Perfil actualizado correctamente', snackPosition: SnackPosition.BOTTOM,backgroundColor:Colors.green , colorText: Colors.white);
+        }
+      } else {
+        throw Exception(body['message']);
+      }
+
+    } else {
+      throw Exception('Error en la actualización');
+    }
+  } catch (e) {
+    throw Exception('Error al actualizar cliente: ${e.toString()}');
+  }
+}
 
 }

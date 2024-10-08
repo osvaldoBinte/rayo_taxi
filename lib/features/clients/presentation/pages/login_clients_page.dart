@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/home_page.dart';
 import 'package:rayo_taxi/main.dart';
-
+import 'package:flutter/services.dart';  
 import '../../domain/entities/client.dart';
 import '../getxs/login/loginclient_getx.dart';
 import 'register_clients_page.dart';
@@ -45,18 +45,22 @@ class _LoginClientsPage extends State<LoginClientsPage> {
       _clientGetx.createClient(LoginClientEvent(client));
     }
   }
-
   @override
   Widget build(BuildContext context) {
+    // Ajustar el estilo de la barra de estado aquí
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Color(0xFF303030),  // Color gris oscuro para la barra de estado
+      statusBarIconBrightness: Brightness.light,  // Iconos de la barra en blanco para mejor contraste
+    ));
+
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      
       body: Stack(
         children: <Widget>[
           Container(
-            color: Theme.of(context).colorScheme.backgroundColor,
+            color: Theme.of(context).colorScheme.backgroundColorLogin,
             child: Align(
               alignment: Alignment.topCenter,
               child: Padding(
@@ -88,7 +92,7 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Text(
+                       Text(
                         'INICIAR SESIÓN',
                         style: TextStyle(
                             fontSize: 24, fontWeight: FontWeight.bold),
@@ -297,6 +301,7 @@ class _LoginClientsPage extends State<LoginClientsPage> {
       ),
     );
   }
+
 
   Widget _buildTextFormField({
     required TextEditingController controller,

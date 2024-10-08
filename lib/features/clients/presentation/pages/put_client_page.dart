@@ -1,9 +1,13 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
+import 'package:rayo_taxi/main.dart';
 import '../../domain/entities/client.dart';
 import '../getxs/get/get_client_getx.dart';
 import '../getxs/update/Update_getx.dart';
-import 'package:intl/intl.dart';
 
 class EditProfilePage extends StatefulWidget {
   final Client client;
@@ -21,11 +25,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   late final TextEditingController _nameController;
   late final TextEditingController _birthdateController;
-  final TextEditingController _passwordController = TextEditingController();
-  final FocusNode _focusNodeName = FocusNode();
-  final FocusNode _focusNodePassword = FocusNode();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _oldPasswordController = TextEditingController();
 
-  bool _isPasswordVisible = false;
+  final FocusNode _focusNodeName = FocusNode();
+  final FocusNode _focusNodeBirthdate = FocusNode();
+  final FocusNode _focusNodeOldPassword = FocusNode();
+  final FocusNode _focusNodeNewPassword = FocusNode();
+
+  final _picker = ImagePicker();
+  String? _imagePath;
+  bool _isOldPasswordVisible = false;
+  bool _isNewPasswordVisible = false;
+  bool _showPasswordFields = false;
 
   @override
   void initState() {
@@ -35,19 +47,37 @@ class _EditProfilePageState extends State<EditProfilePage> {
         TextEditingController(text: widget.client.birthdate?.toString());
   }
 
-  void _update() {
+  void _update() async {
     if (_formKey.currentState!.validate()) {
       String name = _nameController.text;
-      String password = _passwordController.text;
+      String newPassword = _newPasswordController.text;
+      String oldPassword = _oldPasswordController.text;
       String birthdate = _birthdateController.text;
+
+      print('img $_imagePath');
       final post = Client(
-        id: widget.client.id,
+        photo_profile: _imagePath,
         name: name,
-        password: password,
+        new_password: newPassword,
+        current_password: oldPassword,
         birthdate: birthdate,
       );
-      _updateGetx.updateGetx(CreateUpdateEvent(post));
-      getClientGetx.fetchCoDetails(FetchgetDetailsEvent());
+
+      try {
+        await _updateGetx.updateGetx(CreateUpdateEvent(post));
+                await getClientGetx.fetchCoDetails(FetchgetDetailsEvent());
+    Get.back(); // Cierra el formulario o redirige a otra página
+
+        Get.snackbar('Éxito', 'Perfil actualizado correctamente',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor:  Theme.of(context).colorScheme.Success,
+            colorText:  Theme.of(context).colorScheme.TextAler);
+      } catch (error) {
+        Get.snackbar('Error en la actualización', error.toString(),
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor:Theme.of(context).colorScheme.error,
+            colorText: Theme.of(context).colorScheme.TextAler);
+      }
     }
   }
 
@@ -63,6 +93,54 @@ class _EditProfilePageState extends State<EditProfilePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Colors.grey.shade200,
+                      child: _imagePath == null
+                          ? ClipOval(
+                              child: Image.network(
+                                widget.client.path_photo ?? '',
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                errorBuilder: (BuildContext context,
+                                    Object exception, StackTrace? stackTrace) {
+                                  return const Icon(
+                                    Icons.person,
+                                    size: 40,
+                                    color: Colors.grey,
+                                  );
+                                },
+                              ),
+                            )
+                          : ClipOval(
+                              child: Image.file(
+                                File(_imagePath!),
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                              ),
+                            ),
+                    ),
+                    _buildIcon(
+                      Icons.edit,
+                      Colors.white,
+                      () async {
+                        final pickedFile = await _picker.pickImage(
+                            source: ImageSource.gallery);
+                        if (pickedFile != null) {
+                          setState(() {
+                            _imagePath = pickedFile.path;
+                          });
+                        }
+                      },
+                      bottom: 0,
+                      right: 0,
+                    ),
+                  ],
+                ),
                 Text(
                   'Editar Perfil',
                   style: TextStyle(
@@ -88,6 +166,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       borderSide: BorderSide.none,
                     ),
                   ),
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) {
+                    FocusScope.of(context).requestFocus(
+                        _focusNodeBirthdate); // Move focus to next field
+                  },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'El nombre es requerido';
@@ -97,6 +180,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
+                  focusNode: _focusNodeBirthdate,
                   controller: _birthdateController,
                   decoration: InputDecoration(
                     labelText: 'Fecha de nacimiento',
@@ -111,6 +195,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       borderSide: BorderSide.none,
                     ),
                   ),
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) {
+                    FocusScope.of(context).requestFocus(
+                        _focusNodeOldPassword); // Move focus to next field
+                  },
                   readOnly: true,
                   onTap: () async {
                     DateTime today = DateTime.now();
@@ -156,49 +245,126 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     if (value == null || value.isEmpty) {
                       return 'La fecha de nacimiento es requerida';
                     }
-                    return null; // Ya no es necesario validar la edad aquí
+                    return null;
                   },
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  focusNode: _focusNodePassword, // Añade el FocusNode aquí
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: 'Nueva Contraseña',
-                    labelStyle: TextStyle(
-                      color: Colors.black.withOpacity(0.7),
-                    ),
-                    prefixIcon: Icon(Icons.lock, color: Colors.grey[600]),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                        color: Colors.grey[600],
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[200],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _showPasswordFields = !_showPasswordFields;
+                    });
+                  },
+                  child: Text(
+                    _showPasswordFields
+                        ? 'Ocultar Cambio de Contraseña'
+                        : 'Cambiar Contraseña',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'La contraseña es requerida';
-                    }
-                    if (value.length < 5) {
-                      return 'La contraseña debe tener al menos 5 caracteres';
-                    }
-                    return null;
-                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        Theme.of(context).colorScheme.buttonColormap,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 30, vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  height: _showPasswordFields ? 160 : 0,
+                  child: _showPasswordFields
+                      ? Column(
+                          children: [
+                            TextFormField(
+                              focusNode: _focusNodeOldPassword,
+                              controller: _oldPasswordController,
+                              obscureText: !_isOldPasswordVisible,
+                              decoration: InputDecoration(
+                                labelText: 'Contraseña Anterior',
+                                filled: true,
+                                fillColor: Colors.grey[200],
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                                prefixIcon:
+                                    Icon(Icons.lock, color: Colors.grey[600]),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _isOldPasswordVisible
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                    color: Colors.grey[600],
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isOldPasswordVisible =
+                                          !_isOldPasswordVisible;
+                                    });
+                                  },
+                                ),
+                              ),
+                              textInputAction: TextInputAction.next,
+                              onFieldSubmitted: (_) {
+                                FocusScope.of(context).requestFocus(
+                                    _focusNodeNewPassword); // Move focus to next field
+                              },
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'La contraseña anterior es requerida';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              focusNode: _focusNodeNewPassword,
+                              controller: _newPasswordController,
+                              obscureText: !_isNewPasswordVisible,
+                              decoration: InputDecoration(
+                                labelText: 'Contraseña Nueva',
+                                filled: true,
+                                fillColor: Colors.grey[200],
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                                prefixIcon:
+                                    Icon(Icons.lock, color: Colors.grey[600]),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _isNewPasswordVisible
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                    color: Colors.grey[600],
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isNewPasswordVisible =
+                                          !_isNewPasswordVisible;
+                                    });
+                                  },
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'La nueva contraseña es requerida';
+                                }
+                                if (value.length < 5) {
+                                  return 'La contraseña debe tener al menos 5 caracteres';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        )
+                      : null,
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
@@ -214,11 +380,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     style: TextStyle(color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEFC300),
+                    backgroundColor:
+                        Theme.of(context).colorScheme.buttonColormap,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 30,
-                      vertical: 15,
-                    ),
+                        horizontal: 30, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -229,6 +394,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildIcon(IconData icon, Color color, Function onPressed,
+      {double? top, double? right, double? bottom, double? left}) {
+    return Positioned(
+      top: top,
+      right: right,
+      bottom: bottom,
+      left: left,
+      child: IconButton(
+        icon: Icon(icon, color: color, size: 24),
+        onPressed: () async => await onPressed(),
       ),
     );
   }

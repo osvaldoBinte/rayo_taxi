@@ -4,6 +4,8 @@
 	<dict>
 		<key>io.flutter.embedded_views_preview</key>
 		<true/>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Necesitamos acceder a tu galería para seleccionar una foto de perfil.</string>
 		<key>GMSApiKey</key>
 		<string>AIzaSyDUVS-wh25ShrtIHnuXW0J8MuBRz9KC7ak</string>
 		<key>CFBundleDevelopmentRegion</key>
