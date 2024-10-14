@@ -8,6 +8,7 @@ class DriverModel extends Driver {
      String? password,
      int? years_old,
     int? id_company,
+    String? path_photo
     
   }) : super(
             id: id,
@@ -16,6 +17,7 @@ class DriverModel extends Driver {
             password: password,
             years_old: years_old,
             id_company: id_company,
+            path_photo:path_photo
             );
   factory DriverModel.fromJson(Map<String, dynamic> json) {
     return DriverModel(
@@ -25,6 +27,7 @@ class DriverModel extends Driver {
       password: json['password'] ?? '',
       years_old: json['years_old'] ?? '',
       id_company: json['id_company'] ?? '',
+      path_photo: json['path_photo'] ?? ''
     );
   }
 
@@ -36,6 +39,7 @@ class DriverModel extends Driver {
       password: client.password,
       years_old: client.years_old,
       id_company: client.id_company,
+      path_photo:client.path_photo
     );
   }
 
@@ -47,6 +51,7 @@ class DriverModel extends Driver {
       'password': password,
       'years_old': years_old,
       'id_company': id_company,
+      'path_photo':path_photo
     };
   }
 }

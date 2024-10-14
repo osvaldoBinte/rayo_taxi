@@ -5,6 +5,16 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Necesitamos acceder a tu galería para seleccionar una foto de perfil.</string>
+	<key>GMSApiKey</key>
+	<string>AIzaSyDUVS-wh25ShrtIHnuXW0J8MuBRz9KC7ak</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Esta aplicación necesita acceder a tu ubicación para mostrar tu posición en el mapa.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Esta aplicación necesita acceso continuo a tu ubicación para ofrecer funciones basadas en la ubicación incluso cuando la aplicación esté en segundo plano.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Esta aplicación necesita acceder a tu ubicación tanto en primer como segundo plano para mejorar tu experiencia.</string>
 	<string>Rayo Taxi</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>

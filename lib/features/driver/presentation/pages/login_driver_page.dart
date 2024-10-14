@@ -5,7 +5,6 @@ import 'package:rayo_taxi/connectivity_service.dart';
 
 import '../../domain/entities/driver.dart';
 import '../getxs/login/logindriver_getx.dart';
-import 'Homeprueba.dart';
 import 'home_page.dart';
 
 class LoginDriverPage extends StatefulWidget {
@@ -15,15 +14,13 @@ class LoginDriverPage extends StatefulWidget {
 
 class _LoginDriverPage extends State<LoginDriverPage> {
   final LogindriverGetx _driverGetx = Get.find<LogindriverGetx>();
-  final ConnectivityService _connectivityService = ConnectivityService(); // Inicializamos el servicio
-
+  final ConnectivityService _connectivityService = ConnectivityService();
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   bool _obscureText = true;
-  String _errorMessage = ''; // Variable para almacenar mensajes de error
-
+  String _errorMessage = ''; 
   void _togglePasswordVisibility() {
     setState(() {
       _obscureText = !_obscureText;

@@ -5,6 +5,7 @@ class Driver {
   String? name;
   int? years_old;
   int? id_company;
+  String? path_photo;
   Driver({
     this.id,
     this.name,
@@ -12,5 +13,6 @@ class Driver {
     this.password,
     this.years_old,
     this.id_company,
+    this.path_photo
   });
 }
