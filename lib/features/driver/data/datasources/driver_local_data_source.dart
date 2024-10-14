@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:convert' as convert;
-import '../../../notification/presentetion/getx/Device/device_getx.dart';
+import '../../../travel/presentetion/getx/Device/device_getx.dart';
 import '../models/driver_model.dart';
 
 abstract class DriverLocalDataSource {
@@ -77,7 +77,7 @@ class DriverLocalDataSourceImp implements DriverLocalDataSource {
             var data = jsonResponse['data'];
             List<DriverModel> clients = [DriverModel.fromJson(data)];
 
-            sharedPreferences.setString('clients', jsonEncode(clients));
+            sharedPreferences.setString('drives', jsonEncode(clients));
 
             return clients;
           } else {

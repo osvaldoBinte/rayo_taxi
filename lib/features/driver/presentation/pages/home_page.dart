@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:rayo_taxi/features/mapa/presentation/midireccion_page.dart';
+import 'package:rayo_taxi/features/mapa/presentation/page/mapa/select_map.dart';
+import 'package:rayo_taxi/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../notification/presentetion/page/notification_page.dart';
-import 'Homeprueba.dart';
+import '../../../travel/presentetion/page/travel_page.dart';
 import 'get_driver_page.dart';
 import 'login_driver_page.dart';
 
@@ -15,52 +18,77 @@ class HomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<HomePage> {
   final List<Widget> _pages = [
-    NotificationPage(),
-    Homeprueba(),
+    TravelPage(),
+    SelectMap(),
+    //MidireccionPage(),
     GetDriverPage(),
-  ];
-  Future<void> _logout() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
-    Get.offAll(() => LoginDriverPage());
-  }
+  ]; 
 
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Theme.of(context).primaryColor,
+      statusBarIconBrightness: Brightness.light, 
+      statusBarBrightness: Brightness.dark,
+    ));
+
+    bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom != 0;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Center(
-          child: const Text('Rayo_taxi'),
+      extendBody: true,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            IndexedStack(
+              index: _selectedIndex,
+              children: _pages,
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Offstage(
+                offstage: isKeyboardVisible,
+                child: CurvedNavigationBar(
+                  index: _selectedIndex,
+                  backgroundColor: Colors.transparent,
+                  color: Theme.of(context).primaryColor,
+                  buttonBackgroundColor:
+                      Theme.of(context).colorScheme.CurvedIconback,
+                  height: 75,
+                  items: <Widget>[
+                    _buildIcon(Icons.receipt, 0),
+                    _buildIcon(Icons.car_rental, 1),
+                   // _buildIcon(Icons.car_rental, 2),
+                    _buildIcon(Icons.person, 2),
+                  ],
+                  animationDuration: const Duration(milliseconds: 700),
+                  animationCurve: Curves.easeInOut,
+                  onTap: (index) {
+                    setState(() {
+                      _selectedIndex = index;
+                    });
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () async {
-              await _logout();
-            },
-          ),
-        ],
       ),
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: CurvedNavigationBar(
-        backgroundColor: Colors.transparent,
-        color: const Color(0xFFEFC300),
-        buttonBackgroundColor: Colors.orangeAccent,
-        height: 60,
-        items: const <Widget>[
-          Icon(Icons.notifications, size: 30, color: Colors.white),
-          Icon(Icons.car_rental, size: 30, color: Colors.white),
-          Icon(Icons.person, size: 30, color: Colors.white),
-        ],
-        animationDuration: const Duration(milliseconds: 300),
-        animationCurve: Curves.easeInOut,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+    );
+  }
+
+  Widget _buildIcon(IconData icon, int index) {
+    bool isSelected = _selectedIndex == index;
+    return Container(
+      margin: EdgeInsets.only(bottom: isSelected ? 4 : 0),
+      height: isSelected ? 40 : 60,
+      child: Icon(
+        icon,
+        size: isSelected ? 30 : 40,
+        color: isSelected
+            ? Theme.of(context).colorScheme.CurvedNavigationIcono
+            : Theme.of(context).colorScheme.CurvedNavigationIcono2,
       ),
     );
   }

@@ -2,17 +2,18 @@ import 'package:rayo_taxi/features/driver/data/datasources/driver_local_data_sou
 import 'package:rayo_taxi/features/driver/data/repositories/driver_repository_imp.dart';
 import 'package:rayo_taxi/features/driver/domain/usecases/get_driver_usecase.dart';
 import 'package:rayo_taxi/features/driver/domain/usecases/login_driver_usecase.dart';
-import 'package:rayo_taxi/features/notification/data/datasources/notification_local_data_source.dart';
-import 'package:rayo_taxi/features/notification/data/repositories/notification_repository_imp.dart';
-import 'package:rayo_taxi/features/notification/domain/usecases/id_device_usecase.dart';
-import 'package:rayo_taxi/features/notification/domain/usecases/travel_alert_usecase.dart';
-import 'package:rayo_taxi/features/notification/domain/usecases/travels_alert_usecase.dart';
+import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
+import 'package:rayo_taxi/features/travel/data/repositories/travel_repository_imp.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/id_device_usecase.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/travel_alert_usecase.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/travel_by_id_usecase.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/travels_alert_usecase.dart';
 
 class UsecaseConfig {
   DriverLocalDataSourceImp? driverLocalDataSourceImp;
   DriverRepositoryImp?driverRepositoryImp;
-  NotificationLocalDataSourceImp? notificationLocalDataSourceImp;
-  NotificationRepositoryImp? notificationRepositoryImp;
+  TravelLocalDataSourceImp? travelLocalDataSourceImp;
+  TravelRepositoryImp? travelRepositoryImp;
 
   LoginDriverUsecase? loginDriverUsecase;
   GetDriverUsecase? getDriverUsecase;
@@ -20,15 +21,17 @@ class UsecaseConfig {
 
   TravelsAlertUsecase? travelsAlertUsecase;
   TravelAlertUsecase? travelAlertUsecase;  
+  TravelByIdUsecase? travelByIdUsecase;
   UsecaseConfig() {
     driverLocalDataSourceImp = DriverLocalDataSourceImp();
-    notificationLocalDataSourceImp = NotificationLocalDataSourceImp();
+    travelLocalDataSourceImp = TravelLocalDataSourceImp();
     driverRepositoryImp = DriverRepositoryImp(driverLocalDataSource: driverLocalDataSourceImp!);
-    notificationRepositoryImp = NotificationRepositoryImp(notificationLocalDataSource: notificationLocalDataSourceImp!);
+    travelRepositoryImp = TravelRepositoryImp(travelLocalDataSource: travelLocalDataSourceImp!);
     loginDriverUsecase = LoginDriverUsecase(driverRepository: driverRepositoryImp!);
     getDriverUsecase = GetDriverUsecase(driverRepository: driverRepositoryImp!);
-    idDeviceUsecase = IdDeviceUsecase(notificationRepository: notificationRepositoryImp!);
-    travelAlertUsecase = TravelAlertUsecase(notificationRepository: notificationRepositoryImp!);
-    travelsAlertUsecase = TravelsAlertUsecase(notificationRepository: notificationRepositoryImp!);
+    idDeviceUsecase = IdDeviceUsecase(notificationRepository: travelRepositoryImp!);
+    travelAlertUsecase = TravelAlertUsecase(travelRepository: travelRepositoryImp!);
+    travelsAlertUsecase = TravelsAlertUsecase(travelRepository: travelRepositoryImp!);
+    travelByIdUsecase = TravelByIdUsecase(travelRepository:travelRepositoryImp!);
   }
 }

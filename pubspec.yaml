@@ -44,6 +44,10 @@ dependencies:
   firebase_core: ^3.4.1
   firebase_messaging: ^15.1.1
   curved_navigation_bar: ^1.0.6
+  google_maps_flutter: ^2.2.0  # Verifica si hay una versión más reciente
+  geolocator: ^13.0.1
+  geocoding: ^3.0.0
+  quickalert: ^1.1.0
 
 dev_dependencies:
   change_app_package_name: ^1.1.0
