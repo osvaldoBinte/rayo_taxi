@@ -22,7 +22,8 @@ class _GetDriverPage extends State<GetDriverPage> {
   Future<void> _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
-    Get.offAll(() => LoginDriverPage());
+    await Get.offAll(() => LoginDriverPage());
+    
   }
 
   @override
@@ -149,22 +150,11 @@ class _GetDriverPage extends State<GetDriverPage> {
                       label: 'Cerrar Sesión',
                       onPressed: _logout,
                     ),
-                    _buildCardButton(
-                      context,
-                      icon: Icons.payment,
-                      label: 'Pago',
-                      onPressed: () {
-                        // Acción del botón de pago
-                      },
-                    ),
+                    
                   ],
                 ),
                 const SizedBox(height: 30),
-                _buildListOption(
-                  icon: Icons.payment,
-                  title: 'Mis Tarjetas',
-                  subtitle: 'Métodos de pago',
-                ),
+               
                 _buildListOption(
                   icon: Icons.directions_car,
                   title: 'Vehículo',

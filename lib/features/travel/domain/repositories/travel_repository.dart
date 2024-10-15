@@ -5,6 +5,6 @@ abstract class TravelRepository {
   Future<void> updateIdDevice();
   Future<List<TravelAlertModel>> getNotification(bool connection);
   Future<List<TravelAlertModel>> getalltravel(bool connection);
-  Future<List<TravelAlertModel>> getbyIdtravelid(
-      int idTravel, bool connection);
+  Future<List<TravelAlertModel>> getbyIdtravelid(int idTravel, bool connection);
+  Future<String?> fetchDeviceId() ;
 }

@@ -3,7 +3,7 @@ import 'package:rayo_taxi/features/travel/data/models/travel_alert_model.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/device.dart';
 import 'package:rayo_taxi/features/travel/domain/repositories/travel_repository.dart';
 
-class TravelRepositoryImp implements TravelRepository{
+class TravelRepositoryImp implements TravelRepository {
   final TravelLocalDataSource travelLocalDataSource;
   TravelRepositoryImp({required this.travelLocalDataSource});
 
@@ -21,10 +21,15 @@ class TravelRepositoryImp implements TravelRepository{
   Future<List<TravelAlertModel>> getalltravel(bool connection) async {
     return await travelLocalDataSource.getalltravel(connection);
   }
-  
+
   @override
-  Future<List<TravelAlertModel>> getbyIdtravelid(int idTravel, bool connection) async {
+  Future<List<TravelAlertModel>> getbyIdtravelid(
+      int idTravel, bool connection) async {
     return await travelLocalDataSource.getbyIdtravelid(idTravel, connection);
   }
 
+  @override
+  Future<String?> fetchDeviceId() async {
+    return await travelLocalDataSource.fetchDeviceId();
+  }
 }
