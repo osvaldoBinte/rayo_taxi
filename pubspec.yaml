@@ -48,14 +48,24 @@ dependencies:
   geolocator: ^13.0.1
   geocoding: ^3.0.0
   quickalert: ^1.1.0
+
+
 flutter_native_splash:
   color: "#ffffff"  
   image: assets/images/rayo_taxi.png
   android: true
   ios: true
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/Logo_driver.png"
+
+
 dev_dependencies:
   change_app_package_name: ^1.1.0
   flutter_native_splash: ^2.0.8
+  flutter_launcher_icons: ^0.13.1
 
   flutter_test:
     sdk: flutter
@@ -75,6 +85,7 @@ flutter:
   assets:
      - assets/images/rayo_taxi.png
      - assets/images/google.png
+     - assets/images/Logo_driver.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
