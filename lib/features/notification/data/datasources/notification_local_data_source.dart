@@ -11,6 +11,7 @@ abstract class NotificationLocalDataSource {
   Future<void> updateIdDevice();
   Future<List<TravelAlertModel>> getNotification(bool connection);
   Future<List<TravelAlertModel>> getNotificationtravel(bool connection);
+  Future<String?> fetchDeviceId();
 }
 
 class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
@@ -199,13 +200,14 @@ class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
 
             print(
                 'ID del viaje guardado en SharedPreferences: ${travelAlert.id}');
-                print("ultimo viaje 200");
+            print("ultimo viaje 200");
             return [travelAlert];
           } else {
             throw Exception('Estructura de respuesta inesperada  ultimo viaje');
           }
         } else {
-          throw Exception('Error en la petición de ultimo viaje: ${response.statusCode}');
+          throw Exception(
+              'Error en la petición de ultimo viaje: ${response.statusCode}');
         }
       } catch (e) {
         print('Error capturado: $e');
@@ -216,4 +218,45 @@ class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
       return _loadtravelFromLocal(sharedPreferences);
     }
   }
+  
+   @override
+  Future<String?> fetchDeviceId() async {
+    try {
+      final String url = '$_baseUrl/auth/renew';
+      print('Realizando la solicitud a $url...');
+
+    String? token = await _getToken();
+    if (token == null) {
+      throw Exception('Token no disponible');
+    }
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+         'x-token': token,
+          'Content-Type': 'application/json',
+        },
+        
+      );
+
+      if (response.statusCode == 200) {
+        // Decodificar la respuesta en JSON
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+
+        // Extraer el `id_device` del JSON
+        String? idDevice = jsonResponse['data']['id_device'];
+        print('ID del dispositivo obtenido: $idDevice');
+
+        return idDevice; // Retornar el id_device
+      } else {
+        // Manejo de errores cuando el estado no es 200
+        print('Error en la solicitud: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      // Manejo de excepciones
+      print('Error obteniendo el id_device: $e');
+      return null;
+    }
+  }
+
 }

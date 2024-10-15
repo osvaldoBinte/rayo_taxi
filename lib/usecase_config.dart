@@ -8,6 +8,7 @@ import 'package:rayo_taxi/features/clients/domain/usecases/login_client_usecase.
 import 'package:rayo_taxi/features/clients/domain/usecases/update_client_usecase.dart';
 import 'package:rayo_taxi/features/notification/data/datasources/notification_local_data_source.dart';
 import 'package:rayo_taxi/features/notification/data/repositories/notification_repository_imp.dart';
+import 'package:rayo_taxi/features/notification/domain/usecases/get_device_usecase.dart';
 import 'package:rayo_taxi/features/notification/domain/usecases/id_device_usecase.dart';
 import 'package:rayo_taxi/features/notification/domain/usecases/travel_alert_usecase.dart';
 import 'package:rayo_taxi/features/notification/domain/usecases/travels_alert_usecase.dart';
@@ -35,6 +36,8 @@ class UsecaseConfig {
   PoshTravelUsecase? poshTravelUsecase;
   
   IdDeviceUsecase? idDeviceUsecase;
+  GetDeviceUsecase? getDeviceUsecase;
+
   TravelsAlertUsecase? travelsAlertUsecase;
   TravelAlertUsecase? travelAlertUsecase;
   DeleteTravelUsecase? deleteTravelUsecase;
@@ -58,6 +61,8 @@ class UsecaseConfig {
     deleteTravelUsecase = DeleteTravelUsecase(travelRepository: travelRepositoryImp!);
 
     idDeviceUsecase = IdDeviceUsecase(notificationRepository: notificationRepositoryImp!);
+        getDeviceUsecase = GetDeviceUsecase(notificationRepository: notificationRepositoryImp!);
+
     travelsAlertUsecase = TravelsAlertUsecase(notificationRepository: notificationRepositoryImp!);
 travelAlertUsecase = TravelAlertUsecase(notificationRepository: notificationRepositoryImp!);
 

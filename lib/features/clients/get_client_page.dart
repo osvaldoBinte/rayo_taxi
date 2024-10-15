@@ -31,7 +31,7 @@ class _GetClientPageState extends State<GetClientPage> {
   Future<void> _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
-    Get.offAll(() => LoginClientsPage());
+    await Get.offAll(() => LoginClientsPage());
   }
 
   @override
@@ -202,10 +202,11 @@ class _GetClientPageState extends State<GetClientPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildCardButton(
+                   _buildCardButton(
                       context,
-                      icon: Icons.help_outline,
-                      label: 'Ayuda',
+                      icon: Icons.logout,
+                      label: 'Cerrar Sesión',
+                      onPressed: _logout,
                     ),
                     _buildCardButton(
                       context,

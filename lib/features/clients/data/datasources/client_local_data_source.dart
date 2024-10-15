@@ -9,6 +9,7 @@ import 'dart:io';
 import 'dart:convert' as convert;
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+
 abstract class ClientLocalDataSource {
   Future<void> createClient(Client client);
   Future<void> updateClient(Client client);
@@ -151,16 +152,9 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
       String token = body['data']['token'].toString();
 
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      bool isSaved = await prefs.setString('auth_token', token);
-
-      if (isSaved) {
-        print('Token guardado correctamente: $token');
-        String? savedToken = prefs.getString('auth_token');
-        print('Token recuperado de SharedPreferences: $savedToken');
-        await _driverGetx.getDeviceId();
-      } else {
-        print('Error al guardar el token');
-      }
+      await prefs.setString('auth_token', token);
+      print('auth_token: ' + token);
+      await _driverGetx.getDeviceId();
 
       print(message);
     } else {
@@ -198,59 +192,65 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
     return prefs.getString('auth_token');
   }
 
-@override
-Future<void> updateClient(Client client) async {
-  String? savedToken = await _getToken();
+  @override
+  Future<void> updateClient(Client client) async {
+    String? savedToken = await _getToken();
 
-  var uri = Uri.parse('$_baseUrl/clients');
-  var request = http.MultipartRequest('PUT', uri);
+    var uri = Uri.parse('$_baseUrl/clients');
+    var request = http.MultipartRequest('PUT', uri);
 
-  request.headers['x-token'] = savedToken ?? '';
+    request.headers['x-token'] = savedToken ?? '';
 
-  request.fields['name'] = client.name ?? '';
-  request.fields['birthdate'] = client.birthdate ?? '';
-  request.fields['new_password'] = client.new_password ?? '';
-  request.fields['current_password'] = client.current_password ?? '';
+    request.fields['name'] = client.name ?? '';
+    request.fields['birthdate'] = client.birthdate ?? '';
+    request.fields['new_password'] = client.new_password ?? '';
+    request.fields['current_password'] = client.current_password ?? '';
 
-  if (client.photo_profile != null && client.photo_profile!.isNotEmpty) {
-    File imageFile = File(client.photo_profile!);
-    request.files.add(
-      await http.MultipartFile.fromPath('photo_profile', imageFile.path),
-    );
-  }
+    if (client.photo_profile != null && client.photo_profile!.isNotEmpty) {
+      File imageFile = File(client.photo_profile!);
+      request.files.add(
+        await http.MultipartFile.fromPath('photo_profile', imageFile.path),
+      );
+    }
 
-  try {
-    var response = await request.send();
+    try {
+      var response = await request.send();
 
-    // Transformar la respuesta
-    var responseData = await http.Response.fromStream(response);
-    if (response.statusCode == 200) {
-      dynamic body = jsonDecode(responseData.body);
-      print(body);
+      // Transformar la respuesta
+      var responseData = await http.Response.fromStream(response);
+      if (response.statusCode == 200) {
+        dynamic body = jsonDecode(responseData.body);
+        print(body);
 
-      if (body['ok'] == true) {
-        if (body.containsKey('password')) {
-          var passwordStatus = body['password'][0];
-          if (!passwordStatus) {
-            String passwordErrorMessage = body['password'][1]['message'];
-            Get.snackbar('Error de Contraseña', passwordErrorMessage, snackPosition: SnackPosition.BOTTOM, backgroundColor:Colors.red , colorText: Colors.white);
+        if (body['ok'] == true) {
+          if (body.containsKey('password')) {
+            var passwordStatus = body['password'][0];
+            if (!passwordStatus) {
+              String passwordErrorMessage = body['password'][1]['message'];
+              Get.snackbar('Error de Contraseña', passwordErrorMessage,
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.red,
+                  colorText: Colors.white);
+            } else {
+              Get.snackbar('Éxito ', 'Perfil actualizado correctamente',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.green,
+                  colorText: Colors.white);
+            }
           } else {
-            Get.snackbar('Éxito ', 'Perfil actualizado correctamente', snackPosition: SnackPosition.BOTTOM,backgroundColor:Colors.green , colorText: Colors.white);
+            Get.snackbar('Éxito ', 'Perfil actualizado correctamente',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.green,
+                colorText: Colors.white);
           }
         } else {
-          
-          Get.snackbar('Éxito ', 'Perfil actualizado correctamente', snackPosition: SnackPosition.BOTTOM,backgroundColor:Colors.green , colorText: Colors.white);
+          throw Exception(body['message']);
         }
       } else {
-        throw Exception(body['message']);
+        throw Exception('Error en la actualización');
       }
-
-    } else {
-      throw Exception('Error en la actualización');
+    } catch (e) {
+      throw Exception('Error al actualizar cliente: ${e.toString()}');
     }
-  } catch (e) {
-    throw Exception('Error al actualizar cliente: ${e.toString()}');
   }
-}
-
 }
