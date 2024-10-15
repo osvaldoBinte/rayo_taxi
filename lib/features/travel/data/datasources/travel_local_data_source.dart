@@ -14,8 +14,8 @@ abstract class TravelLocalDataSource {
 
   Future<List<TravelAlertModel>> getalltravel(bool connection);
 
-  Future<List<TravelAlertModel>> getbyIdtravelid(
-      int idTravel, bool connection);
+  Future<List<TravelAlertModel>> getbyIdtravelid(int idTravel, bool connection);
+   Future<String?> fetchDeviceId();
 }
 
 class TravelLocalDataSourceImp implements TravelLocalDataSource {
@@ -37,7 +37,7 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
     device = Device(id_device: token);
 
     var response = await http.put(
-      Uri.parse('$_baseUrl/device'),
+      Uri.parse('$_baseUrl/drivers/device'),
       headers: {
         'Content-Type': 'application/json',
         'x-token': savedToken ?? '',
@@ -226,8 +226,9 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
     }
   }
 
-    @override
-  Future<List<TravelAlertModel>> getbyIdtravelid(int idTravel, bool connection) async {
+  @override
+  Future<List<TravelAlertModel>> getbyIdtravelid(
+      int idTravel, bool connection) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
 
     String? token = await _getToken();
@@ -244,7 +245,8 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
 
         print('Realizando la solicitud a $_baseUrl/travels/$idTravel');
         var response = await http.get(
-          Uri.parse('https://developer.binteapi.com:3009/api/app_drivers/travels/travels/$idTravel'), // Cambié la URL para incluir el idTravel
+          Uri.parse(
+              'https://developer.binteapi.com:3009/api/app_drivers/travels/travels/$idTravel'), // Cambié la URL para incluir el idTravel
           headers: headers,
         );
 
@@ -258,7 +260,8 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
 
             print('Datos de viaje recibido: $travelData');
 
-            TravelAlertModel travelAlertbyid = TravelAlertModel.fromJson(travelData);
+            TravelAlertModel travelAlertbyid =
+                TravelAlertModel.fromJson(travelData);
 
             print('Viaje mapeado: $travelAlertbyid');
             // Guardar un solo objeto, no como lista
@@ -285,7 +288,8 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
     }
   }
 
-  Future<List<TravelAlertModel>> _loadtravelbyIDFromLocal(SharedPreferences sharedPreferences) async {
+  Future<List<TravelAlertModel>> _loadtravelbyIDFromLocal(
+      SharedPreferences sharedPreferences) async {
     String travelString = sharedPreferences.getString('getalltravelid') ?? "";
 
     if (travelString.isNotEmpty) {
@@ -299,6 +303,46 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
     } else {
       print('No hay viajes en SharedPreferences');
       throw Exception('No hay viajes en SharedPreferences');
+    }
+  }
+  
+ @override
+  Future<String?> fetchDeviceId() async {
+    try {
+      final String url = '$_baseUrl/auth/renew';
+      print('Realizando la solicitud a $url...');
+
+    String? token = await _getToken();
+    if (token == null) {
+      throw Exception('Token no disponible');
+    }
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+         'x-token': token,
+          'Content-Type': 'application/json',
+        },
+        
+      );
+
+      if (response.statusCode == 200) {
+        // Decodificar la respuesta en JSON
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+
+        // Extraer el `id_device` del JSON
+        String? idDevice = jsonResponse['data']['id_device'];
+        print('ID del dispositivo obtenido: $idDevice');
+
+        return idDevice; // Retornar el id_device
+      } else {
+        // Manejo de errores cuando el estado no es 200
+        print('Error en la solicitud: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      // Manejo de excepciones
+      print('Error obteniendo el id_device: $e');
+      return null;
     }
   }
 }

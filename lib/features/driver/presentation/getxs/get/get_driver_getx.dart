@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/driver/data/models/driver_model.dart';
 import 'package:rayo_taxi/features/driver/domain/usecases/get_driver_usecase.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/get_device_usecase.dart';
 
 import '../../../../../connectivity_service.dart';
 part 'get_driver_event.dart';
@@ -9,6 +10,7 @@ part 'get_driver_state.dart';
 
 class GetDriverGetx extends GetxController {
   final GetDriverUsecase getDriverUsecase;
+
   var state = Rx<GetDriverState>(GetDriverInitial());
   final ConnectivityService connectivityService;
 
@@ -33,4 +35,5 @@ class GetDriverGetx extends GetxController {
       });
     }
   }
+   
 }

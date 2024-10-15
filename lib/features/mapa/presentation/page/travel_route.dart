@@ -32,6 +32,8 @@ class _TravelRouteState extends State<TravelRoute> {
   LatLng? _lastDriverPositionForRouteUpdate;
   final double _routeUpdateDistanceThreshold = 5;
 
+  bool _journeyStarted = false; // Variable para controlar el estado del viaje
+
   @override
   void initState() {
     super.initState();
@@ -53,8 +55,6 @@ class _TravelRouteState extends State<TravelRoute> {
 
         _addMarker(_startLocation!, true);
         _addMarker(_endLocation!, false);
-
-        _traceRoute();
       } else {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
@@ -117,8 +117,7 @@ class _TravelRouteState extends State<TravelRoute> {
             markerId: MarkerId('driver'),
             position: latLng,
             infoWindow: InfoWindow(title: 'Conductor'),
-            icon:
-                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
           ),
         );
         _driverLocation = latLng;
@@ -155,8 +154,7 @@ class _TravelRouteState extends State<TravelRoute> {
       await Geolocator.openLocationSettings();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Por favor, habilita los servicios de ubicación')),
+        SnackBar(content: Text('Por favor, habilita los servicios de ubicación')),
       );
       return;
     }
@@ -203,7 +201,17 @@ class _TravelRouteState extends State<TravelRoute> {
   }
 
   void _updateDriverRouteIfNeeded() {
-    if (_driverLocation == null || _startLocation == null) return;
+    if (_driverLocation == null) return;
+
+    LatLng destination;
+
+    if (_journeyStarted) {
+      if (_endLocation == null) return;
+      destination = _endLocation!;
+    } else {
+      if (_startLocation == null) return;
+      destination = _startLocation!;
+    }
 
     if (_lastDriverPositionForRouteUpdate == null ||
         Geolocator.distanceBetween(
@@ -214,38 +222,15 @@ class _TravelRouteState extends State<TravelRoute> {
             ) >
             _routeUpdateDistanceThreshold) {
       _lastDriverPositionForRouteUpdate = _driverLocation;
-      _traceDriverRoute();
+      _traceDriverRoute(destination);
     }
   }
 
-  Future<void> _traceRoute() async {
-    if (_startLocation != null && _endLocation != null) {
-      try {
-        await _travelLocalDataSource.getRoute(_startLocation!, _endLocation!);
-        String encodedPoints = await _travelLocalDataSource.getEncodedPoints();
-        List<LatLng> polylineCoordinates =
-            _travelLocalDataSource.decodePolyline(encodedPoints);
-        setState(() {
-          _polylines
-              .removeWhere((polyline) => polyline.polylineId.value == 'route');
-          _polylines.add(Polyline(
-            polylineId: PolylineId('route'),
-            points: polylineCoordinates,
-            color: Colors.blue,
-            width: 5,
-          ));
-        });
-      } catch (e) {
-        print('Error al trazar la ruta: $e');
-      }
-    }
-  }
-
-  Future<void> _traceDriverRoute() async {
-    if (_driverLocation != null && _startLocation != null) {
+  Future<void> _traceDriverRoute(LatLng destination) async {
+    if (_driverLocation != null && destination != null) {
       try {
         await _driverTravelLocalDataSource.getRoute(
-            _driverLocation!, _startLocation!);
+            _driverLocation!, destination);
         String encodedPoints =
             await _driverTravelLocalDataSource.getEncodedPoints();
         List<LatLng> polylineCoordinates =
@@ -265,57 +250,65 @@ class _TravelRouteState extends State<TravelRoute> {
       }
     }
   }
-@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    body: SafeArea(
-      child: Stack(
-        children: [
-          GoogleMap(
-            onMapCreated: _onMapCreated,
-            initialCameraPosition: CameraPosition(
-              target: _startLocation ?? _center,
-              zoom: 12.0,
-            ),
-            markers: _markers,
-            polylines: _polylines,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-          ),
-          Positioned(
-            top: 10,
-            left: 10,
-            child: IconButton(
-              icon: Icon(Icons.info_outline, size: 40),
-              onPressed: () {
-                QuickAlert.show(
-                  context: context,
-                  type: QuickAlertType.info,
-                  title: 'Información del Viaje',
-                  text: widget.travelList.isNotEmpty
-                      ? 'Cliente: ${widget.travelList[0].client}\nCosto: ${widget.travelList[0].cost}'
-                      : 'Sin información de cliente',
-                  confirmBtnText: 'Cerrar',
-                );
-              },
-            ),
-          ),
-          Positioned(
-            bottom: 80, // Ajusta esta posición según sea necesario
-            right: 10,
-            child: ElevatedButton(
-              onPressed: () {
-                // Acción del botón
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.buttonColormap,
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            GoogleMap(
+              onMapCreated: _onMapCreated,
+              initialCameraPosition: CameraPosition(
+                target: _startLocation ?? _center,
+                zoom: 12.0,
               ),
-              child: Text('Iniciar Viaje'),
+              markers: _markers,
+              polylines: _polylines,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: true,
             ),
-          ),
-        ],
+            Positioned(
+              top: 10,
+              left: 10,
+              child: IconButton(
+                icon: Icon(Icons.info_outline, size: 40),
+                onPressed: () {
+                  QuickAlert.show(
+                    context: context,
+                    type: QuickAlertType.info,
+                    title: 'Información del Viaje',
+                    text: widget.travelList.isNotEmpty
+                        ? 'Cliente: ${widget.travelList[0].client}\nCosto: ${widget.travelList[0].cost}'
+                        : 'Sin información de cliente',
+                    confirmBtnText: 'Cerrar',
+                  );
+                },
+              ),
+            ),
+            Positioned(
+              bottom: 80,
+              right: 10,
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _journeyStarted = true; // Cambiamos el estado del viaje
+                    _lastDriverPositionForRouteUpdate =
+                        null; // Forzamos la actualización de la ruta
+                    _updateDriverRouteIfNeeded(); // Actualizamos la ruta
+                    _markers.removeWhere(
+                        (m) => m.markerId.value == 'start'); // Eliminamos el marcador 'start'
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.buttonColormap,
+                ),
+                child: Text('Iniciar Viaje'),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
