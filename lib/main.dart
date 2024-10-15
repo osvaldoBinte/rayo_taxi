@@ -20,6 +20,8 @@ import 'package:rayo_taxi/usecase_config.dart';
 import 'connectivity_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:rayo_taxi/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 UsecaseConfig usecaseConfig = UsecaseConfig();
 final connectivityService = ConnectivityService();
@@ -30,7 +32,18 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   SharedPreferences prefs = await SharedPreferences.getInstance();
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
 
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print('Got a message whilst in the foreground!');
+    print('Message data: ${message.data}');
+
+    if (message.notification != null) {
+      print('Message also contained a notification: ${message.notification}');
+    }
+  });
   String? authToken = prefs.getString('auth_token');
 
   Get.put(DeviceGetx(idDeviceUsecase: usecaseConfig.idDeviceUsecase!));
@@ -54,6 +67,7 @@ void main() async {
       deleteTravelUsecase: usecaseConfig.deleteTravelUsecase!,
       connectivityService: connectivityService));
   runApp(MyApp(authToken: authToken));
+  
 }
 
 class MyApp extends StatelessWidget {

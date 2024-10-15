@@ -9,6 +9,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/get/get_client_getx.dart';
+import 'package:rayo_taxi/features/clients/presentation/pages/home_page.dart';
 import 'package:rayo_taxi/features/notification/presentetion/getx/TravelsAlert/travels_alert_getx.dart';
 import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/travel.dart';
@@ -22,7 +23,8 @@ import '../../../../connectivity_service.dart';
 import '../../../notification/presentetion/getx/TravelAlert/travel_alert_getx.dart';
 
 class MapScreen extends StatefulWidget {
-    final TextEditingController endController; // Recibe el controlador del destino
+  final TextEditingController
+      endController; // Recibe el controlador del destino
   final String startAddress; // Recibe la dirección de inicio
   final LatLng? startLatLng; // Recibe las coordenadas de inicio
 
@@ -68,7 +70,7 @@ class _MapScreenState extends State<MapScreen> {
     _connectivityService = ConnectivityService();
     _endController.text = widget.endController.text;
     _startController.text = widget.startAddress;
-        print('mi direcion desde initState');
+    print('mi direcion desde initState');
 
     print(_startController.text);
     print(widget.startAddress);
@@ -137,7 +139,7 @@ class _MapScreenState extends State<MapScreen> {
     super.dispose();
   }
 
-    void _onMapCreated(GoogleMapController controller) {
+  void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
     _controllerCompleter.complete(controller);
 
@@ -149,7 +151,7 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-void _addMarker(LatLng latLng, bool isStartPlace) {
+  void _addMarker(LatLng latLng, bool isStartPlace) {
     setState(() {
       if (isStartPlace) {
         _markers.removeWhere((m) => m.markerId.value == 'start');
@@ -344,7 +346,8 @@ void _addMarker(LatLng latLng, bool isStartPlace) {
       locationBias = widget.startLatLng;
     }
 
-    List<dynamic> predictions = await _travelLocalDataSource.getPlacePredictions(
+    List<dynamic> predictions =
+        await _travelLocalDataSource.getPlacePredictions(
       input,
       location: locationBias,
     );
@@ -416,7 +419,7 @@ void _addMarker(LatLng latLng, bool isStartPlace) {
         // Construye la dirección en formato legible
         address =
             '${placemark.street}, ${placemark.locality}, ${placemark.country}';
-            print('mi direccion desde mapa $address');
+        print('mi direccion desde mapa $address');
       }
 
       // Mueve el mapa a la ubicación del usuario
@@ -454,6 +457,16 @@ void _addMarker(LatLng latLng, bool isStartPlace) {
         title: Text('Agregar dirección'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            // Aquí navegas a la HomePage
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => HomePage()),
+            );
+          },
+        ),
       ),
       body: SafeArea(
         child: Stack(
@@ -562,8 +575,7 @@ void _addMarker(LatLng latLng, bool isStartPlace) {
               child: ElevatedButton(
                 onPressed: _showRouteDetails,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      Theme.of(context).colorScheme.buttonColormap,
+                  backgroundColor: Theme.of(context).colorScheme.buttonColormap,
                   padding: EdgeInsets.symmetric(vertical: 18.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25.0),
