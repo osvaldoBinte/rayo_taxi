@@ -20,7 +20,8 @@ class _LoginDriverPage extends State<LoginDriverPage> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _obscureText = true;
-  String _errorMessage = ''; 
+  String _errorMessage = '';
+
   void _togglePasswordVisibility() {
     setState(() {
       _obscureText = !_obscureText;
@@ -28,7 +29,6 @@ class _LoginDriverPage extends State<LoginDriverPage> {
   }
 
   void _login() async {
-    // Primero, verificamos si hay conexión a Internet
     if (!_connectivityService.isConnected) {
       setState(() {
         _errorMessage = 'No tienes conexión a Internet. Verifica tu red.';
@@ -36,20 +36,15 @@ class _LoginDriverPage extends State<LoginDriverPage> {
       return;
     }
 
-    // Si hay conexión, validamos el formulario y procesamos el inicio de sesión
     if (_formKey.currentState!.validate()) {
       setState(() {
-        _errorMessage = ''; // Limpiamos el mensaje de error si la conexión es exitosa
+        _errorMessage = '';
       });
-      
-      print('Email: ${_emailController.text}');
-      print('Password: ${_passwordController.text}');
 
       String password = _passwordController.text;
       String email = _emailController.text;
       final post = Driver(email: email, password: password);
 
-      // Iniciamos sesión con Getx
       _driverGetx.createClient(LoginDriverEvent(post));
     }
   }
@@ -112,7 +107,6 @@ class _LoginDriverPage extends State<LoginDriverPage> {
                     return SizedBox.shrink();
                   }),
                   SizedBox(height: 20),
-                  // Si hay un error, mostramos el mensaje
                   if (_errorMessage.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -141,6 +135,10 @@ class _LoginDriverPage extends State<LoginDriverPage> {
                               ),
                             ),
                             keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next, // Next en teclado
+                            onFieldSubmitted: (_) {
+                              FocusScope.of(context).nextFocus(); // Enfocar campo de contraseña
+                            },
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Por favor ingrese su correo electrónico';
@@ -178,6 +176,10 @@ class _LoginDriverPage extends State<LoginDriverPage> {
                               ),
                             ),
                             obscureText: _obscureText,
+                            textInputAction: TextInputAction.done, // Send en teclado
+                            onFieldSubmitted: (_) {
+                              _login(); // Ejecutar login al presionar "Send"
+                            },
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Por favor ingrese su contraseña';

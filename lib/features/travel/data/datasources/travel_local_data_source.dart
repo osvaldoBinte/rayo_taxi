@@ -9,12 +9,13 @@ import '../models/travel_alert_model.dart';
 
 abstract class TravelLocalDataSource {
   Future<void> updateIdDevice();
+    Future<void> acceptedTravel();
 
   Future<List<TravelAlertModel>> getTravel(bool connection);
 
   Future<List<TravelAlertModel>> getalltravel(bool connection);
 
-  Future<List<TravelAlertModel>> getbyIdtravelid(int idTravel, bool connection);
+  Future<List<TravelAlertModel>> getbyIdtravelid(int? idTravel, bool connection);
    Future<String?> fetchDeviceId();
 }
 
@@ -228,7 +229,7 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
 
   @override
   Future<List<TravelAlertModel>> getbyIdtravelid(
-      int idTravel, bool connection) async {
+      int? idTravel, bool connection) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
 
     String? token = await _getToken();
@@ -344,5 +345,11 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
       print('Error obteniendo el id_device: $e');
       return null;
     }
+  }
+  
+  @override
+  Future<void> acceptedTravel() {
+    // TODO: implement acceptedTravel
+    throw UnimplementedError();
   }
 }
