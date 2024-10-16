@@ -58,10 +58,14 @@ flutter_native_splash:
   image: assets/images/rayo_taxi.png
   android: true
   ios: true
-
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/Logo_client.png"
 dev_dependencies:
   change_app_package_name: ^1.1.0
   flutter_native_splash: ^2.0.8
+  flutter_launcher_icons: ^0.13.1
 
   flutter_test:
     sdk: flutter
@@ -85,6 +89,7 @@ flutter:
      - assets/images/credit_card.png
      - assets/images/images.png
      - assets/images/Blue-Light.png
+     - assets/images/Logo_client.png
 
 
   # The following line ensures that the Material Icons font is
