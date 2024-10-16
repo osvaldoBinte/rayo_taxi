@@ -10,7 +10,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:rayo_taxi/features/travel/presentetion/getx/TravelById/travel_by_id_alert_getx.dart';
 
 class TravelIdPage extends StatefulWidget {
-  final int idTravel; // Agregar el idTravel como parámetro
+  final int? idTravel; // Agregar el idTravel como parámetro
 
   TravelIdPage({required this.idTravel}); // Constructor que recibe el idTravel
 
@@ -237,6 +237,7 @@ class _TravelRouteState extends State<TravelIdPage> {
                   QuickAlert.show(
                     context: context,
                     type: QuickAlertType.info,
+                    
                     title: 'Información del Viaje',
                     text: travelByIdController.state.value
                             is TravelByIdAlertLoaded

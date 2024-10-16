@@ -4,6 +4,6 @@ part of 'travel_by_id_alert_getx.dart';
 abstract class TravelByIdAlertEvent {}
 
 class TravelByIdEventDetailsEvent {
-   final int idTravel;
+   final int? idTravel;
   TravelByIdEventDetailsEvent({required this.idTravel});
 }

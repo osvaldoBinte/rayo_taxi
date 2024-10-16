@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:rayo_taxi/features/mapa/presentation/midireccion_page.dart';
 import 'package:rayo_taxi/features/mapa/presentation/page/mapa/select_map.dart';
 import 'package:rayo_taxi/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../travel/presentetion/page/travel_page.dart';
 import 'get_driver_page.dart';
 import 'login_driver_page.dart';
@@ -20,17 +20,42 @@ class _MyHomePageState extends State<HomePage> {
   final List<Widget> _pages = [
     TravelPage(),
     SelectMap(),
-    //MidireccionPage(),
     GetDriverPage(),
-  ]; 
+  ];
 
   int _selectedIndex = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthToken();
+    _requestNotificationPermission(); // Solicitar permisos de notificación
+  }
+
+  // Solicitar permisos de notificación
+  Future<void> _requestNotificationPermission() async {
+    var status = await Permission.notification.status;
+    if (!status.isGranted) {
+      await Permission.notification.request();
+    }
+  }
+
+  // Método para verificar el token en SharedPreferences
+  Future<void> _checkAuthToken() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('auth_token');
+
+    if (token == null || token.isEmpty) {
+      // Si el token no está presente, redirigir al login
+      Future.microtask(() => Get.offAll(() => LoginDriverPage()));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Theme.of(context).primaryColor,
-      statusBarIconBrightness: Brightness.light, 
+      statusBarIconBrightness: Brightness.light,
       statusBarBrightness: Brightness.dark,
     ));
 
@@ -59,7 +84,6 @@ class _MyHomePageState extends State<HomePage> {
                   items: <Widget>[
                     _buildIcon(Icons.receipt, 0),
                     _buildIcon(Icons.car_rental, 1),
-                   // _buildIcon(Icons.car_rental, 2),
                     _buildIcon(Icons.person, 2),
                   ],
                   animationDuration: const Duration(milliseconds: 700),

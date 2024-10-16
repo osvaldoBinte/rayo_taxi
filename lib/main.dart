@@ -6,6 +6,7 @@ import 'package:rayo_taxi/features/driver/presentation/getxs/login/logindriver_g
 import 'package:rayo_taxi/features/travel/presentetion/getx/TravelAlert/travel_alert_getx.dart';
 import 'package:rayo_taxi/features/travel/presentetion/getx/TravelById/travel_by_id_alert_getx.dart';
 import 'package:rayo_taxi/features/travel/presentetion/getx/TravelsAlert/travels_alert_getx.dart';
+import 'package:rayo_taxi/features/travel/presentetion/page/accept_travel_page.dart';
 import 'package:rayo_taxi/firebase_options.dart';
 import 'package:rayo_taxi/usecase_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 final connectivityService = ConnectivityService();
 UsecaseConfig usecaseConfig = UsecaseConfig();
+RemoteMessage? initialMessage;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,20 +50,41 @@ void main() async {
 
   // Configura Firebase Messaging
   FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+ 
+ FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     print('Mensaje recibido en primer plano');
     print('Datos del mensaje: ${message.data}');
-
     if (message.notification != null) {
-      print(
-          'El mensaje también contiene una notificación: ${message.notification}');
+      print('El mensaje también contiene una notificación: ${message.notification}');
     }
   });
 
+
+  // Maneja cuando la aplicación está en segundo plano y el usuario hace clic en la notificación
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    print('El usuario hizo clic en una notificación mientras la app estaba en segundo plano');
+    _handleNotificationClick(message);
+        initialMessage = message;
+
+  });
+
+   initialMessage = await messaging.getInitialMessage();
+  if (initialMessage != null) {
+    print('La aplicación se inició desde una notificación');
+    // Almacena el mensaje para manejarlo después
+  }
+
   runApp(MyApp());
 }
+void _handleNotificationClick(RemoteMessage message) {
+  // Aquí puedes obtener datos de la notificación y navegar a la página deseada
+  // Por ejemplo, si tienes datos en message.data
+int? travelId = int.tryParse(message.data['travel'] ?? '');
+    print('Datos del mensaje: ${message.data}');
 
+  // Asegúrate de usar Get.to o Get.offAll según tus necesidades
+  Get.to(() => AcceptTravelPage(idTravel: travelId,));
+}
 class MyApp extends StatelessWidget {
   MyApp();
 
@@ -89,12 +112,16 @@ class MyApp extends StatelessWidget {
               fontWeight: FontWeight.bold,
             )),
       ),
-      home: SplashScreen(), // Usa SplashScreen como pantalla inicial
+      home: SplashScreen(initialMessage: initialMessage), // Pasa initialMessage
     );
   }
 }
 
 class SplashScreen extends StatefulWidget {
+  final RemoteMessage? initialMessage;
+
+  SplashScreen({this.initialMessage});
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
@@ -121,6 +148,24 @@ class _SplashScreenState extends State<SplashScreen> {
       Get.offAll(() => HomePage());
     } else {
       Get.offAll(() => LoginDriverPage());
+    }
+
+    // Después de la navegación, maneja el mensaje inicial
+    if (widget.initialMessage != null) {
+      print('Manejando initialMessage en SplashScreen');
+      _handleNotificationClick(widget.initialMessage!);
+    }
+  }
+
+  void _handleNotificationClick(RemoteMessage message) {
+    print('Datos del mensaje: ${message.data}');
+
+    int? travelId = int.tryParse(message.data['travel'] ?? '');
+
+    if (travelId != null) {
+      Get.to(() => AcceptTravelPage(idTravel: travelId));
+    } else {
+      print('Error: El travelId no es un entero válido');
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:rayo_taxi/features/driver/presentation/getxs/login/logindriver_getx.dart';
 import 'package:rayo_taxi/features/driver/presentation/pages/login_driver_page.dart';
 import 'package:rayo_taxi/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,8 +20,11 @@ class GetDriverPage extends StatefulWidget {
 class _GetDriverPage extends State<GetDriverPage> {
   late StreamSubscription<ConnectivityResult> subscription;
   final GetDriverGetx getDriveGetx = Get.find<GetDriverGetx>();
+    final LogindriverGetx _driverGetx = Get.find<LogindriverGetx>();
+
   Future<void> _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    _driverGetx.logout();
     await prefs.remove('auth_token');
     await Get.offAll(() => LoginDriverPage());
     

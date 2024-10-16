@@ -33,6 +33,9 @@ class _TravelRouteState extends State<TravelRoute> {
   final double _routeUpdateDistanceThreshold = 5;
 
   bool _journeyStarted = false; // Variable para controlar el estado del viaje
+  bool _isButtonEnabled = false; // Variable para controlar si el botón está habilitado
+  bool _journeyCompleted = false; // Variable para controlar si el viaje ha sido completado
+  final double _proximityThreshold = 50; // Umbral de proximidad en metros
 
   @override
   void initState() {
@@ -55,6 +58,8 @@ class _TravelRouteState extends State<TravelRoute> {
 
         _addMarker(_startLocation!, true);
         _addMarker(_endLocation!, false);
+
+        _traceRouteStartToEnd(); // Trazar ruta desde inicio hasta destino
       } else {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
@@ -196,59 +201,125 @@ class _TravelRouteState extends State<TravelRoute> {
         _addMarker(_driverLocation!, false, isDriver: true);
       });
 
+      _checkProximityAndEnableButton();
       _updateDriverRouteIfNeeded();
     });
+  }
+
+  void _checkProximityAndEnableButton() {
+    if (_driverLocation != null && _startLocation != null) {
+      double distance = Geolocator.distanceBetween(
+        _driverLocation!.latitude,
+        _driverLocation!.longitude,
+        _startLocation!.latitude,
+        _startLocation!.longitude,
+      );
+
+      if (distance <= _proximityThreshold && !_isButtonEnabled) {
+        setState(() {
+          _isButtonEnabled = true;
+        });
+      } else if (distance > _proximityThreshold && _isButtonEnabled) {
+        setState(() {
+          _isButtonEnabled = false;
+        });
+      }
+    }
   }
 
   void _updateDriverRouteIfNeeded() {
     if (_driverLocation == null) return;
 
-    LatLng destination;
-
     if (_journeyStarted) {
-      if (_endLocation == null) return;
-      destination = _endLocation!;
+      _traceRouteDriverToEnd();
     } else {
-      if (_startLocation == null) return;
-      destination = _startLocation!;
-    }
-
-    if (_lastDriverPositionForRouteUpdate == null ||
-        Geolocator.distanceBetween(
-              _lastDriverPositionForRouteUpdate!.latitude,
-              _lastDriverPositionForRouteUpdate!.longitude,
-              _driverLocation!.latitude,
-              _driverLocation!.longitude,
-            ) >
-            _routeUpdateDistanceThreshold) {
-      _lastDriverPositionForRouteUpdate = _driverLocation;
-      _traceDriverRoute(destination);
+      _traceRouteDriverToStart();
     }
   }
 
-  Future<void> _traceDriverRoute(LatLng destination) async {
-    if (_driverLocation != null && destination != null) {
+  Future<void> _traceRouteStartToEnd() async {
+    if (_startLocation != null && _endLocation != null) {
+      try {
+        await _travelLocalDataSource.getRoute(_startLocation!, _endLocation!);
+        String encodedPoints = await _travelLocalDataSource.getEncodedPoints();
+        List<LatLng> polylineCoordinates =
+            _travelLocalDataSource.decodePolyline(encodedPoints);
+        setState(() {
+          _polylines.removeWhere(
+              (polyline) => polyline.polylineId.value == 'start_to_end');
+          _polylines.add(Polyline(
+            polylineId: PolylineId('start_to_end'),
+            points: polylineCoordinates,
+            color: Colors.blue,
+            width: 5,
+          ));
+        });
+      } catch (e) {
+        print('Error al trazar la ruta de inicio a destino: $e');
+      }
+    }
+  }
+
+  Future<void> _traceRouteDriverToStart() async {
+    if (_driverLocation != null && _startLocation != null) {
       try {
         await _driverTravelLocalDataSource.getRoute(
-            _driverLocation!, destination);
+            _driverLocation!, _startLocation!);
         String encodedPoints =
             await _driverTravelLocalDataSource.getEncodedPoints();
         List<LatLng> polylineCoordinates =
             _driverTravelLocalDataSource.decodePolyline(encodedPoints);
         setState(() {
           _polylines.removeWhere(
-              (polyline) => polyline.polylineId.value == 'driver_route');
+              (polyline) => polyline.polylineId.value == 'driver_to_start');
           _polylines.add(Polyline(
-            polylineId: PolylineId('driver_route'),
+            polylineId: PolylineId('driver_to_start'),
             points: polylineCoordinates,
             color: Colors.red,
             width: 5,
           ));
         });
       } catch (e) {
-        print('Error al trazar la ruta del conductor: $e');
+        print('Error al trazar la ruta del conductor al inicio: $e');
       }
     }
+  }
+
+  Future<void> _traceRouteDriverToEnd() async {
+    if (_driverLocation != null && _endLocation != null) {
+      try {
+        await _driverTravelLocalDataSource.getRoute(
+            _driverLocation!, _endLocation!);
+        String encodedPoints =
+            await _driverTravelLocalDataSource.getEncodedPoints();
+        List<LatLng> polylineCoordinates =
+            _driverTravelLocalDataSource.decodePolyline(encodedPoints);
+        setState(() {
+          _polylines.removeWhere(
+              (polyline) => polyline.polylineId.value == 'driver_to_end');
+          _polylines.add(Polyline(
+            polylineId: PolylineId('driver_to_end'),
+            points: polylineCoordinates,
+            color: Colors.red,
+            width: 5,
+          ));
+        });
+      } catch (e) {
+        print('Error al trazar la ruta del conductor al destino: $e');
+      }
+    }
+  }
+
+  void _cancelJourney() {
+    setState(() {
+      _journeyStarted = false;
+      _journeyCompleted = false;
+      _polylines.clear(); // Limpiamos las polilíneas
+      _isButtonEnabled = false;
+      _addMarker(_startLocation!, true);
+      _traceRouteStartToEnd();
+      _traceRouteDriverToStart();
+    });
   }
 
   @override
@@ -288,24 +359,54 @@ class _TravelRouteState extends State<TravelRoute> {
             ),
             Positioned(
               bottom: 80,
+              left: 10,
               right: 10,
-              child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _journeyStarted = true; // Cambiamos el estado del viaje
-                    _lastDriverPositionForRouteUpdate =
-                        null; // Forzamos la actualización de la ruta
-                    _updateDriverRouteIfNeeded(); // Actualizamos la ruta
-                    _markers.removeWhere(
-                        (m) => m.markerId.value == 'start'); // Eliminamos el marcador 'start'
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.buttonColormap,
-                ),
-                child: Text('Iniciar Viaje'),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton(
+                    onPressed: _journeyStarted
+                        ? () {
+                            _cancelJourney(); // Lógica para cancelar el viaje
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.buttonColormap,
+                    ),
+                    child: Text('Cancelar Viaje'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _isButtonEnabled
+                        ? () {
+                            setState(() {
+                              _journeyStarted = true; // Cambiamos el estado del viaje
+                              _journeyCompleted = true; // Cambiamos el estado a completado
+                              _lastDriverPositionForRouteUpdate =
+                                  null; // Forzamos la actualización de la ruta
+                              _updateDriverRouteIfNeeded(); // Actualizamos la ruta
+                              _markers.removeWhere((m) =>
+                                  m.markerId.value ==
+                                  'start'); // Eliminamos el marcador 'start'
+                              _polylines.removeWhere((polyline) =>
+                                  polyline.polylineId.value ==
+                                  'start_to_end'); // Eliminamos la polilínea 'start_to_end'
+                              _polylines.removeWhere((polyline) =>
+                                  polyline.polylineId.value ==
+                                  'driver_to_start'); // Eliminamos la polilínea 'driver_to_start'
+                              _isButtonEnabled =
+                                  false; // Deshabilitamos el botón después de iniciar el viaje
+                            });
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.buttonColormap,
+                    ),
+                    child: Text(_journeyCompleted ? 'Viaje Completado' : 'Iniciar Viaje'),
+                  ),
+                ],
               ),
             ),
+          
           ],
         ),
       ),

@@ -24,12 +24,18 @@ class TravelRepositoryImp implements TravelRepository {
 
   @override
   Future<List<TravelAlertModel>> getbyIdtravelid(
-      int idTravel, bool connection) async {
+      int? idTravel, bool connection) async {
     return await travelLocalDataSource.getbyIdtravelid(idTravel, connection);
   }
 
   @override
   Future<String?> fetchDeviceId() async {
     return await travelLocalDataSource.fetchDeviceId();
+  }
+  
+  @override
+  Future<void> acceptedTravel() {
+    // TODO: implement acceptedTravel
+    throw UnimplementedError();
   }
 }

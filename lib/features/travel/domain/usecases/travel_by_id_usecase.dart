@@ -6,7 +6,7 @@ import 'package:rayo_taxi/features/travel/domain/repositories/travel_repository.
 class TravelByIdUsecase {
   final TravelRepository travelRepository;
   TravelByIdUsecase({required this.travelRepository});
-  Future<List<TravelAlertModel>> execute(int idTravel,bool connection) async {
+  Future<List<TravelAlertModel>> execute(int? idTravel,bool connection) async {
     return await travelRepository.getbyIdtravelid(idTravel, connection);
   }
 }
