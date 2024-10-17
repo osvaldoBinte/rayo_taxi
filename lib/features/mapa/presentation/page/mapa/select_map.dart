@@ -7,6 +7,7 @@ import 'package:rayo_taxi/features/mapa/presentation/page/mapa/destino_page.dart
 import 'package:rayo_taxi/features/mapa/presentation/page/travel_route.dart';
 import 'package:rayo_taxi/features/travel/data/models/travel_alert_model.dart';
 import 'package:rayo_taxi/features/travel/presentetion/getx/TravelAlert/travel_alert_getx.dart';
+
 class SelectMap extends StatefulWidget {
   @override
   _SelectMapState createState() => _SelectMapState();
@@ -18,7 +19,9 @@ class _SelectMapState extends State<SelectMap> {
   @override
   void initState() {
     super.initState();
-    travelAlertGetx.fetchCoDetails(FetchgetDetailsEvent());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      travelAlertGetx.fetchCoDetails(FetchgetDetailsEvent());
+    });
   }
 
   @override
@@ -54,7 +57,6 @@ class MapContent extends StatefulWidget {
 }
 
 class _MapContentState extends State<MapContent> {
-
   @override
   Widget build(BuildContext context) {
     if (widget.travelList.isNotEmpty) {

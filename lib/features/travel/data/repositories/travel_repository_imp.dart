@@ -37,4 +37,14 @@ class TravelRepositoryImp implements TravelRepository {
   Future<void> acceptedTravel(int? id_travel) async {
     return await travelLocalDataSource.acceptedTravel(id_travel);
   }
+  
+  @override
+  Future<void> endTravel(int? id_travel) async {
+    return await travelLocalDataSource.endTravel(id_travel);
+  }
+  
+  @override
+  Future<void> startTravel(int? id_travel) async {
+    return await travelLocalDataSource.startTravel(id_travel);
+  }
 }

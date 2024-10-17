@@ -20,21 +20,22 @@ class GetDriverPage extends StatefulWidget {
 class _GetDriverPage extends State<GetDriverPage> {
   late StreamSubscription<ConnectivityResult> subscription;
   final GetDriverGetx getDriveGetx = Get.find<GetDriverGetx>();
-    final LogindriverGetx _driverGetx = Get.find<LogindriverGetx>();
+  final LogindriverGetx _driverGetx = Get.find<LogindriverGetx>();
 
   Future<void> _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     _driverGetx.logout();
     await prefs.remove('auth_token');
     await Get.offAll(() => LoginDriverPage());
-    
   }
 
   @override
   void initState() {
     super.initState();
 
-    getDriveGetx.fetchCoDetails(FetchgetDetailsEvent());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getDriveGetx.fetchCoDetails(FetchgetDetailsEvent());
+    });
 
     subscription = Connectivity()
         .onConnectivityChanged
@@ -154,11 +155,9 @@ class _GetDriverPage extends State<GetDriverPage> {
                       label: 'Cerrar Sesión',
                       onPressed: _logout,
                     ),
-                    
                   ],
                 ),
                 const SizedBox(height: 30),
-               
                 _buildListOption(
                   icon: Icons.directions_car,
                   title: 'Vehículo',

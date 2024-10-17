@@ -22,9 +22,11 @@ class _NotificationPage extends State<TravelPage> {
   @override
   void initState() {
     super.initState();
-    travelAlertGetx.fetchCoDetails(FetchtravelsDetailsEvent());
-    _travelAlertGetx.fetchCoDetails(FetchgetDetailsEvent());
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      travelAlertGetx.fetchCoDetails(FetchtravelsDetailsEvent());
+      _travelAlertGetx.fetchCoDetails(FetchgetDetailsEvent());
+    });
     subscription = Connectivity()
         .onConnectivityChanged
         .listen((ConnectivityResult result) {
@@ -51,13 +53,21 @@ class _NotificationPage extends State<TravelPage> {
   Icon getStatusIcon(int status) {
     switch (status) {
       case 4:
-        return Icon(Icons.check_circle, color:Theme.of(context).colorScheme.getStatusIcon, size: 28);
+        return Icon(Icons.check_circle,
+            color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
       case 1:
-        return Icon(Icons.local_taxi, color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
+        return Icon(Icons.local_taxi,
+            color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
       case 2:
-        return Icon(Icons.cancel, color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
+        return Icon(Icons.cancel,
+            color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
       case 3:
-        return Icon(Icons.done_all, color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
+        return Icon(Icons.done_all,
+            color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
+    case 5:
+    return Icon(Icons.check_circle_outline,
+        color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
+
       default:
         return Icon(Icons.help_outline,
             color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
@@ -74,6 +84,8 @@ class _NotificationPage extends State<TravelPage> {
         return Theme.of(context).colorScheme.Statuscancelled;
       case 3:
         return Theme.of(context).colorScheme.Statusaccepted;
+      case 5:
+        return Theme.of(context).colorScheme.StatusCompletado;
       default:
         return Theme.of(context).colorScheme.Statusrecognized;
     }
@@ -90,8 +102,10 @@ class _NotificationPage extends State<TravelPage> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [ Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.primary,],
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.primary,
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -113,11 +127,13 @@ class _NotificationPage extends State<TravelPage> {
               SizedBox(height: 10),
               Expanded(
                 child: RefreshIndicator(
-                  onRefresh: _refreshTravels, // Funcionalidad para deslizar y refrescar
+                  onRefresh:
+                      _refreshTravels, // Funcionalidad para deslizar y refrescar
                   child: Obx(() {
                     if (travelAlertGetx.state.value is TravelsAlertLoading) {
                       return Center(child: CircularProgressIndicator());
-                    } else if (travelAlertGetx.state.value is TravelsAlertFailure) {
+                    } else if (travelAlertGetx.state.value
+                        is TravelsAlertFailure) {
                       return Center(
                         child: Container(
                           padding: EdgeInsets.all(16.0),
@@ -142,10 +158,18 @@ class _NotificationPage extends State<TravelPage> {
                           ),
                         ),
                       );
-                    } else if (travelAlertGetx.state.value is TravelsAlertLoaded) {
-                      var travels = (travelAlertGetx.state.value as TravelsAlertLoaded).travels;
+                    } else if (travelAlertGetx.state.value
+                        is TravelsAlertLoaded) {
+                      var travels =
+                          (travelAlertGetx.state.value as TravelsAlertLoaded)
+                              .travels;
 
                       return ListView.builder(
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.of(context).padding.bottom +
+                              75.0 +
+                              16.0,
+                        ),
                         itemCount: travels.length,
                         itemBuilder: (context, index) {
                           return Card(
@@ -158,7 +182,8 @@ class _NotificationPage extends State<TravelPage> {
                               contentPadding: EdgeInsets.symmetric(
                                   vertical: 10, horizontal: 16),
                               leading: CircleAvatar(
-                                backgroundColor: getStatusColor(travels[index].id_status),
+                                backgroundColor:
+                                    getStatusColor(travels[index].id_status),
                                 radius: 30,
                                 child: getStatusIcon(travels[index].id_status),
                               ),
@@ -202,7 +227,7 @@ class _NotificationPage extends State<TravelPage> {
                                   backgroundColor: Colors.transparent,
                                   builder: (BuildContext context) {
                                     return AnimatedModalBottomSheet(
-                                      idTravel:  travels[index].id, 
+                                      idTravel: travels[index].id,
                                     );
                                   },
                                 );
@@ -224,7 +249,8 @@ class _NotificationPage extends State<TravelPage> {
                             SizedBox(height: 20),
                             Text(
                               'No hay viajes aún',
-                              style: TextStyle(fontSize: 18, color: Colors.white),
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.white),
                             ),
                           ],
                         ),
@@ -237,7 +263,6 @@ class _NotificationPage extends State<TravelPage> {
           ),
         ),
       ),
-     
     );
   }
 }

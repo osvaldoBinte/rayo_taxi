@@ -5,7 +5,13 @@ import 'package:quickalert/quickalert.dart';
 import 'package:rayo_taxi/features/travel/data/models/travel_alert_model.dart';
 import 'package:rayo_taxi/features/mapa/data/datasources/travel_local_data_source.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:rayo_taxi/features/travel/presentetion/getx/EndTravel/endTravel_getx.dart';
+import 'package:rayo_taxi/features/travel/presentetion/getx/StartTravel/startTravel_getx.dart';
 import 'package:rayo_taxi/main.dart';
+
+import 'package:get/get.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/start_travel_usecase.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/end_travel_usecase.dart';
 
 class TravelRoute extends StatefulWidget {
   final List<TravelAlertModel> travelList;
@@ -32,46 +38,79 @@ class _TravelRouteState extends State<TravelRoute> {
   LatLng? _lastDriverPositionForRouteUpdate;
   final double _routeUpdateDistanceThreshold = 5;
 
-  bool _journeyStarted = false; // Variable para controlar el estado del viaje
-  bool _isButtonEnabled = false; // Variable para controlar si el botón está habilitado
-  bool _journeyCompleted = false; // Variable para controlar si el viaje ha sido completado
-  final double _proximityThreshold = 50; // Umbral de proximidad en metros
+  bool _journeyStarted = false;
+  bool _isButtonEnabled = false;
+  bool _journeyCompleted = false;
+  final double _proximityThreshold = 50;
 
-  @override
-  void initState() {
-    super.initState();
+  final StarttravelGetx _startTravelController = Get.find<StarttravelGetx>();
+  final EndtravelGetx _endTravelController = Get.find<EndtravelGetx>();
 
-    if (widget.travelList.isNotEmpty) {
-      var travelAlert = widget.travelList[0];
+@override
+void initState() {
+  super.initState();
 
-      double? startLatitude = double.tryParse(travelAlert.start_latitude);
-      double? startLongitude = double.tryParse(travelAlert.start_longitude);
-      double? endLatitude = double.tryParse(travelAlert.end_latitude);
-      double? endLongitude = double.tryParse(travelAlert.end_longitude);
+  if (widget.travelList.isNotEmpty) {
+    var travelAlert = widget.travelList[0];
 
-      if (startLatitude != null &&
-          startLongitude != null &&
-          endLatitude != null &&
-          endLongitude != null) {
-        _startLocation = LatLng(startLatitude, startLongitude);
-        _endLocation = LatLng(endLatitude, endLongitude);
+    double? startLatitude = double.tryParse(travelAlert.start_latitude);
+    double? startLongitude = double.tryParse(travelAlert.start_longitude);
+    double? endLatitude = double.tryParse(travelAlert.end_latitude);
+    double? endLongitude = double.tryParse(travelAlert.end_longitude);
 
-        _addMarker(_startLocation!, true);
-        _addMarker(_endLocation!, false);
+    if (startLatitude != null &&
+        startLongitude != null &&
+        endLatitude != null &&
+        endLongitude != null) {
+      _startLocation = LatLng(startLatitude, startLongitude);
+      _endLocation = LatLng(endLatitude, endLongitude);
 
-        _traceRouteStartToEnd(); // Trazar ruta desde inicio hasta destino
-      } else {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al convertir coordenadas a números')),
-          );
-        });
-      }
+      _addMarker(_startLocation!, true);
+      _addMarker(_endLocation!, false);
+
+      _traceRouteStartToEnd(); // Trazar ruta desde inicio hasta destino
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al convertir coordenadas a números')),
+        );
+      });
     }
 
-    _getCurrentLocation();
+    // Ahora, manejamos el id_status
+    String idStatusStr = travelAlert.id_status.toString();
+    int idStatus = int.tryParse(idStatusStr) ?? 0;
+
+    if (idStatus == 4) {
+      // El viaje ya ha sido iniciado
+      setState(() {
+        _journeyStarted = true;
+        _journeyCompleted = false;
+
+        // Eliminamos el marcador 'start'
+        _markers.removeWhere((m) => m.markerId.value == 'start');
+
+        // Eliminamos las polilíneas relacionadas con el inicio
+        _polylines.removeWhere(
+            (polyline) => polyline.polylineId.value == 'start_to_end');
+        _polylines.removeWhere(
+            (polyline) => polyline.polylineId.value == 'driver_to_start');
+
+        // Forzamos la actualización de la ruta
+        _lastDriverPositionForRouteUpdate = null;
+        _updateDriverRouteIfNeeded();
+      });
+    } else if (idStatus == 3) {
+      // El viaje ha sido aceptado pero no iniciado
+      _journeyStarted = false;
+      _journeyCompleted = false;
+    }
   }
+
+  _getCurrentLocation();
+}
+
 
   @override
   void dispose() {
@@ -122,7 +161,8 @@ class _TravelRouteState extends State<TravelRoute> {
             markerId: MarkerId('driver'),
             position: latLng,
             infoWindow: InfoWindow(title: 'Conductor'),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+            icon:
+                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
           ),
         );
         _driverLocation = latLng;
@@ -159,7 +199,8 @@ class _TravelRouteState extends State<TravelRoute> {
       await Geolocator.openLocationSettings();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Por favor, habilita los servicios de ubicación')),
+        SnackBar(
+            content: Text('Por favor, habilita los servicios de ubicación')),
       );
       return;
     }
@@ -206,33 +247,66 @@ class _TravelRouteState extends State<TravelRoute> {
     });
   }
 
-  void _checkProximityAndEnableButton() {
-    if (_driverLocation != null && _startLocation != null) {
-      double distance = Geolocator.distanceBetween(
-        _driverLocation!.latitude,
-        _driverLocation!.longitude,
-        _startLocation!.latitude,
-        _startLocation!.longitude,
-      );
+ void _checkProximityAndEnableButton() {
+  if (_driverLocation != null) {
+    double distance;
+    if (!_journeyStarted) {
+      // Antes de iniciar el viaje, comprobar proximidad al punto de inicio
+      if (_startLocation != null) {
+        distance = Geolocator.distanceBetween(
+          _driverLocation!.latitude,
+          _driverLocation!.longitude,
+          _startLocation!.latitude,
+          _startLocation!.longitude,
+        );
 
-      if (distance <= _proximityThreshold && !_isButtonEnabled) {
-        setState(() {
-          _isButtonEnabled = true;
-        });
-      } else if (distance > _proximityThreshold && _isButtonEnabled) {
+        if (distance <= _proximityThreshold && !_isButtonEnabled) {
+          setState(() {
+            _isButtonEnabled = true;
+          });
+        } else if (distance > _proximityThreshold && _isButtonEnabled) {
+          setState(() {
+            _isButtonEnabled = false;
+          });
+        }
+      }
+    } else if (_journeyStarted && !_journeyCompleted) {
+      // Durante el viaje, comprobar proximidad al destino
+      if (_endLocation != null) {
+        distance = Geolocator.distanceBetween(
+          _driverLocation!.latitude,
+          _driverLocation!.longitude,
+          _endLocation!.latitude,
+          _endLocation!.longitude,
+        );
+
+        if (distance <= _proximityThreshold && !_isButtonEnabled) {
+          setState(() {
+            _isButtonEnabled = true;
+          });
+        } else if (distance > _proximityThreshold && _isButtonEnabled) {
+          setState(() {
+            _isButtonEnabled = false;
+          });
+        }
+      }
+    } else {
+      // Viaje completado, el botón debe estar deshabilitado
+      if (_isButtonEnabled) {
         setState(() {
           _isButtonEnabled = false;
         });
       }
     }
   }
+}
 
   void _updateDriverRouteIfNeeded() {
     if (_driverLocation == null) return;
 
-    if (_journeyStarted) {
+    if (_journeyStarted && !_journeyCompleted) {
       _traceRouteDriverToEnd();
-    } else {
+    } else if (!_journeyStarted) {
       _traceRouteDriverToStart();
     }
   }
@@ -322,8 +396,113 @@ class _TravelRouteState extends State<TravelRoute> {
     });
   }
 
+  void _startTravel() {
+    String travelId =
+        widget.travelList.isNotEmpty ? widget.travelList[0].id.toString() : '';
+
+    if (travelId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se encontró el ID del viaje')),
+      );
+
+      return;
+    }
+
+    _startTravelController
+        .starttravel(StartravelEvent(id_travel: widget.travelList[0].id));
+
+    _startTravelController.starttravelState.listen((state) {
+      if (state is StarttravelLoading) {
+        // Mostrar indicador de carga si es necesario
+      } else if (state is AcceptedtravelSuccessfully) {
+        // Viaje iniciado correctamente
+        setState(() {
+          _journeyStarted = true;
+          _isButtonEnabled = false;
+          // Actualizar la interfaz de usuario según sea necesario
+          // Eliminar marcador 'start'
+          _markers.removeWhere((m) => m.markerId.value == 'start');
+          // Eliminar polilíneas
+          _polylines.removeWhere(
+              (polyline) => polyline.polylineId.value == 'start_to_end');
+          _polylines.removeWhere(
+              (polyline) => polyline.polylineId.value == 'driver_to_start');
+          // Forzar actualización de ruta
+          _lastDriverPositionForRouteUpdate = null;
+          _updateDriverRouteIfNeeded();
+        });
+
+        Get.snackbar(
+          'Éxito',
+          'Viaje iniciado correctamente',
+          backgroundColor: Theme.of(context).colorScheme.Success,
+        );
+      } else if (state is StarttravelError) {
+        Get.snackbar(
+          'Error al iniciar viaje',
+          'viaje ya fue iniciado ${state.message}',
+          backgroundColor: Theme.of(context).colorScheme.error,
+        );
+      }
+    });
+  }
+
+  void _endTravel() {
+    String travelId =
+        widget.travelList.isNotEmpty ? widget.travelList[0].id.toString() : '';
+
+    if (travelId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se encontró el ID del viaje')),
+      );
+      return;
+    }
+
+    _endTravelController
+        .endtravel(EndTravelEvent(id_travel: widget.travelList[0].id));
+
+    _endTravelController.endtravelState.listen((state) {
+      if (state is EndtravelLoading) {
+        // Mostrar indicador de carga si es necesario
+      } else if (state is EndtravelSuccessfully) {
+        // Viaje terminado correctamente
+        setState(() {
+          _journeyCompleted = true;
+          _isButtonEnabled = false;
+          // Actualizar la interfaz de usuario según sea necesario
+        });
+       Get.snackbar(
+          'Éxito',
+          'Viaje terminado correctamente',
+          backgroundColor: Theme.of(context).colorScheme.Success,
+        );
+      } else if (state is EndtravelError) {
+       
+         Get.snackbar(
+          'Error al terminal el viaje',
+          'viaje ya fue terminado ${state.message}',
+          backgroundColor: Theme.of(context).colorScheme.error,
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    String buttonLabel;
+    Function()? onButtonPressed;
+
+     if (!_journeyStarted) {
+    buttonLabel = 'Iniciar Viaje';
+    onButtonPressed = _isButtonEnabled ? _startTravel : null;
+  } else if (_journeyStarted && !_journeyCompleted) {
+    buttonLabel = 'Terminar Viaje';
+    onButtonPressed = _isButtonEnabled ? _endTravel : null;
+  } else {
+    buttonLabel = 'Viaje Completado';
+    onButtonPressed = null;
+  }
+
     return Scaffold(
       body: SafeArea(
         child: Stack(
@@ -371,42 +550,22 @@ class _TravelRouteState extends State<TravelRoute> {
                           }
                         : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.buttonColormap,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.buttonColormap,
                     ),
                     child: Text('Cancelar Viaje'),
                   ),
                   ElevatedButton(
-                    onPressed: _isButtonEnabled
-                        ? () {
-                            setState(() {
-                              _journeyStarted = true; // Cambiamos el estado del viaje
-                              _journeyCompleted = true; // Cambiamos el estado a completado
-                              _lastDriverPositionForRouteUpdate =
-                                  null; // Forzamos la actualización de la ruta
-                              _updateDriverRouteIfNeeded(); // Actualizamos la ruta
-                              _markers.removeWhere((m) =>
-                                  m.markerId.value ==
-                                  'start'); // Eliminamos el marcador 'start'
-                              _polylines.removeWhere((polyline) =>
-                                  polyline.polylineId.value ==
-                                  'start_to_end'); // Eliminamos la polilínea 'start_to_end'
-                              _polylines.removeWhere((polyline) =>
-                                  polyline.polylineId.value ==
-                                  'driver_to_start'); // Eliminamos la polilínea 'driver_to_start'
-                              _isButtonEnabled =
-                                  false; // Deshabilitamos el botón después de iniciar el viaje
-                            });
-                          }
-                        : null,
+                    onPressed: onButtonPressed,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.buttonColormap,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.buttonColormap,
                     ),
-                    child: Text(_journeyCompleted ? 'Viaje Completado' : 'Iniciar Viaje'),
+                    child: Text(buttonLabel),
                   ),
                 ],
               ),
             ),
-          
           ],
         ),
       ),

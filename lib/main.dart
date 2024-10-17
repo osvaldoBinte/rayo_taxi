@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import 'package:rayo_taxi/features/driver/presentation/getxs/get/id_device_get.dart';
 import 'package:rayo_taxi/features/driver/presentation/getxs/login/logindriver_getx.dart';
 import 'package:rayo_taxi/features/travel/presentetion/getx/AcceptedTravel/acceptedTravel_getx.dart';
+import 'package:rayo_taxi/features/travel/presentetion/getx/EndTravel/endTravel_getx.dart';
+import 'package:rayo_taxi/features/travel/presentetion/getx/StartTravel/startTravel_getx.dart';
 import 'package:rayo_taxi/features/travel/presentetion/getx/TravelAlert/travel_alert_getx.dart';
 import 'package:rayo_taxi/features/travel/presentetion/getx/TravelById/travel_by_id_alert_getx.dart';
 import 'package:rayo_taxi/features/travel/presentetion/getx/TravelsAlert/travels_alert_getx.dart';
@@ -84,7 +86,8 @@ void main() async {
   Get.put(GetDeviceGetx(
       getDeviceUsecase: usecaseConfig.getDeviceUsecase!));
   Get.put(AcceptedtravelGetx(acceptedTravelUsecase: usecaseConfig.acceptedTravelUsecase!));
-
+  Get.put(StarttravelGetx(startTravelUsecase: usecaseConfig.startTravelUsecase!));
+  Get.put(EndtravelGetx(endTravelUsecase: usecaseConfig.endTravelUsecase!));
   FirebaseMessaging messaging = FirebaseMessaging.instance;
 
   // Listener para mensajes en primer plano

@@ -41,52 +41,76 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
       Get.find<TravelByIdAlertGetx>();
   late StreamSubscription<ConnectivityResult> subscription;
 
-  @override
-  void initState() {
-    super.initState();
+@override
+void initState() {
+  super.initState();
 
-    travelByIdController
-        .fetchCoDetails(TravelByIdEventDetailsEvent(idTravel: widget.idTravel));
+  // Escuchar cambios en el controlador de TravelById
+  ever(travelByIdController.state, (state) {
+    if (state is TravelByIdAlertLoaded) {
+      TravelAlertModel travel = state.travels[0];
 
-    subscription = Connectivity()
-        .onConnectivityChanged
-        .listen((ConnectivityResult result) {
-      if (result == ConnectivityResult.none) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Se perdió la conectividad Wi-Fi'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      } else {
-        travelByIdController.fetchCoDetails(
-            TravelByIdEventDetailsEvent(idTravel: widget.idTravel));
-      }
-    });
-  }
+      double? startLatitude = double.tryParse(travel.start_latitude);
+      double? startLongitude = double.tryParse(travel.start_longitude);
+      double? endLatitude = double.tryParse(travel.end_latitude);
+      double? endLongitude = double.tryParse(travel.end_longitude);
 
-  Future<void> _traceRoute() async {
-    if (_startLocation != null && _endLocation != null) {
-      try {
-        await _travelLocalDataSource.getRoute(_startLocation!, _endLocation!);
-        String encodedPoints = await _travelLocalDataSource.getEncodedPoints();
-        List<LatLng> polylineCoordinates =
-            _travelLocalDataSource.decodePolyline(encodedPoints);
+      if (startLatitude != null &&
+          startLongitude != null &&
+          endLatitude != null &&
+          endLongitude != null) {
         setState(() {
-          _polylines
-              .removeWhere((polyline) => polyline.polylineId.value == 'route');
-          _polylines.add(Polyline(
-            polylineId: PolylineId('route'),
-            points: polylineCoordinates,
-            color: Colors.blue,
-            width: 5,
-          ));
+          _startLocation = LatLng(startLatitude, startLongitude);
+          _endLocation = LatLng(endLatitude, endLongitude);
+
+          _addMarker(_startLocation!, true);
+          _addMarker(_endLocation!, false);
+
+          _traceRoute();
         });
-      } catch (e) {
-        print('Error al trazar la ruta: $e');
       }
+    } else if (state is TravelByIdAlertFailure) {
+      print('Error al cargar los detalles del viaje: ${state.error}');
+    }
+  });
+
+  // Iniciar la búsqueda de detalles del viaje
+  travelByIdController.fetchCoDetails(
+      TravelByIdEventDetailsEvent(idTravel: widget.idTravel));
+
+  // Suscripción a cambios de conectividad
+  subscription = Connectivity()
+      .onConnectivityChanged
+      .listen((ConnectivityResult result) {
+    if (result != ConnectivityResult.none) {
+      travelByIdController.fetchCoDetails(
+          TravelByIdEventDetailsEvent(idTravel: widget.idTravel));
+    }
+  });
+}
+Future<void> _traceRoute() async {
+  if (_startLocation != null && _endLocation != null) {
+    try {
+      await _travelLocalDataSource.getRoute(_startLocation!, _endLocation!);
+      String encodedPoints = await _travelLocalDataSource.getEncodedPoints();
+      List<LatLng> polylineCoordinates =
+          _travelLocalDataSource.decodePolyline(encodedPoints);
+      setState(() {
+        _polylines
+            .removeWhere((polyline) => polyline.polylineId.value == 'route');
+        _polylines.add(Polyline(
+          polylineId: PolylineId('route'),
+          points: polylineCoordinates,
+          color: Colors.blue,
+          width: 5,
+        ));
+      });
+    } catch (e) {
+      print('Error al trazar la ruta: $e');
     }
   }
+}
+
 
   @override
   void dispose() {
@@ -95,24 +119,31 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
     super.dispose();
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    try {
-      _mapController = controller;
+void _onMapCreated(GoogleMapController controller) {
+  try {
+    _mapController = controller;
+    if (_markers.isNotEmpty) {
       LatLngBounds bounds = _createLatLngBoundsFromMarkers();
+      _mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+    } else {
       _mapController.animateCamera(
-        CameraUpdate.newLatLngBounds(bounds, 50),
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: _center,
+            zoom: 12.0,
+          ),
+        ),
       );
-    } catch (e) {
-      print('Error al crear el mapa: $e');
     }
+  } catch (e) {
+    print('Error al crear el mapa: $e');
   }
+}
+
 
   LatLngBounds _createLatLngBoundsFromMarkers() {
     if (_markers.isEmpty) {
-      return LatLngBounds(
-        northeast: _center,
-        southwest: _center,
-      );
+      return LatLngBounds(northeast: _center, southwest: _center);
     }
 
     List<LatLng> positions = _markers.map((m) => m.position).toList();
@@ -125,10 +156,7 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
       if (pos.longitude > y1) y1 = pos.longitude;
       if (pos.longitude < y0) y0 = pos.longitude;
     }
-    return LatLngBounds(
-      northeast: LatLng(x1, y1),
-      southwest: LatLng(x0, y0),
-    );
+    return LatLngBounds(northeast: LatLng(x1, y1), southwest: LatLng(x0, y0));
   }
 
   void _addMarker(LatLng latLng, bool isStartPlace, {bool isDriver = false}) {
@@ -173,15 +201,12 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true, // Extiende el cuerpo detrás del AppBar
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
           'Accept Travel',
           style: TextStyle(
-            fontSize: 18,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+              fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).primaryColor,
         elevation: 0,
@@ -190,46 +215,18 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
         child: Stack(
           children: [
             // Mapa con detalles del viaje
-            Obx(() {
-              if (travelByIdController.state.value is TravelByIdAlertLoading) {
-                return Center(child: CircularProgressIndicator());
-              } else if (travelByIdController.state.value
-                  is TravelByIdAlertFailure) {
-                return Center(
-                    child: Text((travelByIdController.state.value
-                            as TravelByIdAlertFailure)
-                        .error));
-              } else if (travelByIdController.state.value
-                  is TravelByIdAlertLoaded) {
-                TravelAlertModel travel =
-                    (travelByIdController.state.value as TravelByIdAlertLoaded)
-                        .travels[0];
-
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_startLocation == null && _endLocation == null) {
-                    double? startLatitude =
-                        double.tryParse(travel.start_latitude);
-                    double? startLongitude =
-                        double.tryParse(travel.start_longitude);
-                    double? endLatitude = double.tryParse(travel.end_latitude);
-                    double? endLongitude =
-                        double.tryParse(travel.end_longitude);
-
-                    if (startLatitude != null &&
-                        startLongitude != null &&
-                        endLatitude != null &&
-                        endLongitude != null) {
-                      _startLocation = LatLng(startLatitude, startLongitude);
-                      _endLocation = LatLng(endLatitude, endLongitude);
-
-                      _addMarker(_startLocation!, true);
-                      _addMarker(_endLocation!, false);
-
-                      _traceRoute();
-                    }
-                  }
-                });
-
+           Obx(() {
+            if (travelByIdController.state.value is TravelByIdAlertLoading) {
+              return Center(child: CircularProgressIndicator());
+            } else if (travelByIdController.state.value
+                is TravelByIdAlertFailure) {
+              return Center(
+                  child: Text((travelByIdController.state.value
+                          as TravelByIdAlertFailure)
+                      .error));
+            } else if (travelByIdController.state.value
+                is TravelByIdAlertLoaded) {
+              if (_startLocation != null && _endLocation != null) {
                 return GoogleMap(
                   onMapCreated: _onMapCreated,
                   initialCameraPosition: CameraPosition(
@@ -242,11 +239,13 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
                   myLocationButtonEnabled: false,
                 );
               } else {
-                return Center(
-                    child: Text("No hay datos del viaje disponibles."));
+                return Center(child: CircularProgressIndicator());
               }
-            }),
-
+            } else {
+              return Center(
+                  child: Text("No hay datos del viaje disponibles."));
+            }
+          }),
             // Botón flotante en el mapa
             Positioned(
               bottom: 30,
@@ -262,24 +261,21 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
                           .travels[0];
 
                       if (travel.id_status == 3) {
-                        // Si el id_status es 3, mostrar texto "Viaje ya aceptado"
                         return Column(
                           children: [
                             Text(
                               'Viaje ya aceptado',
                               style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                              ),
+                                  fontSize: 18,
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold),
                             ),
                             SizedBox(height: 10),
                             ElevatedButton(
-                              onPressed: null, // Deshabilitado
+                              onPressed: null,
                               child: Text('Aceptar Viaje'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Colors.grey, // Botón deshabilitado
+                                backgroundColor: Colors.grey,
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 50, vertical: 20),
                                 textStyle: TextStyle(fontSize: 18),
@@ -291,12 +287,12 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
                         return ElevatedButton(
                           onPressed: () async {
                             await _acceptedGetx.acceptedtravel(
-                              AcceptedTravelEvent(id_travel: widget.idTravel),
-                            );
+                                AcceptedTravelEvent(
+                                    id_travel: widget.idTravel));
                           },
                           child: Text('Aceptar Viaje'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: Theme.of(context).colorScheme.buttonColormap,
                             padding: EdgeInsets.symmetric(
                                 horizontal: 50, vertical: 20),
                             textStyle: TextStyle(fontSize: 18),
@@ -309,8 +305,8 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
                     } else if (travelByIdController.state.value
                         is TravelByIdAlertFailure) {
                       return Center(
-                        child: Text('Error al cargar los detalles del viaje'),
-                      );
+                          child:
+                              Text('Error al cargar los detalles del viaje'));
                     } else {
                       return SizedBox(); // O cualquier otro widget que consideres apropiado
                     }
@@ -320,15 +316,12 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
                   Obx(() {
                     if (_acceptedGetx.acceptedtravelState.value
                         is AcceptedtravelSuccessfully) {
-                      // Mostrar snackbar de éxito
                       Get.snackbar(
                         'Éxito',
                         'Viaje aceptado correctamente',
                         backgroundColor: Theme.of(context).colorScheme.Success,
-                        colorText: Colors.white,
                       );
 
-                      // Redirigir a HomePage después de un pequeño delay
                       Future.delayed(Duration(seconds: 1), () {
                         Navigator.pushAndRemoveUntil(
                           context,
@@ -338,12 +331,10 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
                       });
                     } else if (_acceptedGetx.acceptedtravelState.value
                         is AcceptedtravelError) {
-                      // Mostrar snackbar de error
                       Get.snackbar(
                         'Error',
                         'Ocurrió un error: viaje ya fue aceptado o falló la solicitud',
                         backgroundColor: Theme.of(context).colorScheme.error,
-                        colorText: Colors.white,
                       );
                     }
                     return Container();

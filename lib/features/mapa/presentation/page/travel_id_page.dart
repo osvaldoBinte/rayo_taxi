@@ -41,9 +41,10 @@ class _TravelRouteState extends State<TravelIdPage> {
   @override
   void initState() {
     super.initState();
-
-    travelByIdController
-        .fetchCoDetails(TravelByIdEventDetailsEvent(idTravel: widget.idTravel));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      travelByIdController.fetchCoDetails(
+          TravelByIdEventDetailsEvent(idTravel: widget.idTravel));
+    });
 
     subscription = Connectivity()
         .onConnectivityChanged
@@ -237,7 +238,6 @@ class _TravelRouteState extends State<TravelIdPage> {
                   QuickAlert.show(
                     context: context,
                     type: QuickAlertType.info,
-                    
                     title: 'Información del Viaje',
                     text: travelByIdController.state.value
                             is TravelByIdAlertLoaded
