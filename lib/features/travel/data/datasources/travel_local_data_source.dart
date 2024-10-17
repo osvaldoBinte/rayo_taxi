@@ -9,14 +9,18 @@ import '../models/travel_alert_model.dart';
 
 abstract class TravelLocalDataSource {
   Future<void> updateIdDevice();
-    Future<void> acceptedTravel();
+
+  Future<void> acceptedTravel(int? id_travel);
+  Future<void> startTravel(int? id_travel);
+  Future<void> endTravel(int? id_travel);
 
   Future<List<TravelAlertModel>> getTravel(bool connection);
 
   Future<List<TravelAlertModel>> getalltravel(bool connection);
 
-  Future<List<TravelAlertModel>> getbyIdtravelid(int? idTravel, bool connection);
-   Future<String?> fetchDeviceId();
+  Future<List<TravelAlertModel>> getbyIdtravelid(
+      int? idTravel, bool connection);
+  Future<String?> fetchDeviceId();
 }
 
 class TravelLocalDataSourceImp implements TravelLocalDataSource {
@@ -306,24 +310,23 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
       throw Exception('No hay viajes en SharedPreferences');
     }
   }
-  
- @override
+
+  @override
   Future<String?> fetchDeviceId() async {
     try {
       final String url = '$_baseUrl/auth/renew';
       print('Realizando la solicitud a $url...');
 
-    String? token = await _getToken();
-    if (token == null) {
-      throw Exception('Token no disponible');
-    }
+      String? token = await _getToken();
+      if (token == null) {
+        throw Exception('Token no disponible');
+      }
       final response = await http.get(
         Uri.parse(url),
         headers: {
-         'x-token': token,
+          'x-token': token,
           'Content-Type': 'application/json',
         },
-        
       );
 
       if (response.statusCode == 200) {
@@ -346,10 +349,103 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
       return null;
     }
   }
+
+  @override
+  Future<void> acceptedTravel(int? id_travel) async {
+    String? savedToken = await _getToken();
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    String? token = await messaging.getToken();
+    print('Device Token: $token');
+
+    device = Device(id_device: token);
+
+    var response = await http.put(
+      Uri.parse('$_baseUrl2/travels/accepted/$id_travel'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': savedToken ?? '',
+      },
+      body: jsonEncode(DeviceModel.fromEntity(device).toJson()),
+    );
+
+    dynamic body = jsonDecode(response.body);
+    print(body);
+    print(response.statusCode);
+
+    if (response.statusCode == 200) {
+      String message = body['message'].toString();
+      print(message);
+      print("si se ejecuto bien el id device");
+    } else {
+      String message = body['message'].toString();
+      print(body);
+      throw Exception(message);
+    }
+  }
   
   @override
-  Future<void> acceptedTravel() {
-    // TODO: implement acceptedTravel
-    throw UnimplementedError();
+  Future<void> endTravel(int? id_travel) async {
+    String? savedToken = await _getToken();
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    String? token = await messaging.getToken();
+    print('Device Token: $token');
+
+    device = Device(id_device: token);
+
+    var response = await http.put(
+      Uri.parse('$_baseUrl2/travels/end/$id_travel'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': savedToken ?? '',
+      },
+      body: jsonEncode(DeviceModel.fromEntity(device).toJson()),
+    );
+
+    dynamic body = jsonDecode(response.body);
+    print(body);
+    print(response.statusCode);
+
+    if (response.statusCode == 200) {
+      String message = body['message'].toString();
+      print(message);
+      print("si se ejecuto bien el id device");
+    } else {
+      String message = body['message'].toString();
+      print(body);
+      throw Exception(message);
+    }
+  }
+  
+  @override
+  Future<void> startTravel(int? id_travel) async{
+   String? savedToken = await _getToken();
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    String? token = await messaging.getToken();
+    print('Device Token: $token');
+
+    device = Device(id_device: token);
+
+    var response = await http.put(
+      Uri.parse('$_baseUrl2/travels/start/$id_travel'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': savedToken ?? '',
+      },
+      body: jsonEncode(DeviceModel.fromEntity(device).toJson()),
+    );
+
+    dynamic body = jsonDecode(response.body);
+    print(body);
+    print(response.statusCode);
+
+    if (response.statusCode == 200) {
+      String message = body['message'].toString();
+      print(message);
+      print("si se ejecuto bien el id device");
+    } else {
+      String message = body['message'].toString();
+      print(body);
+      throw Exception(message);
+    }
   }
 }
