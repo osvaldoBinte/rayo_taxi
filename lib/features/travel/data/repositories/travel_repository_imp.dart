@@ -34,8 +34,7 @@ class TravelRepositoryImp implements TravelRepository {
   }
   
   @override
-  Future<void> acceptedTravel() {
-    // TODO: implement acceptedTravel
-    throw UnimplementedError();
+  Future<void> acceptedTravel(int? id_travel) async {
+    return await travelLocalDataSource.acceptedTravel(id_travel);
   }
 }

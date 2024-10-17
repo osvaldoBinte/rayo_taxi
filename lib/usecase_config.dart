@@ -4,6 +4,7 @@ import 'package:rayo_taxi/features/driver/domain/usecases/get_driver_usecase.dar
 import 'package:rayo_taxi/features/driver/domain/usecases/login_driver_usecase.dart';
 import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
 import 'package:rayo_taxi/features/travel/data/repositories/travel_repository_imp.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/accepted_travel_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/get_device_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/id_device_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/travel_alert_usecase.dart';
@@ -24,6 +25,7 @@ class UsecaseConfig {
   TravelsAlertUsecase? travelsAlertUsecase;
   TravelAlertUsecase? travelAlertUsecase;  
   TravelByIdUsecase? travelByIdUsecase;
+  AcceptedTravelUsecase? acceptedTravelUsecase;
   UsecaseConfig() {
     driverLocalDataSourceImp = DriverLocalDataSourceImp();
     travelLocalDataSourceImp = TravelLocalDataSourceImp();
@@ -36,5 +38,6 @@ class UsecaseConfig {
     travelAlertUsecase = TravelAlertUsecase(travelRepository: travelRepositoryImp!);
     travelsAlertUsecase = TravelsAlertUsecase(travelRepository: travelRepositoryImp!);
     travelByIdUsecase = TravelByIdUsecase(travelRepository:travelRepositoryImp!);
+    acceptedTravelUsecase = AcceptedTravelUsecase(travelRepository: travelRepositoryImp!);
   }
 }

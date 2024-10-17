@@ -6,13 +6,6 @@ import 'package:rayo_taxi/main.dart';
 import '../getx/TravelsAlert/travels_alert_getx.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:rayo_taxi/features/travel/presentetion/getx/TravelAlert/travel_alert_getx.dart';
-import 'package:rayo_taxi/main.dart';
-import 'package:rayo_taxi/features/travel/data/models/travel_alert_model.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'dart:async';
 
 class TravelPage extends StatefulWidget {
   const TravelPage({super.key});
@@ -86,6 +79,11 @@ class _NotificationPage extends State<TravelPage> {
     }
   }
 
+  Future<void> _refreshTravels() async {
+    travelAlertGetx.fetchCoDetails(FetchtravelsDetailsEvent());
+    _travelAlertGetx.fetchCoDetails(FetchgetDetailsEvent());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,128 +112,132 @@ class _NotificationPage extends State<TravelPage> {
               ),
               SizedBox(height: 10),
               Expanded(
-                child: Obx(() {
-                  if (travelAlertGetx.state.value is TravelsAlertLoading) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (travelAlertGetx.state.value is TravelsAlertFailure) {
-                    return Center(
-                      child: Container(
-                        padding: EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: Colors.redAccent,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.error, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text(
-                              'Ocurrió un error',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                child: RefreshIndicator(
+                  onRefresh: _refreshTravels, // Funcionalidad para deslizar y refrescar
+                  child: Obx(() {
+                    if (travelAlertGetx.state.value is TravelsAlertLoading) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (travelAlertGetx.state.value is TravelsAlertFailure) {
+                      return Center(
+                        child: Container(
+                          padding: EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.error, color: Colors.white),
+                              SizedBox(width: 8),
+                              Text(
+                                'Ocurrió un error',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
+                            ],
+                          ),
+                        ),
+                      );
+                    } else if (travelAlertGetx.state.value is TravelsAlertLoaded) {
+                      var travels = (travelAlertGetx.state.value as TravelsAlertLoaded).travels;
+
+                      return ListView.builder(
+                        itemCount: travels.length,
+                        itemBuilder: (context, index) {
+                          return Card(
+                            elevation: 6,
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: ListTile(
+                              contentPadding: EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 16),
+                              leading: CircleAvatar(
+                                backgroundColor: getStatusColor(travels[index].id_status),
+                                radius: 30,
+                                child: getStatusIcon(travels[index].id_status),
+                              ),
+                              title: Text(
+                                travels[index].status,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: Color(0xFF333333),
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(height: 5),
+                                  Text(
+                                    'Kilómetros: ${travels[index].kilometers}',
+                                    style: TextStyle(
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    travels[index].date,
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              trailing: Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.grey,
+                                size: 18,
+                              ),
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (BuildContext context) {
+                                    return AnimatedModalBottomSheet(
+                                      idTravel:  travels[index].id, 
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      );
+                    } else {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.hourglass_empty,
+                              size: 80,
+                              color: Colors.white,
+                            ),
+                            SizedBox(height: 20),
+                            Text(
+                              'No hay viajes aún',
+                              style: TextStyle(fontSize: 18, color: Colors.white),
                             ),
                           ],
                         ),
-                      ),
-                    );
-                  } else if (travelAlertGetx.state.value is TravelsAlertLoaded) {
-                    var travels = (travelAlertGetx.state.value as TravelsAlertLoaded).travels;
-
-                    return ListView.builder(
-                      itemCount: travels.length,
-                      itemBuilder: (context, index) {
-                        return Card(
-                          elevation: 6,
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: ListTile(
-                            contentPadding: EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 16),
-                            leading: CircleAvatar(
-                              backgroundColor: getStatusColor(travels[index].id_status),
-                              radius: 30,
-                              child: getStatusIcon(travels[index].id_status),
-                            ),
-                            title: Text(
-                              travels[index].status,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: Color(0xFF333333),
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(height: 5),
-                                Text(
-                                  'Kilómetros: ${travels[index].kilometers}',
-                                  style: TextStyle(
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  travels[index].date,
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            trailing: Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.grey,
-                              size: 18,
-                            ),
-                            onTap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (BuildContext context) {
-                                  return AnimatedModalBottomSheet(
-                                    idTravel:  travels[index].id, 
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    );
-                  } else {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.hourglass_empty,
-                            size: 80,
-                            color: Colors.white,
-                          ),
-                          SizedBox(height: 20),
-                          Text(
-                            'No hay viajes aún',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                }),
+                      );
+                    }
+                  }),
+                ),
               ),
             ],
           ),
         ),
       ),
+     
     );
   }
 }

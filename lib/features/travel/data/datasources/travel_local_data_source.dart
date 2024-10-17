@@ -9,7 +9,7 @@ import '../models/travel_alert_model.dart';
 
 abstract class TravelLocalDataSource {
   Future<void> updateIdDevice();
-    Future<void> acceptedTravel();
+    Future<void> acceptedTravel(int? id_travel);
 
   Future<List<TravelAlertModel>> getTravel(bool connection);
 
@@ -348,8 +348,35 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
   }
   
   @override
-  Future<void> acceptedTravel() {
-    // TODO: implement acceptedTravel
-    throw UnimplementedError();
+  Future<void> acceptedTravel(int? id_travel)async {
+    String? savedToken = await _getToken();
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    String? token = await messaging.getToken();
+    print('Device Token: $token');
+
+    device = Device(id_device: token);
+
+    var response = await http.put(
+      Uri.parse('$_baseUrl2/travels/accepted/$id_travel'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': savedToken ?? '',
+      },
+      body: jsonEncode(DeviceModel.fromEntity(device).toJson()),
+    );
+
+    dynamic body = jsonDecode(response.body);
+    print(body);
+    print(response.statusCode);
+
+    if (response.statusCode == 200) {
+      String message = body['message'].toString();
+      print(message);
+      print("si se ejecuto bien el id device");
+    } else {
+      String message = body['message'].toString();
+      print(body);
+      throw Exception(message);
+    }
   }
 }

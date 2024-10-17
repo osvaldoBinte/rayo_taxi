@@ -3,7 +3,7 @@ import 'package:rayo_taxi/features/travel/domain/entities/device.dart';
 
 abstract class TravelRepository {
   Future<void> updateIdDevice();
-    Future<void> acceptedTravel();
+    Future<void> acceptedTravel(int? id_travel);
 
   Future<List<TravelAlertModel>> getNotification(bool connection);
   Future<List<TravelAlertModel>> getalltravel(bool connection);
