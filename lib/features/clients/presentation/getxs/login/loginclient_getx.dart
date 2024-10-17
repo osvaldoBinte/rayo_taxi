@@ -2,6 +2,7 @@ import 'package:meta/meta.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/clients/domain/entities/client.dart';
 import 'package:rayo_taxi/features/clients/domain/usecases/login_client_usecase.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'loginclient_event.dart';
 part 'loginclient_state.dart';
@@ -19,4 +20,11 @@ class LoginclientGetx extends GetxController {
       state.value = LoginclientFailure(e.toString());
     }
   }
+  void logout() {
+  state.value = LoginclientInitial();  
+  SharedPreferences.getInstance().then((prefs) {
+    prefs.remove('auth_token');
+  });
+}
+
 }

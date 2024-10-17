@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:rayo_taxi/features/clients/presentation/getxs/login/loginclient_getx.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/edit_porfile_modal.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/login_clients_page.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/pagos/animated_modal_bottom.dart';
@@ -24,12 +25,15 @@ class _GetClientPageState extends State<GetClientPage> {
   late StreamSubscription<ConnectivityResult> subscription;
   final GetClientGetx getClientGetx = Get.find<GetClientGetx>();
   final CalculateAgeGetx calculateAgeGetx = Get.find<CalculateAgeGetx>();
+  final LoginclientGetx _loginGetx = Get.find<LoginclientGetx>();
 
   final _picker = ImagePicker();
   String? _imagePath;
 
   Future<void> _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    _loginGetx.logout();
+
     await prefs.remove('auth_token');
     await Get.offAll(() => LoginClientsPage());
   }
@@ -94,9 +98,9 @@ class _GetClientPageState extends State<GetClientPage> {
                 ),
               );
             }
-  if (client.birthdate != null) {
-                calculateAgeGetx.calculateAge(client.birthdate!);
-              }
+            if (client.birthdate != null) {
+              calculateAgeGetx.calculateAge(client.birthdate!);
+            }
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,9 +138,7 @@ class _GetClientPageState extends State<GetClientPage> {
                       ],
                     ),
                     const SizedBox(width: 20),
-                    
                     Expanded(
-                      
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -149,43 +151,44 @@ class _GetClientPageState extends State<GetClientPage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 5),
-                           Obx(() {
-                        final ageState = calculateAgeGetx.state.value;
-                       
-                        if (ageState is CalculateAgeLoading) {
-                          return const Text(
-                            'Calculando edad...',
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 16,
-                            ),
-                          );
-                        } else if (ageState is CalculateAgeSuccessfully) {
-                          return Text(
-                            'Edad: ${ageState.age} años',
-                            style:  TextStyle(
-                              color: Theme.of(context).colorScheme.icongreen,
-                              fontSize: 16,
-                            ),
-                          );
-                        } else if (ageState is CalculateAgeFailure) {
-                          return Text(
-                            'Error: ${ageState.error}',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.iconred,
-                              fontSize: 16,
-                            ),
-                          );
-                        } else {
-                          return const Text(
-                            'Edad no disponible',
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 16,
-                            ),
-                          );
-                        }
-                      }),
+                          Obx(() {
+                            final ageState = calculateAgeGetx.state.value;
+
+                            if (ageState is CalculateAgeLoading) {
+                              return const Text(
+                                'Calculando edad...',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 16,
+                                ),
+                              );
+                            } else if (ageState is CalculateAgeSuccessfully) {
+                              return Text(
+                                'Edad: ${ageState.age} años',
+                                style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.icongreen,
+                                  fontSize: 16,
+                                ),
+                              );
+                            } else if (ageState is CalculateAgeFailure) {
+                              return Text(
+                                'Error: ${ageState.error}',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.iconred,
+                                  fontSize: 16,
+                                ),
+                              );
+                            } else {
+                              return const Text(
+                                'Edad no disponible',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 16,
+                                ),
+                              );
+                            }
+                          }),
                           Text(
                             '${client.email ?? 'Sin email'}',
                             style: TextStyle(
@@ -202,7 +205,7 @@ class _GetClientPageState extends State<GetClientPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                   _buildCardButton(
+                    _buildCardButton(
                       context,
                       icon: Icons.logout,
                       label: 'Cerrar Sesión',

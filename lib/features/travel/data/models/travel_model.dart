@@ -8,12 +8,14 @@ class TravelModel extends Travel {
   double? end_longitude,
   double? end_latitude,
   String? kilometers,
+  double? duration,
   }) : super(
             start_longitude: start_longitude,
             start_latitude: start_latitude,
             end_longitude: end_longitude,
             end_latitude: end_latitude,
-            kilometers: kilometers,);
+            kilometers: kilometers,
+            duration:duration);
   factory TravelModel.fromJson(Map<String, dynamic> json) {
     return TravelModel(
       start_longitude: json['start_longitude'] ?? '',
@@ -21,6 +23,7 @@ class TravelModel extends Travel {
       end_longitude: json['end_longitude'] ?? '',
       end_latitude: json['end_latitude'] ?? '',
       kilometers: json['kilometers'] ?? '',
+      duration:json['duration'] ?? '',
     );
   }
 
@@ -31,6 +34,7 @@ class TravelModel extends Travel {
       end_longitude: travel.end_longitude,
       end_latitude: travel.end_latitude,
       kilometers: travel.kilometers,
+      duration:travel.duration
     );
   }
 
@@ -41,6 +45,7 @@ class TravelModel extends Travel {
       'end_longitude': end_longitude,
       'end_latitude': end_latitude,
       'kilometers': kilometers,
+      'duration':duration
       
     };
   }
