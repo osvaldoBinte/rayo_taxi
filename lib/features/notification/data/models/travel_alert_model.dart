@@ -1,21 +1,23 @@
+import 'package:rayo_taxi/features/notification/data/models/driver_model.dart';
 import 'package:rayo_taxi/features/notification/domain/entities/travel_alert.dart';
 
 class TravelAlertModel extends TravelAlert {
-  TravelAlertModel({
-    required int id,
-    required String date,
-    required String start_longitude,
-    required String start_latitude,
-    required String end_longitude,
-    required String end_latitude,
-    required num kilometers,
-    required int id_client,
-    required int id_company,
-    required int id_status,
-    required String status,
-    int? cost,
-    String? client,
-  }) : super(
+  TravelAlertModel(
+      {required int id,
+      required String date,
+      required String start_longitude,
+      required String start_latitude,
+      required String end_longitude,
+      required String end_latitude,
+      required num kilometers,
+      required int id_client,
+      required int id_company,
+      required int id_status,
+      required String status,
+      int? cost,
+      String? client,
+      List<DriverModel>? drivers})
+      : super(
             id: id,
             date: date,
             start_longitude: start_longitude,
@@ -28,7 +30,8 @@ class TravelAlertModel extends TravelAlert {
             id_status: id_status,
             status: status,
             cost: cost,
-            client: client);
+            client: client,
+            drivers: drivers);
   factory TravelAlertModel.fromJson(Map<String, dynamic> json) {
     return TravelAlertModel(
       id: json['id'] ?? '',
@@ -44,6 +47,9 @@ class TravelAlertModel extends TravelAlert {
       status: json['status'] ?? '',
       cost: json['cost'] ?? '',
       client: json['client'] ?? '',
+      drivers: json['drivers'] != null
+          ? List<DriverModel>.from(json['drivers'].map((x) => DriverModel.fromJson(x)))
+          : [],
     );
   }
 
@@ -61,7 +67,8 @@ class TravelAlertModel extends TravelAlert {
       id_status: travelAlert.id_status,
       status: travelAlert.status,
       cost: travelAlert.cost,
-      client: travelAlert.client
+      client: travelAlert.client,
+      drivers: travelAlert.drivers,
     );
   }
 
@@ -78,8 +85,9 @@ class TravelAlertModel extends TravelAlert {
       'id_company': id_company,
       'id_status': id_status,
       'status': status,
-       'cost': cost,
-      'client': client
+      'cost': cost,
+      'client': client,
+      'drivers': drivers?.map((x) => x.toJson()).toList(),
     };
   }
 }

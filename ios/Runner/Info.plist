@@ -7,7 +7,7 @@
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Necesitamos acceder a tu galería para seleccionar una foto de perfil.</string>
 		<key>GMSApiKey</key>
-		<string>AIzaSyDUVS-wh25ShrtIHnuXW0J8MuBRz9KC7ak</string>
+		<string>AIzaSyCq2Wlj0VSkXQSzcxZcMPIoUtTwFLj-ip0</string>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>

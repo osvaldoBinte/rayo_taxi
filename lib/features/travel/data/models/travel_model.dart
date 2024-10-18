@@ -8,7 +8,7 @@ class TravelModel extends Travel {
   double? end_longitude,
   double? end_latitude,
   String? kilometers,
-  double? duration,
+  String? duration,
   }) : super(
             start_longitude: start_longitude,
             start_latitude: start_latitude,

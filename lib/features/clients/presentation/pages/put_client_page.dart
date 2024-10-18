@@ -45,6 +45,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _nameController = TextEditingController(text: widget.client.name);
     _birthdateController =
         TextEditingController(text: widget.client.birthdate?.toString());
+
+  
   }
 
   void _update() async {

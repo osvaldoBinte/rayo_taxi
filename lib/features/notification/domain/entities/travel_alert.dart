@@ -1,3 +1,5 @@
+import 'package:rayo_taxi/features/notification/data/models/driver_model.dart';
+
 class TravelAlert {
   final int id;
   final String date;
@@ -12,6 +14,9 @@ class TravelAlert {
   final String status;
       int? cost;
     String? client;
+    String? name;
+          List<DriverModel>? drivers;
+
   TravelAlert({
     required this.id,
     required this.date,
@@ -25,6 +30,7 @@ class TravelAlert {
     required this.id_status,
     required this.status,
     this.cost,
-    this.client
+    this.client,
+    this.drivers
   });
 }

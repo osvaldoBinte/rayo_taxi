@@ -19,6 +19,7 @@ abstract class TravelLocalDataSource {
       Function(LatLng) moveToLocation, Function(LatLng) addMarker);
   Future<String> getEncodedPoints();
   Future<Map<String, dynamic>> getPlaceDetails(String placeId); // Nueva función
+   double getDuration();
 }
 
 class TravelLocalDataSourceImp implements TravelLocalDataSource {
@@ -26,6 +27,9 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
   String? _encodedPoints;
   final String _baseUrl =
       'https://developer.binteapi.com:3009/api/app_clients/travels/travels';
+
+  double _routeDuration =
+      0.0; // Añade esta variable a tu clase para almacenar la duración
 
   @override
   Future<void> getRoute(LatLng startLocation, LatLng endLocation) async {
@@ -36,9 +40,21 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
     if (response.statusCode == 200) {
       final result = json.decode(response.body);
       _encodedPoints = result['routes'][0]['overview_polyline']['points'];
+
+      // Extraer la duración de la respuesta
+      final legs = result['routes'][0]['legs'];
+      if (legs.isNotEmpty) {
+        final durationInSeconds =
+            legs[0]['duration']['value']; // Duración en segundos
+        _routeDuration = durationInSeconds / 60.0; // Convertir a minutos
+      }
     } else {
       throw Exception('Error al obtener la ruta');
     }
+  }
+
+  double getDuration() {
+    return _routeDuration;
   }
 
   @override
@@ -93,8 +109,10 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
   double degreesToRadians(double degrees) {
     return degrees * pi / 180;
   }
- @override
-  Future<List<dynamic>> getPlacePredictions(String input, {LatLng? location}) async {
+
+  @override
+  Future<List<dynamic>> getPlacePredictions(String input,
+      {LatLng? location}) async {
     if (input.isEmpty) return [];
 
     try {
@@ -102,14 +120,15 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
       String encodedInput = Uri.encodeComponent(input);
 
       // Construir la URL base
-      String url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json'
+      String url =
+          'https://maps.googleapis.com/maps/api/place/autocomplete/json'
           '?input=$encodedInput'
           '&key=$_apiKey';
 
       // Si la ubicación está disponible, agregar parámetros de ubicación y radio
       if (location != null) {
         url += '&location=${location.latitude},${location.longitude}'
-               '&radius=500'; // Radio en metros
+            '&radius=500'; // Radio en metros
       }
 
       // Realizar la solicitud HTTP GET
@@ -120,7 +139,8 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
         return predictions;
       } else {
         print('Error en la respuesta de la API: ${response.body}');
-        throw Exception('Error obteniendo predicciones: ${response.reasonPhrase}');
+        throw Exception(
+            'Error obteniendo predicciones: ${response.reasonPhrase}');
       }
     } catch (e) {
       print('Excepción al obtener predicciones: $e');
@@ -198,14 +218,15 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
       String message = body['message'].toString();
       print(message);
       if (body['data'] != null && body['data'] is int) {
-      int newTravelId = body['data'];
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('current_travel_id', newTravelId);
-      print('Nuevo ID de viaje guardado en SharedPreferences: $newTravelId');
-    } else {
-      print('El ID del viaje no se encontró en la respuesta del servidor.');
-      throw Exception('El ID del viaje no se encontró en la respuesta del servidor.');
-    }
+        int newTravelId = body['data'];
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('current_travel_id', newTravelId);
+        print('Nuevo ID de viaje guardado en SharedPreferences: $newTravelId');
+      } else {
+        print('El ID del viaje no se encontró en la respuesta del servidor.');
+        throw Exception(
+            'El ID del viaje no se encontró en la respuesta del servidor.');
+      }
     } else {
       String message = body['message'].toString();
       print(body);

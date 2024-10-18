@@ -1,42 +1,35 @@
 import 'package:flutter/material.dart';
 
-class NoDataCard extends StatelessWidget {
-  final String message;
-  final IconData iconData;
-
-  const NoDataCard({
-    Key? key,
-    required this.message,
-    this.iconData = Icons.hourglass_empty,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildListOption(
+      {required IconData icon,
+      required String title,
+      required String subtitle,
+      Widget? trailing}) {
     return Card(
-      elevation: 6,
       margin: const EdgeInsets.symmetric(vertical: 8),
+      elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(15),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              iconData,
-              size: 80,
-              color: Colors.grey[600],
-            ),
-            SizedBox(height: 20),
-            Text(
-              message,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 18),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      child: ListTile(
+        leading: Icon(icon, color: Colors.black, size: 30),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(subtitle),
+        trailing: trailing,
       ),
     );
   }
-}
+
+  Widget _buildIcon(IconData icon, Color color, Function onPressed,
+      {double? top, double? right, double? bottom, double? left}) {
+    return Positioned(
+      top: top,
+      right: right,
+      bottom: bottom,
+      left: left,
+      child: IconButton(
+        icon: Icon(icon, color: color, size: 24),
+        onPressed: () async => await onPressed(),
+      ),
+    );
+  }

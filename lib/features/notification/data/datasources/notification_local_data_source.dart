@@ -261,67 +261,68 @@ class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
       return null;
     }
   }
-  
+
   @override
   Future<List<TravelAlertModel>> getbyIdtravelid(int? idTravel, bool connection) async {
-       SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+  SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
 
-    String? token = await _getToken();
-    if (token == null) {
-      throw Exception('Token no disponible');
-    }
+  String? token = await _getToken();
+  if (token == null) {
+    throw Exception('Token no disponible');
+  }
 
-    if (connection) {
-      try {
-        var headers = {
-          'x-token': token,
-          'Content-Type': 'application/json',
-        };
+  if (connection) {
+    try {
+      var headers = {
+        'x-token': token,
+        'Content-Type': 'application/json',
+      };
+      final String url = '$_baseUrl2/travels/$idTravel';
 
-        print('Realizando la solicitud a $_baseUrl/travels/$idTravel');
-        var response = await http.get(
-          Uri.parse(
-              '/travels/travels/$idTravel'), // Cambié la URL para incluir el idTravel
-          headers: headers,
-        );
+      print('Realizando la solicitud a $url');
+      var response = await http.get(
+        Uri.parse(url),
+        headers: headers,
+      );
 
-        print('Código de estado de la respuesta: ${response.statusCode}');
-        if (response.statusCode == 200) {
-          final jsonResponse = convert.jsonDecode(response.body);
-          print('Respuesta JSON: $jsonResponse');
+      print('Código de estado de la respuesta: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        print('Respuesta JSON completa: $jsonResponse');
 
-          if (jsonResponse['data'] != null) {
-            var travelData = jsonResponse['data'];
+        if (jsonResponse['data'] != null) {
+          var travelData = jsonResponse['data'];
 
-            print('Datos de viaje recibido: $travelData');
+          // Aquí colocamos los print para depurar
+          print('Datos de viaje recibido: $travelData');
+          print('Conductores recibidos: ${travelData['drivers']}');
 
-            TravelAlertModel travelAlertbyid =
-                TravelAlertModel.fromJson(travelData);
+          TravelAlertModel travelAlertbyid = TravelAlertModel.fromJson(travelData);
 
-            print('Viaje mapeado: $travelAlertbyid');
-            // Guardar un solo objeto, no como lista
-            sharedPreferences.setString(
-              'getalltravelid',
-              jsonEncode(travelAlertbyid.toJson()),
-            );
+          print('Viaje mapeado: $travelAlertbyid');
+          // Guardar un solo objeto, no como lista
+          sharedPreferences.setString(
+            'getalltravelid',
+            jsonEncode(travelAlertbyid.toJson()),
+          );
 
-            print('Viaje guardado en SharedPreferences: getalltravelid');
-            return [travelAlertbyid];
-          } else {
-            throw Exception('Estructura de respuesta inesperada');
-          }
+          print('Viaje guardado en SharedPreferences: getalltravelid');
+          return [travelAlertbyid];
         } else {
-          throw Exception('Error en la petición: ${response.body}');
+          throw Exception('Estructura de respuesta inesperada');
         }
-      } catch (e) {
-        print('Error capturado: $e');
-        return _loadtravelbyIDFromLocal(sharedPreferences);
+      } else {
+        throw Exception('Error en la petición: ${response.body}');
       }
-    } else {
-      print('Conexión no disponible, cargando desde SharedPreferences...');
+    } catch (e) {
+      print('Error capturado: $e');
       return _loadtravelbyIDFromLocal(sharedPreferences);
     }
+  } else {
+    print('Conexión no disponible, cargando desde SharedPreferences...');
+    return _loadtravelbyIDFromLocal(sharedPreferences);
   }
+}
 
   Future<List<TravelAlertModel>> _loadtravelbyIDFromLocal(
       SharedPreferences sharedPreferences) async {

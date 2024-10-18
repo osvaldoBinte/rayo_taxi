@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Import necesario
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:get/get.dart';
-import 'package:rayo_taxi/features/clients/get_client_page.dart';
+import 'package:rayo_taxi/features/clients/presentation/pages/get_client_page.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/home/select_map.dart';
 import 'package:rayo_taxi/main.dart';
 import '../../../notification/presentetion/page/notification_page.dart';

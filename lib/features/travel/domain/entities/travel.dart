@@ -4,7 +4,7 @@ class Travel {
   double? end_longitude;
   double? end_latitude;
   String? kilometers;
-  double? duration;
+  String? duration;
 
   Travel(
       {this.start_longitude,

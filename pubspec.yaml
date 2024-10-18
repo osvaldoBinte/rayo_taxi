@@ -52,19 +52,26 @@ dependencies:
   geocoding: ^2.0.4
   cool_alert: ^2.0.1
   quickalert: ^1.1.0
+  flutter_local_notifications: ^17.2.3
+
 
 flutter_native_splash:
-  color: "#ffffff"  
-  image: assets/images/rayo_taxi.png
-  android: true
-  ios: true
+  color: "#EFC300"
+  image: assets/images/rayo_taxi2.png
+  #branding: assets/images/rayo_taxi2.png
+  branding_bottom_padding: 24
+  color_dark: "#EFC300"
+ # image_dark: assets/images/rayo_taxi2.png
+  #branding_dark: assets/images/rayo_taxi2.png
+
+
 flutter_icons:
   android: true
   ios: true
   image_path: "assets/images/Logo_client.png"
 dev_dependencies:
   change_app_package_name: ^1.1.0
-  flutter_native_splash: ^2.0.8
+  flutter_native_splash: ^2.4.1
   flutter_launcher_icons: ^0.13.1
 
   flutter_test:
@@ -90,7 +97,7 @@ flutter:
      - assets/images/images.png
      - assets/images/Blue-Light.png
      - assets/images/Logo_client.png
-
+     - assets/images/rayo_taxi2.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

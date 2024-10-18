@@ -236,10 +236,11 @@ class _MapScreenState extends State<MapScreen> {
     if (_startLocation != null && _endLocation != null) {
       double distance = _travelLocalDataSource.calculateDistance(
           _startLocation!, _endLocation!);
+      double duration = _travelLocalDataSource.getDuration();
+
       print("Start: ${_startLocation!.longitude}, ${_startLocation!.latitude}");
       print("End: ${_endLocation!.longitude}, ${_endLocation!.latitude}");
       print("Distance: ${distance.toStringAsFixed(2)} km");
-      double  duration = 15;
 
       final post = Travel(
         start_longitude: _startLocation!.longitude,
@@ -247,7 +248,7 @@ class _MapScreenState extends State<MapScreen> {
         end_longitude: _endLocation!.longitude,
         end_latitude: _endLocation!.latitude,
         kilometers: distance.toStringAsFixed(2),
-        duration:duration
+        duration: duration.toStringAsFixed(2),
       );
 
       await _travelGetx.poshTravel(CreateTravelEvent(post));

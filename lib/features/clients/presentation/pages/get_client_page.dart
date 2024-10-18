@@ -11,8 +11,8 @@ import 'package:rayo_taxi/features/clients/presentation/pages/pagos/animated_mod
 import 'package:rayo_taxi/features/clients/presentation/pages/pagos/pago_page.dart';
 import 'package:rayo_taxi/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'presentation/getxs/get/get_client_getx.dart';
-import 'presentation/getxs/calculateAge/calculateAge_getx.dart';
+import '../getxs/get/get_client_getx.dart';
+import '../getxs/calculateAge/calculateAge_getx.dart';
 
 class GetClientPage extends StatefulWidget {
   const GetClientPage({super.key});
@@ -41,8 +41,9 @@ class _GetClientPageState extends State<GetClientPage> {
   @override
   void initState() {
     super.initState();
+ WidgetsBinding.instance.addPostFrameCallback((_) {
     getClientGetx.fetchCoDetails(FetchgetDetailsEvent());
-
+    });
     subscription = Connectivity()
         .onConnectivityChanged
         .listen((ConnectivityResult result) {
@@ -275,29 +276,7 @@ class _GetClientPageState extends State<GetClientPage> {
                   title: 'Revisión de privacidad',
                   subtitle: 'Haz un recorrido interactivo por tu configuración',
                 ),
-                const SizedBox(height: 30),
-
-                // Botón de Cerrar Sesión
-                Center(
-                  child: ElevatedButton.icon(
-                    onPressed: _logout, // Acción para cerrar sesión
-                    icon: const Icon(Icons.logout, color: Colors.white),
-                    label: const Text(
-                      'Cerrar Sesión',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 30,
-                        vertical: 15,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                ),
+                
                 const SizedBox(height: 80),
               ],
             );
