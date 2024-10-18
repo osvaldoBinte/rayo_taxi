@@ -10,6 +10,8 @@ class TravelAlert {
   final int id_company;
   final int id_status;
   final String status;
+      int? cost;
+    String? client;
   TravelAlert({
     required this.id,
     required this.date,
@@ -22,5 +24,7 @@ class TravelAlert {
     required this.id_company,
     required this.id_status,
     required this.status,
+    this.cost,
+    this.client
   });
 }

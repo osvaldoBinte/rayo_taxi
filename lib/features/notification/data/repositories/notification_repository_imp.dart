@@ -26,4 +26,10 @@ class NotificationRepositoryImp implements NotificationRepository {
   Future<String?> fetchDeviceId() async {
      return await notificationLocalDataSource.fetchDeviceId();
   }
+  
+  @override
+  Future<List<TravelAlertModel>> getbyIdtravelid(int? idTravel, bool connection)  async{
+   return await notificationLocalDataSource.getbyIdtravelid(idTravel, connection);
+  }
+  
 }

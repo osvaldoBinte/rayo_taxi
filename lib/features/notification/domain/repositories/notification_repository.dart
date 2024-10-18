@@ -8,4 +8,5 @@ abstract class NotificationRepository {
   Future<List<TravelAlertModel>> getNotification(bool connection);
   Future<List<TravelAlertModel>> getNotificationtravel(bool connection);
   Future<String?> fetchDeviceId();
+  Future<List<TravelAlertModel>> getbyIdtravelid(int? idTravel, bool connection);
 }

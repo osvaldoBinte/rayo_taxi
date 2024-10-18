@@ -143,6 +143,15 @@ class _SplashScreenState extends State<SplashScreen> {
 
 extension CustomColorScheme on ColorScheme {
   Color get buttonColor => Color(0xFFEFC300);
+
+    Color get Statuscancelled => Colors.red;
+  Color get Statusaccepted => Colors.green;
+  Color get StatusLookingfor => Colors.orange;
+  Color get StatusCompletado => Colors.blue;
+  Color get Statusrecognized => Colors.grey;
+  Color get getStatusIcon => Colors.white;
+
+  
   Color get iconred => Colors.red;
   Color get icongreen => Colors.green;
   Color get iconorange => Colors.orange;

@@ -13,6 +13,8 @@ class TravelAlertModel extends TravelAlert {
     required int id_company,
     required int id_status,
     required String status,
+    int? cost,
+    String? client,
   }) : super(
             id: id,
             date: date,
@@ -24,7 +26,9 @@ class TravelAlertModel extends TravelAlert {
             id_client: id_client,
             id_company: id_company,
             id_status: id_status,
-            status: status);
+            status: status,
+            cost: cost,
+            client: client);
   factory TravelAlertModel.fromJson(Map<String, dynamic> json) {
     return TravelAlertModel(
       id: json['id'] ?? '',
@@ -38,6 +42,8 @@ class TravelAlertModel extends TravelAlert {
       id_company: json['id_company'] ?? '',
       id_status: json['id_status'] ?? '',
       status: json['status'] ?? '',
+      cost: json['cost'] ?? '',
+      client: json['client'] ?? '',
     );
   }
 
@@ -54,6 +60,8 @@ class TravelAlertModel extends TravelAlert {
       id_company: travelAlert.id_company,
       id_status: travelAlert.id_status,
       status: travelAlert.status,
+      cost: travelAlert.cost,
+      client: travelAlert.client
     );
   }
 
@@ -70,6 +78,8 @@ class TravelAlertModel extends TravelAlert {
       'id_company': id_company,
       'id_status': id_status,
       'status': status,
+       'cost': cost,
+      'client': client
     };
   }
 }

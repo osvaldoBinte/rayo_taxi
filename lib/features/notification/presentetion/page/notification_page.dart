@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/notification/presentetion/getx/TravelAlert/travel_alert_getx.dart';
+import 'package:rayo_taxi/features/notification/presentetion/page/animated_modal_bottom.dart';
 import 'package:rayo_taxi/features/notification/presentetion/page/widgets.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/delete/delete_travel_getx.dart';
 import 'package:rayo_taxi/main.dart';
@@ -58,194 +59,196 @@ class _NotificationPage extends State<NotificationPage> {
     super.dispose();
   }
 
-  Icon getStatusIcon(String status) {
+  Icon getStatusIcon(int status) {
     switch (status) {
-      case 'Completado':
+      case 4:
         return Icon(Icons.check_circle,
-            color: Theme.of(context).colorScheme.iconwhite, size: 28);
-      case 'Buscando Taxi':
+            color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
+      case 1:
         return Icon(Icons.local_taxi,
-            color: Theme.of(context).colorScheme.iconwhite, size: 28);
-      case 'Viaje Cancelado':
+            color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
+      case 2:
         return Icon(Icons.cancel,
-            color: Theme.of(context).colorScheme.iconwhite, size: 28);
-      case 'Viaje Completado':
+            color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
+      case 3:
         return Icon(Icons.done_all,
-            color: Theme.of(context).colorScheme.iconwhite, size: 28);
+            color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
+    case 5:
+    return Icon(Icons.check_circle_outline,
+        color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
+
       default:
         return Icon(Icons.help_outline,
-            color: Theme.of(context).colorScheme.iconwhite, size: 28);
+            color: Theme.of(context).colorScheme.getStatusIcon, size: 28);
     }
   }
 
-  Color getStatusColor(String status) {
+  Color getStatusColor(int status) {
     switch (status) {
-      case 'Completado':
-        return Theme.of(context).colorScheme.icongreen;
-      case 'Buscando Taxi':
-        return Theme.of(context).colorScheme.iconorange;
-      case 'Viaje Cancelado':
-        return Theme.of(context).colorScheme.iconred;
-      case 'Viaje Completado':
-        return Theme.of(context).colorScheme.iconblue;
+      case 4:
+        return Theme.of(context).colorScheme.StatusCompletado;
+      case 1:
+        return Theme.of(context).colorScheme.StatusLookingfor;
+      case 2:
+        return Theme.of(context).colorScheme.Statuscancelled;
+      case 3:
+        return Theme.of(context).colorScheme.Statusaccepted;
+      case 5:
+        return Theme.of(context).colorScheme.StatusCompletado;
       default:
-        return Theme.of(context).colorScheme.icongrey;
+        return Theme.of(context).colorScheme.Statusrecognized;
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.primary,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 20),
-              Text(
-                'Mis viajes',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.buttonColormap,
-                ),
-              ),
-              SizedBox(height: 10),
-              Expanded(
-                child: Obx(() {
-                  if (travelAlertGetx.state.value is TravelsAlertLoading) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (travelAlertGetx.state.value
-                      is TravelsAlertFailure) {
-                    return NoDataCard(
-                      message: 'Ocurrió un error',
-                    );
-                  } else if (travelAlertGetx.state.value
-                      is TravelsAlertLoaded) {
-                    var travels =
-                        (travelAlertGetx.state.value as TravelsAlertLoaded)
-                            .travels;
-
-                    return RefreshIndicator(
-                      onRefresh: _refreshTravels,
-                      child: ListView.builder(
-                        padding: EdgeInsets.only(
-                          bottom: MediaQuery.of(context).padding.bottom +
-                              75.0 +
-                              16.0,
-                        ),
-                        itemCount: travels.length,
-                        itemBuilder: (context, index) {
-                          return Card(
-                            elevation: 6,
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: ListTile(
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: 10, horizontal: 16),
-                              leading: CircleAvatar(
-                                backgroundColor:
-                                    getStatusColor(travels[index].status),
-                                radius: 30,
-                                child: getStatusIcon(travels[index].status),
-                              ),
-                              title: Text(
-                                travels[index].status,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Color(0xFF333333),
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(height: 5),
-                                  Text(
-                                    'Kilómetros: ${travels[index].kilometers}',
-                                    style: TextStyle(
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    travels[index].date,
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              trailing: (travels[index].status ==
-                                      'Buscando Taxi')
-                                  ? IconButton(
-                                      icon: Icon(
-                                        Icons.cancel,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .iconred,
-                                      ),
-                                      onPressed: () async {
-                                        QuickAlert.show(
-                                          context: context,
-                                          type: QuickAlertType.error,
-                                          title: 'Cancelar viaje',
-                                          text:
-                                              '¿Estás seguro de que deseas cancelar este viaje?',
-                                          confirmBtnText: 'Sí',
-                                          cancelBtnText: 'No',
-                                              showCancelBtn: true, 
-                                          onConfirmBtnTap: () async {
-                                            Navigator.of(context)
-                                                .pop(); // Cerrar la alerta
-                                            await _deleteTravelGetx
-                                                .deleteTravel(
-                                              DeleteTravelEvent(
-                                                  travels[index].id.toString()),
-                                            );
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                  content:
-                                                      Text('Viaje cancelado')),
-                                            );
-                                            await _refreshTravels();
-                                          },
-                                        );
-                                      },
-                                    )
-                                  : null,
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  } else {
-                    return NoDataCard(
-                      message: 'No hay viajes aún',
-                    );
-                  }
-                }),
-              ),
-            ],
-          ),
+  }@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.transparent,
+    body: Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.primary,
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
       ),
-    );
-  }
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 20),
+            Text(
+              'Mis viajes',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.buttonColormap,
+              ),
+            ),
+            SizedBox(height: 10),
+            Expanded(
+              child: Obx(() {
+                if (travelAlertGetx.state.value is TravelsAlertLoading) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (travelAlertGetx.state.value is TravelsAlertFailure) {
+                  return NoDataCard(
+                    message: 'Ocurrió un error',
+                  );
+                } else if (travelAlertGetx.state.value is TravelsAlertLoaded) {
+                  var travels = (travelAlertGetx.state.value as TravelsAlertLoaded).travels;
+
+                  return RefreshIndicator(
+                    onRefresh: _refreshTravels,
+                    child: ListView.builder(
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).padding.bottom + 75.0 + 16.0,
+                      ),
+                      itemCount: travels.length,
+                      itemBuilder: (context, index) {
+                        return Card(
+                          elevation: 6,
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: ListTile(
+                            contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                            leading: CircleAvatar(
+                              backgroundColor: getStatusColor(travels[index].id_status),
+                              radius: 30,
+                              child: getStatusIcon(travels[index].id_status),
+                            ),
+                            title: Text(
+                              travels[index].status,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Color(0xFF333333),
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(height: 5),
+                                Text(
+                                  'Kilómetros: ${travels[index].kilometers}',
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  travels[index].date,
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            trailing: (travels[index].status == 'Buscando Taxi')
+                                ? IconButton(
+                                    icon: Icon(
+                                      Icons.cancel,
+                                      color: Theme.of(context).colorScheme.iconred,
+                                    ),
+                                    onPressed: () async {
+                                      QuickAlert.show(
+                                        context: context,
+                                        type: QuickAlertType.error,
+                                        title: 'Cancelar viaje',
+                                        text: '¿Estás seguro de que deseas cancelar este viaje?',
+                                        confirmBtnText: 'Sí',
+                                        cancelBtnText: 'No',
+                                        showCancelBtn: true,
+                                        onConfirmBtnTap: () async {
+                                          Navigator.of(context).pop(); // Cerrar la alerta
+                                          await _deleteTravelGetx.deleteTravel(
+                                            DeleteTravelEvent(travels[index].id.toString()),
+                                          );
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('Viaje cancelado')),
+                                          );
+                                          await _refreshTravels();
+                                        },
+                                      );
+                                    },
+                                  )
+                                : Icon(
+                                    Icons.arrow_forward_ios,
+                                    color: Colors.grey,
+                                    size: 18,
+                                  ),
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (BuildContext context) {
+                                  return AnimatedModalBottomSheet(
+                                    idTravel: travels[index].id,
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                } else {
+                  return NoDataCard(
+                    message: 'No hay viajes aún',
+                  );
+                }
+              }),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 }

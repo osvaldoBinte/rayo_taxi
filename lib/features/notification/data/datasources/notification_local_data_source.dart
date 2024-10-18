@@ -12,12 +12,15 @@ abstract class NotificationLocalDataSource {
   Future<List<TravelAlertModel>> getNotification(bool connection);
   Future<List<TravelAlertModel>> getNotificationtravel(bool connection);
   Future<String?> fetchDeviceId();
+   Future<List<TravelAlertModel>> getbyIdtravelid(
+      int? idTravel, bool connection);
 }
 
 class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
   final String _baseUrl =
       'https://developer.binteapi.com:3009/api/app_clients/users';
-
+  final String _baseUrl2 =
+      'https://developer.binteapi.com:3009/api/app_clients/travels';
   late Device device;
 
   @override
@@ -256,6 +259,85 @@ class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
       // Manejo de excepciones
       print('Error obteniendo el id_device: $e');
       return null;
+    }
+  }
+  
+  @override
+  Future<List<TravelAlertModel>> getbyIdtravelid(int? idTravel, bool connection) async {
+       SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+
+    String? token = await _getToken();
+    if (token == null) {
+      throw Exception('Token no disponible');
+    }
+
+    if (connection) {
+      try {
+        var headers = {
+          'x-token': token,
+          'Content-Type': 'application/json',
+        };
+
+        print('Realizando la solicitud a $_baseUrl/travels/$idTravel');
+        var response = await http.get(
+          Uri.parse(
+              '/travels/travels/$idTravel'), // Cambié la URL para incluir el idTravel
+          headers: headers,
+        );
+
+        print('Código de estado de la respuesta: ${response.statusCode}');
+        if (response.statusCode == 200) {
+          final jsonResponse = convert.jsonDecode(response.body);
+          print('Respuesta JSON: $jsonResponse');
+
+          if (jsonResponse['data'] != null) {
+            var travelData = jsonResponse['data'];
+
+            print('Datos de viaje recibido: $travelData');
+
+            TravelAlertModel travelAlertbyid =
+                TravelAlertModel.fromJson(travelData);
+
+            print('Viaje mapeado: $travelAlertbyid');
+            // Guardar un solo objeto, no como lista
+            sharedPreferences.setString(
+              'getalltravelid',
+              jsonEncode(travelAlertbyid.toJson()),
+            );
+
+            print('Viaje guardado en SharedPreferences: getalltravelid');
+            return [travelAlertbyid];
+          } else {
+            throw Exception('Estructura de respuesta inesperada');
+          }
+        } else {
+          throw Exception('Error en la petición: ${response.body}');
+        }
+      } catch (e) {
+        print('Error capturado: $e');
+        return _loadtravelbyIDFromLocal(sharedPreferences);
+      }
+    } else {
+      print('Conexión no disponible, cargando desde SharedPreferences...');
+      return _loadtravelbyIDFromLocal(sharedPreferences);
+    }
+  }
+
+  Future<List<TravelAlertModel>> _loadtravelbyIDFromLocal(
+      SharedPreferences sharedPreferences) async {
+    String travelString = sharedPreferences.getString('getalltravelid') ?? "";
+
+    if (travelString.isNotEmpty) {
+      print('Cargando viaje de SharedPreferences: $travelString');
+
+      // Parsear como un solo objeto, no una lista
+      Map<String, dynamic> travelMap = convert.jsonDecode(travelString);
+      TravelAlertModel travelAlert = TravelAlertModel.fromJson(travelMap);
+
+      return [travelAlert]; // Retornar como lista
+    } else {
+      print('No hay viajes en SharedPreferences');
+      throw Exception('No hay viajes en SharedPreferences');
     }
   }
 
