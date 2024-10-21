@@ -53,8 +53,8 @@ dependencies:
 
 
 flutter_native_splash:
-  color: "#ffffff"  
-  image: assets/images/rayo_taxi.png
+  color: "#EFC300"  
+  image: assets/images/rayo_taxi2.png
   android: true
   ios: true
 
@@ -88,6 +88,7 @@ flutter:
      - assets/images/rayo_taxi.png
      - assets/images/google.png
      - assets/images/Logo_driver.png
+     - assets/images/rayo_taxi2.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
