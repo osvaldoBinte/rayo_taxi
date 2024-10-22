@@ -90,30 +90,48 @@ class _DestinoPageState extends State<DestinoPage> {
       ),
     );
   }
+void _searchPlace(String input) async {
+  if (input.isEmpty) {
+    setState(() {
+      _predictions = [];
+    });
+    _isButtonEnabled.value = false;
+    return;
+  }
 
-  void _searchPlace(String input) async {
-    if (input.isEmpty) {
-      setState(() {
-        _predictions = [];
-      });
-      _isButtonEnabled.value = false;
-      return;
-    }
+  _isButtonEnabled.value = true;
 
-    _isButtonEnabled.value = true;
-
-    List<dynamic> predictions =
-        await _travelLocalDataSource.getPlacePredictions(input);
+  try {
+    List<dynamic> predictions = await _travelLocalDataSource.getPlacePredictions(input);
+    print('Predicciones obtenidas en DestinoPage: ${predictions.length}'); // Debug
     setState(() {
       _predictions = predictions;
     });
+  } catch (e) {
+    print('Error al obtener predicciones en DestinoPage: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al obtener predicciones')),
+    );
+    setState(() {
+      _predictions = [];
+    });
+    _isButtonEnabled.value = false;
   }
+}
 
-  void _selectPlace(String placeId, String description) async {
+
+ void _selectPlace(String placeId, String description) async {
+  try {
     await _travelLocalDataSource.getPlaceDetailsAndMove(
       placeId,
-      (LatLng location) {},
-      (LatLng location) {},
+      (LatLng location) {
+        // Implementa la lógica para mover la cámara al mapa si es necesario
+        print('Mover a ubicación: $location'); // Debug
+      },
+      (LatLng location) {
+        // Implementa la lógica para agregar un marcador si es necesario
+        print('Agregar marcador en: $location'); // Debug
+      },
     );
 
     setState(() {
@@ -121,7 +139,14 @@ class _DestinoPageState extends State<DestinoPage> {
       _predictions = [];
     });
     _isButtonEnabled.value = true;
+  } catch (e) {
+    print('Error al seleccionar lugar: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al seleccionar el lugar')),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

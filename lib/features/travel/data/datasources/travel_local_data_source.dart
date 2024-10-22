@@ -23,7 +23,7 @@ abstract class TravelLocalDataSource {
 }
 
 class TravelLocalDataSourceImp implements TravelLocalDataSource {
-  final String _apiKey = 'AIzaSyDUVS-wh25ShrtIHnuXW0J8MuBRz9KC7ak';
+  final String _apiKey = 'AIzaSyD9ujivJZkEzGrX_WALZ7Jg9oRSE2mOvZM';
   String? _encodedPoints;
   final String _baseUrl =
       'https://developer.binteapi.com:3009/api/app_clients/travels/travels';
@@ -33,25 +33,56 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
 
   @override
   Future<void> getRoute(LatLng startLocation, LatLng endLocation) async {
-    final String url =
-        'https://maps.googleapis.com/maps/api/directions/json?origin=${startLocation.latitude},${startLocation.longitude}&destination=${endLocation.latitude},${endLocation.longitude}&key=$_apiKey';
+  final String url =
+      'https://maps.googleapis.com/maps/api/directions/json?origin=${startLocation.latitude},${startLocation.longitude}&destination=${endLocation.latitude},${endLocation.longitude}&key=$_apiKey';
 
+  // Imprimir la URL de la solicitud para verificar que se está construyendo correctamente
+  print('--- Solicitando ruta ---');
+  print('URL de la solicitud: $url');
+
+  try {
     final response = await http.get(Uri.parse(url));
+
+    // Imprimir el código de estado de la respuesta
+    print('Código de estado de la respuesta: ${response.statusCode}');
+
+    // Imprimir el cuerpo completo de la respuesta para analizar posibles errores
+    print('Cuerpo de la respuesta: ${response.body}');
+
     if (response.statusCode == 200) {
       final result = json.decode(response.body);
-      _encodedPoints = result['routes'][0]['overview_polyline']['points'];
 
-      // Extraer la duración de la respuesta
-      final legs = result['routes'][0]['legs'];
-      if (legs.isNotEmpty) {
-        final durationInSeconds =
-            legs[0]['duration']['value']; // Duración en segundos
-        _routeDuration = durationInSeconds / 60.0; // Convertir a minutos
+      // Verificar que la ruta y el polyline existan en la respuesta
+      if (result['routes'] != null && result['routes'].isNotEmpty) {
+        _encodedPoints = result['routes'][0]['overview_polyline']['points'];
+        print('Encoded Points obtenidos: $_encodedPoints');
+
+        // Extraer la duración de la respuesta
+        final legs = result['routes'][0]['legs'];
+        if (legs.isNotEmpty) {
+          final durationInSeconds = legs[0]['duration']['value']; // Duración en segundos
+          _routeDuration = durationInSeconds / 60.0; // Convertir a minutos
+          print('Duración de la ruta: $_routeDuration minutos');
+        } else {
+          print('No se encontraron legs en la ruta.');
+        }
+      } else {
+        print('No se encontraron rutas en la respuesta.');
       }
     } else {
-      throw Exception('Error al obtener la ruta');
+      // Manejar errores específicos de la API
+      final errorResult = json.decode(response.body);
+      final errorMessage = errorResult['error_message'] ?? 'Error desconocido';
+      print('Error al obtener la ruta: $errorMessage');
+      throw Exception('Error al obtener la ruta: $errorMessage');
     }
+  } catch (e) {
+    // Capturar y imprimir cualquier excepción que ocurra durante la solicitud
+    print('Excepción durante la solicitud de la ruta: $e');
+    throw Exception('Excepción durante la solicitud de la ruta: $e');
   }
+}
+
 
   double getDuration() {
     return _routeDuration;
@@ -111,42 +142,37 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
   }
 
   @override
-  Future<List<dynamic>> getPlacePredictions(String input,
-      {LatLng? location}) async {
-    if (input.isEmpty) return [];
+Future<List<dynamic>> getPlacePredictions(String input, {LatLng? location}) async {
+  if (input.isEmpty) return [];
 
-    try {
-      // Codificar el input para manejar caracteres especiales y espacios
-      String encodedInput = Uri.encodeComponent(input);
+  try {
+    String encodedInput = Uri.encodeComponent(input);
+    String url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$encodedInput&key=$_apiKey';
 
-      // Construir la URL base
-      String url =
-          'https://maps.googleapis.com/maps/api/place/autocomplete/json'
-          '?input=$encodedInput'
-          '&key=$_apiKey';
-
-      // Si la ubicación está disponible, agregar parámetros de ubicación y radio
-      if (location != null) {
-        url += '&location=${location.latitude},${location.longitude}'
-            '&radius=500'; // Radio en metros
-      }
-
-      // Realizar la solicitud HTTP GET
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        final predictions = json.decode(response.body)['predictions'];
-        return predictions;
-      } else {
-        print('Error en la respuesta de la API: ${response.body}');
-        throw Exception(
-            'Error obteniendo predicciones: ${response.reasonPhrase}');
-      }
-    } catch (e) {
-      print('Excepción al obtener predicciones: $e');
-      throw Exception('Excepción al obtener predicciones: $e');
+    if (location != null) {
+      url += '&location=${location.latitude},${location.longitude}&radius=500';
     }
+
+    print('Solicitud a Places API: $url'); // Debug
+
+    final response = await http.get(Uri.parse(url));
+
+    print('Respuesta de Places API: ${response.statusCode}'); // Debug
+    print('Cuerpo de la respuesta: ${response.body}'); // Debug
+
+    if (response.statusCode == 200) {
+      final predictions = json.decode(response.body)['predictions'];
+      print('Predicciones recibidas: ${predictions.length}'); // Debug
+      return predictions;
+    } else {
+      print('Error en la respuesta de la API: ${response.body}');
+      throw Exception('Error obteniendo predicciones: ${response.reasonPhrase}');
+    }
+  } catch (e) {
+    print('Excepción al obtener predicciones: $e');
+    throw Exception('Excepción al obtener predicciones: $e');
   }
+}
 
   @override
   Future<void> getPlaceDetailsAndMove(String placeId,

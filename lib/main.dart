@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:quickalert/quickalert.dart';
@@ -17,7 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:rayo_taxi/firebase_options.dart';
+import 'package:rayo_taxi/firebase_options.dart'; 
 import 'connectivity_service.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/login_clients_page.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/client/client_getx.dart';
@@ -37,7 +36,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Inicializa Firebase
+  // In icializa Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
