@@ -61,7 +61,7 @@ flutter_native_splash:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/images/Logo_driver.png"
+  image_path: "assets/images/Logo_driver(2).png"
 
 
 dev_dependencies:
@@ -89,6 +89,7 @@ flutter:
      - assets/images/google.png
      - assets/images/Logo_driver.png
      - assets/images/rayo_taxi2.png
+     - assets/images/Logo_driver(2).png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
