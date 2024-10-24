@@ -8,6 +8,12 @@
 		<string>Necesitamos acceder a tu galería para seleccionar una foto de perfil.</string>
 		<key>GMSApiKey</key>
 		<string>AIzaSyCq2Wlj0VSkXQSzcxZcMPIoUtTwFLj-ip0</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>Necesitamos acceder a tu ubicación para mostrar taxis cercanos.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>Necesitamos acceder a tu ubicación en segundo plano.</string>
+		<key>NSLocationAlwaysUsageDescription</key>
+		<string>Necesitamos acceder a tu ubicación siempre.</string>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>

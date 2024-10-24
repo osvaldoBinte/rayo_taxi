@@ -30,6 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.19.0
   cupertino_icons: ^1.0.6
   font_awesome_flutter: ^10.7.0
   get: ^4.6.6
@@ -43,7 +46,7 @@ dependencies:
   firebase_messaging: ^15.1.1
   lottie: ^2.2.0
   eva_icons_flutter: ^3.1.0
-  intl: ^0.17.0 
+ 
   image_picker: ^1.1.2
   flutter_credit_card: ^4.0.1
   credit_card_form: ^0.0.7
@@ -53,7 +56,9 @@ dependencies:
   cool_alert: ^2.0.1
   quickalert: ^1.1.0
   flutter_local_notifications: ^17.2.3
-
+  flutter_spinkit: ^5.2.1
+  permission_handler: ^10.2.0
+  device_info_plus: ^9.0.2
 
 flutter_native_splash:
   color: "#EFC300"
@@ -98,6 +103,7 @@ flutter:
      - assets/images/Blue-Light.png
      - assets/images/Logo_client.png
      - assets/images/rayo_taxi2.png
+     - assets/images/logo-new.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

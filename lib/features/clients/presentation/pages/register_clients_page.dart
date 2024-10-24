@@ -3,15 +3,16 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:rayo_taxi/features/clients/domain/entities/client.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/client/client_getx.dart';
-import 'package:flutter/services.dart';
+import 'package:rayo_taxi/features/clients/presentation/pages/login_clients_page.dart'; // Importa la página de login
+import 'package:quickalert/quickalert.dart';
 import 'package:rayo_taxi/main.dart';
 
 class RegisterClientsPage extends StatefulWidget {
   @override
-  _RegisterClientsPage createState() => _RegisterClientsPage();
+  _RegisterClientsPageState createState() => _RegisterClientsPageState();
 }
 
-class _RegisterClientsPage extends State<RegisterClientsPage> {
+class _RegisterClientsPageState extends State<RegisterClientsPage> {
   final _formKey = GlobalKey<FormState>();
   final ClientGetx _clientGetx = Get.find<ClientGetx>();
 
@@ -23,7 +24,10 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
   final FocusNode _emailFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
 
-  void _register() {
+  // Nueva variable para controlar la visibilidad de la contraseña
+  bool _isPasswordVisible = false;
+
+  Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       String name = _nameController.text;
       String password = _passwordController.text;
@@ -37,13 +41,14 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
         birthdate: birthdate,
       );
 
-      _clientGetx.createClient(CreateClientEvent(client));
+      await _clientGetx.createClient(CreateClientEvent(client));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -51,7 +56,7 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
         backgroundColor: Theme.of(context).colorScheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -59,34 +64,36 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
         children: <Widget>[
           Container(
             color: Theme.of(context).colorScheme.backgroundColorLogin,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20.0),
-                child: Image.asset(
-                  'assets/images/rayo_taxi.png',
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  height: screenHeight * 0.29,
-                  fit: BoxFit.contain,
-                ),
-              ),
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                double availableHeight = constraints.maxHeight * 0.15; // 15% del espacio disponible
+                return Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20.0),
+                    child: Image.asset(
+                      'assets/images/logo-new.png',
+                      width: screenWidth * 0.8,
+                      height: availableHeight, // Ajustar la altura disponible
+                      fit: BoxFit.contain, // Mantener la imagen completa sin recortes
+                    ),
+                  ),
+                );
+              },
             ),
           ),
-          SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.only(
-                top: screenHeight * 0.35,
-                bottom: MediaQuery.of(context).viewInsets.bottom,
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: ClipRRect(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-                child: Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 20.0),
+              child: Container(
+                color: Colors.white,
+                height: screenHeight * 0.65, // Fija la altura al 65% de la pantalla
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+                child: SingleChildScrollView(
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -117,9 +124,10 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
                               initialDate: eighteenYearsAgo,
                               firstDate: DateTime(1900),
                               lastDate: eighteenYearsAgo,
+                              locale: const Locale('es', 'ES'),
                               builder: (BuildContext context, Widget? child) {
                                 return Theme(
-                                  data: ThemeData.light().copyWith(
+                                  data: Theme.of(context).copyWith(
                                     colorScheme: ColorScheme.light(
                                       primary: Color(0xFFEFC300),
                                       onPrimary: Colors.white,
@@ -132,8 +140,8 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
                               },
                             );
                             if (pickedDate != null) {
-                              String formattedDate =
-                                  DateFormat('dd/MM/yyyy').format(pickedDate);
+                              String formattedDate = DateFormat('dd/MM/yyyy', 'es_ES').format(pickedDate);
+
                               setState(() {
                                 _birthdateController.text = formattedDate;
                               });
@@ -169,15 +177,26 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
                           },
                         ),
                         SizedBox(height: 20),
-                        _buildTextFormField(
+                        _buildPasswordFormField(
                           controller: _passwordController,
                           label: 'Contraseña',
                           icon: Icons.lock,
-                          obscureText: true,
+                          obscureText: !_isPasswordVisible, // Usa el estado para mostrar u ocultar la contraseña
                           focusNode: _passwordFocus,
                           onFieldSubmitted: (_) {
                             _register();
                           },
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                              color: Colors.grey[600],
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible; // Cambia el estado para mostrar u ocultar
+                              });
+                            },
+                          ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Por favor ingrese su contraseña';
@@ -191,7 +210,7 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
                           child: Text(
                             'Registrarse',
                             style: TextStyle(
-                                color: Colors.black,
+                                color: Theme.of(context).colorScheme.textButton,
                                 fontWeight: FontWeight.bold),
                           ),
                           style: ElevatedButton.styleFrom(
@@ -200,6 +219,40 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
                             minimumSize: Size(double.infinity, 50),
                           ),
                         ),
+                        SizedBox(height: 20),
+                        Obx(() {
+                          if (_clientGetx.state.value is ClientLoading) {
+                            return CircularProgressIndicator();
+                          } else if (_clientGetx.state.value is ClientCreatedSuccessfully) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              QuickAlert.show(
+                                context: context,
+                                type: QuickAlertType.success,
+                                title: 'Registro exitoso',
+                                text: 'Ahora puede iniciar sesión',
+                                onConfirmBtnTap: () {
+                                  Get.offAll(() => LoginClientsPage());
+                                },
+                              );
+                            });
+                            _clientGetx.state.value = ClientInitial();
+                            return SizedBox.shrink();
+                          } else if (_clientGetx.state.value is ClientCreationFailure) {
+                            final errorState = _clientGetx.state.value as ClientCreationFailure;
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              QuickAlert.show(
+                                context: context,
+                                type: QuickAlertType.error,
+                                title: 'Error en el registro',
+                                text: errorState.error,
+                              );
+                            });
+                            _clientGetx.state.value = ClientInitial();
+                            return SizedBox.shrink();
+                          } else {
+                            return SizedBox.shrink();
+                          }
+                        }),
                       ],
                     ),
                   ),
@@ -212,6 +265,7 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
     );
   }
 
+  // Método para crear un TextFormField normal
   Widget _buildTextFormField({
     required TextEditingController controller,
     required String label,
@@ -244,6 +298,41 @@ class _RegisterClientsPage extends State<RegisterClientsPage> {
       obscureText: obscureText,
       keyboardType: keyboardType,
       textInputAction: textInputAction,
+      onFieldSubmitted: onFieldSubmitted,
+      validator: validator,
+    );
+  }
+
+  // Método para crear el campo de contraseña con un ícono para mostrar/ocultar
+  Widget _buildPasswordFormField({
+    required TextEditingController controller,
+    required String label,
+    IconData? icon,
+    bool obscureText = true,
+    FocusNode? focusNode,
+    TextInputType keyboardType = TextInputType.text,
+    required String? Function(String?) validator,
+    Function(String)? onFieldSubmitted,
+    Widget? suffixIcon, // Aquí agregamos el ícono para mostrar/ocultar la contraseña
+  }) {
+    return TextFormField(
+      controller: controller,
+      focusNode: focusNode,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.black.withOpacity(0.7)),
+        prefixIcon: Icon(icon, color: Colors.grey[600]),
+        suffixIcon: suffixIcon, // Añade el ícono al campo de texto
+        filled: true,
+        fillColor: Colors.grey[200],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide.none,
+        ),
+      ),
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      textInputAction: TextInputAction.done,
       onFieldSubmitted: onFieldSubmitted,
       validator: validator,
     );

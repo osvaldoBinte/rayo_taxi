@@ -16,13 +16,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:rayo_taxi/firebase_options.dart'; 
+import 'package:rayo_taxi/firebase_options.dart';
 import 'connectivity_service.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/login_clients_page.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/client/client_getx.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/login/loginclient_getx.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/get/get_client_getx.dart';
 import 'package:rayo_taxi/usecase_config.dart';
+
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 UsecaseConfig usecaseConfig = UsecaseConfig();
 final connectivityService = ConnectivityService();
@@ -36,7 +38,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // In icializa Firebase
+  // Inicializa Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -152,6 +154,18 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       navigatorKey: navigatorKey, // Añade el navigatorKey aquí
       debugShowCheckedModeBanner: false,
+
+      // Añade las configuraciones de localización aquí
+      locale: const Locale('es', 'ES'),
+      supportedLocales: [
+        const Locale('es', 'ES'),
+      ],
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+
       theme: ThemeData(
         primaryColor: Color(0xFF3F3F3F),
         colorScheme: colorScheme,
@@ -216,16 +230,16 @@ class _SplashScreenState extends State<SplashScreen> {
 }
 
 extension CustomColorScheme on ColorScheme {
-  Color get buttonColor => Color(0xFFEFC300);
+  Color get buttonColor => Color.fromARGB(255, 0, 0, 0);
+  Color get textButton => Color(0xFFEFC300);
 
-    Color get Statuscancelled => Colors.red;
+  Color get Statuscancelled => Colors.red;
   Color get Statusaccepted => Colors.green;
   Color get StatusLookingfor => Colors.orange;
   Color get StatusCompletado => Colors.blue;
   Color get Statusrecognized => Colors.grey;
   Color get getStatusIcon => Colors.white;
 
-  
   Color get iconred => Colors.red;
   Color get icongreen => Colors.green;
   Color get iconorange => Colors.orange;
@@ -236,7 +250,7 @@ extension CustomColorScheme on ColorScheme {
   Color get buttonColormap2 => Color(0xFF1e88e5);
   Color get blueAccent => const Color.fromARGB(255, 0, 0, 0);
   Color get backgroundColor => Color.fromARGB(255, 0, 0, 0);
-  Color get backgroundColorLogin => Color(0xFFEFC300);
+  Color get backgroundColorLogin => Color.fromARGB(255, 5, 5, 5);
   Color get CurvedNavigationIcono => Color.fromARGB(255, 5, 5, 5);
   Color get CurvedNavigationIcono2 => Colors.white;
   Color get CurvedIconback => Color(0xFFEFC300);
@@ -247,3 +261,4 @@ extension CustomColorScheme on ColorScheme {
   Color get button => Color.fromARGB(255, 10, 10, 10);
   Color get buttontext => Colors.white;
 }
+  

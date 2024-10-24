@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/home_page.dart';
 import 'package:rayo_taxi/main.dart';
-import 'package:flutter/services.dart';  
+import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart'; 
 import '../../domain/entities/client.dart';
 import '../getxs/login/loginclient_getx.dart';
 import 'register_clients_page.dart';
+
 
 class LoginClientsPage extends StatefulWidget {
   @override
@@ -21,6 +23,7 @@ class _LoginClientsPage extends State<LoginClientsPage> {
 
   bool _isEmailEntered = false;
   bool _obscureText = true;
+  bool _isLoading = false; 
 
   void _nextStep() {
     if (_formKey.currentState!.validate()) {
@@ -36,272 +39,356 @@ class _LoginClientsPage extends State<LoginClientsPage> {
     });
   }
 
-  void _login() {
+  void _login() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true; // Iniciar carga
+      });
+
       String password = _passwordController.text;
       String email = _emailController.text;
       final client = Client(email: email, password: password);
 
-      _clientGetx.createClient(LoginClientEvent(client));
+      try {
+        // Asumiendo que createClient es una función asíncrona
+        await _clientGetx.createClient(LoginClientEvent(client));
+
+        if (_clientGetx.state.value is LoginclientSuccessfully) {
+          // Redirigir al HomePage
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomePage()),
+          );
+        } else if (_clientGetx.state.value is LoginclientFailure) {
+          // Mostrar error (ya manejado en el Obx)
+        }
+      } catch (e) {
+        // Manejar excepciones si es necesario
+        print('Error durante el inicio de sesión: $e');
+      } finally {
+        setState(() {
+          _isLoading = false; // Finalizar carga
+        });
+      }
     }
   }
+
   @override
   Widget build(BuildContext context) {
-    // Ajustar el estilo de la barra de estado aquí
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Color(0xFF303030),  // Color gris oscuro para la barra de estado
-      statusBarIconBrightness: Brightness.light,  // Iconos de la barra en blanco para mejor contraste
+      statusBarColor: Color(0xFF303030),
+      statusBarIconBrightness: Brightness.light,
     ));
 
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.backgroundColorLogin,
       resizeToAvoidBottomInset: true,
       body: Stack(
-        children: <Widget>[
-          Container(
-            color: Theme.of(context).colorScheme.backgroundColorLogin,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20.0),
-                child: Image.asset(
-                  'assets/images/rayo_taxi.png',
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  height: screenHeight * 0.29,
-                  fit: BoxFit.contain,
+        children: [
+          Column(
+            children: <Widget>[
+              // Contenedor de fondo con el logo
+              Container(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20.0),
+                    child: Image.asset(
+                      'assets/images/logo-new.png',
+                      width: MediaQuery.of(context).size.width * 0.6,
+                      height: screenHeight * 0.25,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.only(
-                top: screenHeight * 0.35,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
+              Expanded(
                 child: Container(
-                  color: Colors.white,
+                      margin: EdgeInsets.only(bottom: 25.0) ,//
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 10,
+                        offset: Offset(0, -2),
+                      ),
+                    ],
+                  ),
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16.0, vertical: 20.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                       Text(
-                        'INICIAR SESIÓN',
-                        style: TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 20),
-                      Obx(() {
-                        if (_clientGetx.state.value
-                            is LoginclientSuccessfully) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => HomePage()),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment
+                          .stretch, // Para que los botones ocupen todo el ancho
+                      children: <Widget>[
+                        Text(
+                          'INICIAR SESIÓN',
+                          style: TextStyle(
+                              fontSize: 24, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center, // Centra el texto
+                        ),
+                        SizedBox(height: 20),
+                        Obx(() {
+                          if (_clientGetx.state.value
+                              is LoginclientSuccessfully) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => HomePage()),
+                              );
+                            });
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Text(
+                                'Inicio de sesión exitoso',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             );
-                          });
-                          return Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Text(
-                              'Inicio de sesión exitoso',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
+                          } else if (_clientGetx.state.value
+                              is LoginclientFailure) {
+                            final failureState =
+                                _clientGetx.state.value as LoginclientFailure;
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Text(
+                                failureState.error,
+                                style: TextStyle(color: Colors.red),
                               ),
-                            ),
-                          );
-                        } else if (_clientGetx.state.value
-                            is LoginclientFailure) {
-                          final failureState =
-                              _clientGetx.state.value as LoginclientFailure;
-                          return Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Text(
-                              failureState.error,
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          );
-                        }
-                        return SizedBox.shrink();
-                      }),
-                      SizedBox(height: 20),
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          children: <Widget>[
-                            if (!_isEmailEntered) ...[
-                              _buildTextFormField(
-                                controller: _emailController,
-                                label: 'Correo electrónico',
-                                icon: Icons.email,
-                                keyboardType: TextInputType.emailAddress,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Por favor ingrese su correo electrónico';
-                                  }
-                                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                                      .hasMatch(value)) {
-                                    return 'Por favor ingrese un correo electrónico válido';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              SizedBox(height: 20),
-                              ElevatedButton(
-                                onPressed: _nextStep,
-                                child: Text(
-                                  'Siguiente',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                            );
+                          }
+                          return SizedBox.shrink();
+                        }),
+                        SizedBox(height: 20),
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            children: <Widget>[
+                              if (!_isEmailEntered) ...[
+                                _buildTextFormField(
+                                  controller: _emailController,
+                                  label: 'Correo electrónico',
+                                  icon: Icons.email,
+                                  keyboardType: TextInputType.emailAddress,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Por favor ingrese su correo electrónico';
+                                    }
+                                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                        .hasMatch(value)) {
+                                      return 'Por favor ingrese un correo electrónico válido';
+                                    }
+                                    return null;
+                                  },
                                 ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Color(0xFFEFC300),
-                                  minimumSize: Size(double.infinity, 50),
-                                ),
-                              ),
-                            ] else ...[
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      'Correo electrónico: ${_emailController.text}',
-                                      style: TextStyle(fontSize: 16),
+                                SizedBox(height: 20),
+                                ElevatedButton(
+                                  onPressed: _nextStep,
+                                  child: Text(
+                                    'Siguiente',
+                                    style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .textButton,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  IconButton(
-                                    icon: Icon(Icons.edit, color: Colors.grey),
-                                    onPressed: () {
-                                      setState(() {
-                                        _isEmailEntered = false;
-                                      });
-                                    },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .buttonColor, // Color del botón
+                                    minimumSize: Size(double.infinity,
+                                        50), // Botón de ancho completo
+                                  ),
+                                ),
+                              ] else ...[
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Correo electrónico: ${_emailController.text}',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon:
+                                          Icon(Icons.edit, color: Colors.grey),
+                                      onPressed: () {
+                                        setState(() {
+                                          _isEmailEntered = false;
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 20),
+                                _buildTextFormField(
+                                  controller: _passwordController,
+                                  label: 'Contraseña',
+                                  icon: Icons.lock,
+                                  obscureText: _obscureText,
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscureText
+                                          ? Icons.visibility
+                                          : Icons.visibility_off,
+                                      color: Colors.grey[600],
+                                    ),
+                                    onPressed: _togglePasswordVisibility,
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Por favor ingrese su contraseña';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                SizedBox(height: 20),
+                                ElevatedButton(
+                                  onPressed: _isLoading
+                                      ? null
+                                      : _login, // Deshabilitar botón si está cargando
+                                  child: _isLoading
+                                      ? Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            SpinKitFadingCube(
+                                              // Reemplazado por SpinKitFadingCube
+                                              color: Colors.white,
+                                              size: 24.0,
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              'Cargando...',
+                                              style: TextStyle(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .textButton,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : Text(
+                                          'Iniciar Sesión',
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .textButton,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .buttonColor, // Color del botón
+                                    minimumSize: Size(double.infinity,
+                                        50), // Botón de ancho completo
+                                  ),
+                                ),
+                              ],
+                              SizedBox(height: 20),
+                              Row(
+                                children: <Widget>[
+                                  Expanded(
+                                    child: Divider(
+                                      color: Colors.black,
+                                      height: 36,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8.0),
+                                    child: Text("o"),
+                                  ),
+                                  Expanded(
+                                    child: Divider(
+                                      color: Colors.black,
+                                      height: 36,
+                                    ),
                                   ),
                                 ],
                               ),
                               SizedBox(height: 20),
-                              _buildTextFormField(
-                                controller: _passwordController,
-                                label: 'Contraseña',
-                                icon: Icons.lock,
-                                obscureText: _obscureText,
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscureText
-                                        ? Icons.visibility
-                                        : Icons.visibility_off,
-                                    color: Colors.grey[600],
-                                  ),
-                                  onPressed: _togglePasswordVisibility,
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Por favor ingrese su contraseña';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              SizedBox(height: 20),
                               ElevatedButton(
-                                onPressed: _login,
+                                onPressed: _isLoading
+                                    ? null
+                                    : () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  RegisterClientsPage()),
+                                        );
+                                      },
                                 child: Text(
-                                  'Iniciar Sesión',
+                                  'Registrarse',
                                   style: TextStyle(
-                                    color: Colors.black,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .textButton,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor:
                                       Theme.of(context).colorScheme.buttonColor,
-                                  minimumSize: Size(double.infinity, 50),
+                                  minimumSize: Size(double.infinity,
+                                      50), // Botón de ancho completo
                                 ),
+                              ),
+                              SizedBox(height: 20),
+                              _buildSocialLoginButton(
+                                imagePath: 'assets/images/google.png',
+                                text: 'Iniciar sesión con Google',
+                              ),
+                              SizedBox(height: 20),
+                              _buildSocialLoginButton(
+                                icon: Icons.apple,
+                                text: 'Iniciar sesión con Apple',
+                                color: Colors.black,
                               ),
                             ],
-                            SizedBox(height: 20),
-                            Row(
-                              children: <Widget>[
-                                Expanded(
-                                  child: Divider(
-                                    color: Colors.black,
-                                    height: 36,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
-                                  child: Text("o"),
-                                ),
-                                Expanded(
-                                  child: Divider(
-                                    color: Colors.black,
-                                    height: 36,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 20),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          RegisterClientsPage()),
-                                );
-                              },
-                              child: Text(
-                                'Registrarse',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.buttonColor,
-                                minimumSize: Size(double.infinity, 50),
-                              ),
-                            ),
-                            SizedBox(height: 20),
-                            _buildSocialLoginButton(
-                              imagePath: 'assets/images/google.png',
-                              text: 'Iniciar sesión con Google',
-                            ),
-                         
-                            SizedBox(height: 20),
-                            _buildSocialLoginButton(
-                              icon: Icons.apple,
-                              text: 'Iniciar sesión con Apple',
-                              color: Colors.black,
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
+          // Indicador de Carga Overlay
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: Center(
+                child: SpinKitFadingCube(
+                  // Usando SpinKitFadingCube
+                  color: Theme.of(context).colorScheme.buttonColor,
+                  size: 50.0,
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
-
 
   Widget _buildTextFormField({
     required TextEditingController controller,
@@ -339,7 +426,7 @@ class _LoginClientsPage extends State<LoginClientsPage> {
     Color? color,
   }) {
     return Container(
-      width: 300,
+      width: double.infinity,
       height: 50,
       decoration: BoxDecoration(
         color: Color(0xFFD9D9D9),
