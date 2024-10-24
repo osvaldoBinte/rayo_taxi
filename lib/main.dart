@@ -12,6 +12,7 @@ import 'package:rayo_taxi/features/notification/presentetion/getx/TravelById/tra
 import 'package:rayo_taxi/features/notification/presentetion/getx/TravelsAlert/travels_alert_getx.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/delete/delete_travel_getx.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/travel/accept_travel_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -96,21 +97,29 @@ void main() async {
 
   Get.put(TravelByIdAlertGetx(travelByIdUsecase: usecaseConfig.travelByIdUsecase!, connectivityService: connectivityService));
   // Configura el listener para mensajes en primer plano
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    print('Mensaje recibido en primer plano: ${message.messageId}');
-    // Obtén el contexto usando el navigatorKey
-    final context = navigatorKey.currentState?.overlay?.context;
-    if (context != null) {
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.info,
-        title: message.notification?.title ?? 'Notificación',
-        text: message.notification?.body ?? 'Tienes una nueva notificación',
-      );
-    } else {
-      print('El contexto es nulo');
-    }
-  });
+FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+  print('Mensaje recibido en primer plano: ${message.messageId}');
+  RemoteNotification? notification = message.notification;
+  AndroidNotification? android = message.notification?.android;
+
+  if (notification != null && android != null) {
+    flutterLocalNotificationsPlugin.show(
+      notification.hashCode,
+      notification.title,
+      notification.body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          channel!.id,
+          channel!.name,
+          channelDescription: channel!.description,
+          icon: '@mipmap/ic_launcher',
+        ),
+      ),
+      payload: jsonEncode(message.data),
+    );
+  }
+});
+
 
   FirebaseMessaging messaging = FirebaseMessaging.instance;
 
@@ -135,7 +144,7 @@ void _handleNotificationClick(Map<String, dynamic> data) {
 
   if (travelId != null) {
     // Navega a la página deseada
-    // Get.to(() => AcceptTravelPage(idTravel: travelId));
+     Get.to(() => AcceptTravelPage(idTravel: travelId));
   } else {
     print('Error: El travelId no es un entero válido');
   }

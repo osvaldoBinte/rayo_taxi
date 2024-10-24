@@ -50,7 +50,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBg6CMRjaCEGmLhkWJBaLlEU6ZkAO2KTIs',
+    apiKey: 'AIzaSyD9ujivJZkEzGrX_WALZ7Jg9oRSE2mOvZM', // Nuevo API key
     appId: '1:142272499428:android:2f154b05ec6b17a509a6f1',
     messagingSenderId: '142272499428',
     projectId: 'rayo-taxi-d58f6',
