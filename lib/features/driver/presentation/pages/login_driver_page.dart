@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:rayo_taxi/connectivity_service.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart'; // Importar flutter_spinkit
+import 'package:rayo_taxi/main.dart';
 
 import '../../domain/entities/driver.dart';
 import '../getxs/login/logindriver_getx.dart';
@@ -57,8 +58,7 @@ class _LoginDriverPage extends State<LoginDriverPage> {
           // Redirigir al HomePage
           Get.offAll(() => HomePage());
         } else if (_driverGetx.state.value is LogindriverFailure) {
-          final failureState =
-              _driverGetx.state.value as LogindriverFailure;
+          final failureState = _driverGetx.state.value as LogindriverFailure;
           setState(() {
             _errorMessage = failureState.error;
           });
@@ -81,10 +81,9 @@ class _LoginDriverPage extends State<LoginDriverPage> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.backgroundColorLogin,
-      resizeToAvoidBottomInset: true,
-      body: Stack(
-        children: [
+        backgroundColor: Theme.of(context).colorScheme.backgroundColorLogin,
+        resizeToAvoidBottomInset: true,
+        body: Stack(children: [
           Column(
             children: <Widget>[
               // Contenedor de fondo con el logo
@@ -94,7 +93,7 @@ class _LoginDriverPage extends State<LoginDriverPage> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 20.0),
                     child: Image.asset(
-                      'assets/images/rayo_taxi.png',
+                      'assets/images/logo-new.png',
                       width: MediaQuery.of(context).size.width * 0.6,
                       height: screenHeight * 0.29,
                       fit: BoxFit.contain,
@@ -123,8 +122,8 @@ class _LoginDriverPage extends State<LoginDriverPage> {
                       horizontal: 16.0, vertical: 20.0),
                   child: SingleChildScrollView(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.stretch, // Para que los botones ocupen todo el ancho
+                      crossAxisAlignment: CrossAxisAlignment
+                          .stretch, // Para que los botones ocupen todo el ancho
                       children: <Widget>[
                         Text(
                           'INICIAR SESIÓN',
@@ -178,14 +177,14 @@ class _LoginDriverPage extends State<LoginDriverPage> {
                           child: Column(
                             children: <Widget>[
                               Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16.0),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0),
                                 child: TextFormField(
                                   controller: _emailController,
                                   decoration: InputDecoration(
                                     labelText: 'Correo electrónico',
-                                    labelStyle: TextStyle(
-                                        color: Color(0xFF545454)),
+                                    labelStyle:
+                                        TextStyle(color: Color(0xFF545454)),
                                     filled: true,
                                     fillColor: Color(0xFFD9D9D9),
                                     border: OutlineInputBorder(
@@ -214,14 +213,14 @@ class _LoginDriverPage extends State<LoginDriverPage> {
                               ),
                               SizedBox(height: 20),
                               Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16.0),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0),
                                 child: TextFormField(
                                   controller: _passwordController,
                                   decoration: InputDecoration(
                                     labelText: 'Contraseña',
-                                    labelStyle: TextStyle(
-                                        color: Color(0xFF545454)),
+                                    labelStyle:
+                                        TextStyle(color: Color(0xFF545454)),
                                     filled: true,
                                     fillColor: Color(0xFFD9D9D9),
                                     border: OutlineInputBorder(
@@ -254,8 +253,8 @@ class _LoginDriverPage extends State<LoginDriverPage> {
                               ),
                               SizedBox(height: 20),
                               Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16.0),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0),
                                 child: ElevatedButton(
                                   onPressed: _isLoading
                                       ? null
@@ -265,7 +264,8 @@ class _LoginDriverPage extends State<LoginDriverPage> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
                                           children: [
-                                            SpinKitFadingCube( // Usando SpinKitFadingCube
+                                            SpinKitFadingCube(
+                                              // Usando SpinKitFadingCube
                                               color: Colors.white,
                                               size: 24.0,
                                             ),
@@ -282,14 +282,16 @@ class _LoginDriverPage extends State<LoginDriverPage> {
                                       : Text(
                                           'Iniciar Sesión',
                                           style: TextStyle(
-                                            color: Colors.black,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .textButton,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Color(0xFFEFC300),
-                                    minimumSize:
-                                        Size(double.infinity, 50), // Botón de ancho completo
+                                    backgroundColor:Theme.of(context).colorScheme.buttonColor,
+                                    minimumSize: Size(double.infinity,
+                                        50), // Botón de ancho completo
                                   ),
                                 ),
                               ),
@@ -300,22 +302,22 @@ class _LoginDriverPage extends State<LoginDriverPage> {
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+
           // Indicador de Carga Overlay
           if (_isLoading)
             Container(
               color: Colors.black.withOpacity(0.5),
               child: Center(
-                child: SpinKitFadingCube( // Usando SpinKitFadingCube
-                  color: Color(0xFFEFC300),
+                child: SpinKitFadingCube(
+                  // Usando SpinKitFadingCube
+                  color: Theme.of(context).colorScheme.buttonColor,
                   size: 50.0,
                 ),
               ),
             ),
-        ],
-      ),
-    );
+        ]));
   }
 }
