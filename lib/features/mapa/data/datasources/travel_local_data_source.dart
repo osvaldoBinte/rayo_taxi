@@ -22,7 +22,7 @@ abstract class TravelLocalDataSource {
 }
 
 class TravelLocalDataSourceImp implements TravelLocalDataSource {
-  final String _apiKey = 'AIzaSyD9ujivJZkEzGrX_WALZ7Jg9oRSE2mOvZM';
+  final String _apiKey = 'AIzaSyBAVJDSpCXiLRhVTq-MA3RgZqbmxm1wD1I';
   String? _encodedPoints;
   final String _baseUrl =
       'https://developer.binteapi.com:3009/api/app_clients/travels/travels';
