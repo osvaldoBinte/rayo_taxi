@@ -16,7 +16,11 @@ import 'package:rayo_taxi/features/notification/domain/usecases/travels_alert_us
 import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
 import 'package:rayo_taxi/features/travel/data/repositories/travel_repository_Imp.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/delete_travel_usecase.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/get_place_details_and_move_usecase.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/get_place_predictions_usecase.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/get_search_history_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/posh_travel_usecase.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/save_search_history_usecase.dart';
 import 'features/clients/domain/usecases/tokenclient_usecase.dart';
 
 class UsecaseConfig {
@@ -43,6 +47,11 @@ class UsecaseConfig {
   TravelAlertUsecase? travelAlertUsecase;
   DeleteTravelUsecase? deleteTravelUsecase;
   TravelByIdUsecase? travelByIdUsecase;
+
+  GetSearchHistoryUsecase? getSearchHistoryUsecase;
+  SaveSearchHistoryUsecase? saveSearchHistoryUsecase;
+  GetPlaceDetailsAndMoveUsecase? getPlaceDetailsAndMoveUsecase;
+  GetPlacePredictionsUsecase ? getPlacePredictionsUsecase;
   UsecaseConfig() {
     clientLocalDataSourceImp = ClientLocalDataSourceImp();
     travelLocalDataSourceImp = TravelLocalDataSourceImp();
@@ -68,5 +77,10 @@ class UsecaseConfig {
     travelsAlertUsecase = TravelsAlertUsecase(notificationRepository: notificationRepositoryImp!);
     travelAlertUsecase = TravelAlertUsecase(notificationRepository: notificationRepositoryImp!);
     travelByIdUsecase = TravelByIdUsecase(travelRepository: notificationRepositoryImp!);
+
+    getSearchHistoryUsecase = GetSearchHistoryUsecase(travelRepository: travelRepositoryImp!);
+    saveSearchHistoryUsecase = SaveSearchHistoryUsecase(travelRepository: travelRepositoryImp!);
+    getPlaceDetailsAndMoveUsecase = GetPlaceDetailsAndMoveUsecase(travelRepository: travelRepositoryImp!);
+    getPlacePredictionsUsecase = GetPlacePredictionsUsecase(travelRepository: travelRepositoryImp!);
   }
 }

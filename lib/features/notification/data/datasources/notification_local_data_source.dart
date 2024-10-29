@@ -12,7 +12,7 @@ abstract class NotificationLocalDataSource {
   Future<List<TravelAlertModel>> getNotification(bool connection);
   Future<List<TravelAlertModel>> getNotificationtravel(bool connection);
   Future<String?> fetchDeviceId();
-   Future<List<TravelAlertModel>> getbyIdtravelid(
+  Future<List<TravelAlertModel>> getbyIdtravelid(
       int? idTravel, bool connection);
 }
 
@@ -221,24 +221,23 @@ class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
       return _loadtravelFromLocal(sharedPreferences);
     }
   }
-  
-   @override
+
+  @override
   Future<String?> fetchDeviceId() async {
     try {
       final String url = '$_baseUrl/auth/renew';
       print('Realizando la solicitud a $url...');
 
-    String? token = await _getToken();
-    if (token == null) {
-      throw Exception('Token no disponible');
-    }
+      String? token = await _getToken();
+      if (token == null) {
+        throw Exception('Token no disponible');
+      }
       final response = await http.get(
         Uri.parse(url),
         headers: {
-         'x-token': token,
+          'x-token': token,
           'Content-Type': 'application/json',
         },
-        
       );
 
       if (response.statusCode == 200) {
@@ -263,66 +262,85 @@ class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
   }
 
   @override
-  Future<List<TravelAlertModel>> getbyIdtravelid(int? idTravel, bool connection) async {
-  SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+  Future<List<TravelAlertModel>> getbyIdtravelid(
+      int? idTravel, bool connection) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
 
-  String? token = await _getToken();
-  if (token == null) {
-    throw Exception('Token no disponible');
-  }
+    String? token = await _getToken();
+    if (token == null) {
+      throw Exception('Token no disponible');
+    }
 
-  if (connection) {
-    try {
-      var headers = {
-        'x-token': token,
-        'Content-Type': 'application/json',
-      };
-      final String url = '$_baseUrl2/travels/$idTravel';
+    if (connection) {
+      try {
+        var headers = {
+          'x-token': token,
+          'Content-Type': 'application/json',
+        };
+        final String url = '$_baseUrl2/travels/$idTravel';
 
-      print('Realizando la solicitud a $url');
-      var response = await http.get(
-        Uri.parse(url),
-        headers: headers,
-      );
+        print('Realizando la solicitud a $url');
+        var response = await http.get(
+          Uri.parse(url),
+          headers: headers,
+        );
 
-      print('Código de estado de la respuesta: ${response.statusCode}');
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
-        print('Respuesta JSON completa: $jsonResponse');
+        print('Código de estado de la respuesta: ${response.statusCode}');
+        if (response.statusCode == 200) {
+          final jsonResponse = json.decode(response.body);
+          print('Respuesta JSON completa: $jsonResponse');
 
-        if (jsonResponse['data'] != null) {
-          var travelData = jsonResponse['data'];
+          if (jsonResponse['data'] != null) {
+            var travelData = jsonResponse['data'];
 
-          // Aquí colocamos los print para depurar
-          print('Datos de viaje recibido: $travelData');
-          print('Conductores recibidos: ${travelData['drivers']}');
+            // Aquí colocamos los print para depurar
+            print('Datos de viaje recibido: $travelData');
+            print('Conductores recibidos: ${travelData['drivers']}');
 
-          TravelAlertModel travelAlertbyid = TravelAlertModel.fromJson(travelData);
+            TravelAlertModel travelAlertbyid =
+                TravelAlertModel.fromJson(travelData);
 
-          print('Viaje mapeado: $travelAlertbyid');
-          // Guardar un solo objeto, no como lista
-          sharedPreferences.setString(
-            'getalltravelid',
-            jsonEncode(travelAlertbyid.toJson()),
-          );
+            /*
+                
+      String token = body['data']['token'].toString();
 
-          print('Viaje guardado en SharedPreferences: getalltravelid');
-          return [travelAlertbyid];
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_token', token); */
+            print('El id_status es: ${travelAlertbyid.id_status}');
+            SharedPreferences sharedPreferences =
+                await SharedPreferences.getInstance();
+            int id_statuss = jsonResponse['data']['id_status'];
+
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.setInt('id_status', id_statuss);
+            //  int? idStatus = sharedPreferences.getInt('id_status',id_statuss);
+
+            print('El id_status guardado es: $id_statuss');
+
+            print('Viaje mapeado: $travelAlertbyid');
+            // Guardar un solo objeto, no como lista
+            sharedPreferences.setString(
+              'getalltravelid',
+              jsonEncode(travelAlertbyid.toJson()),
+            );
+
+            print('Viaje guardado en SharedPreferences: getalltravelid');
+            return [travelAlertbyid];
+          } else {
+            throw Exception('Estructura de respuesta inesperada');
+          }
         } else {
-          throw Exception('Estructura de respuesta inesperada');
+          throw Exception('Error en la petición: ${response.body}');
         }
-      } else {
-        throw Exception('Error en la petición: ${response.body}');
+      } catch (e) {
+        print('Error capturado: $e');
+        return _loadtravelbyIDFromLocal(sharedPreferences);
       }
-    } catch (e) {
-      print('Error capturado: $e');
+    } else {
+      print('Conexión no disponible, cargando desde SharedPreferences...');
       return _loadtravelbyIDFromLocal(sharedPreferences);
     }
-  } else {
-    print('Conexión no disponible, cargando desde SharedPreferences...');
-    return _loadtravelbyIDFromLocal(sharedPreferences);
   }
-}
 
   Future<List<TravelAlertModel>> _loadtravelbyIDFromLocal(
       SharedPreferences sharedPreferences) async {
@@ -341,5 +359,4 @@ class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
       throw Exception('No hay viajes en SharedPreferences');
     }
   }
-
 }

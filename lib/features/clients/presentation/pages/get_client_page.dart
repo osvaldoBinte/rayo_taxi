@@ -9,10 +9,12 @@ import 'package:rayo_taxi/features/clients/presentation/pages/edit_porfile_modal
 import 'package:rayo_taxi/features/clients/presentation/pages/login_clients_page.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/pagos/animated_modal_bottom.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/pagos/pago_page.dart';
+import 'package:rayo_taxi/features/payment/presentetion/payment_method.dart';
 import 'package:rayo_taxi/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../getxs/get/get_client_getx.dart';
 import '../getxs/calculateAge/calculateAge_getx.dart';
+import 'package:quickalert/quickalert.dart';
 
 class GetClientPage extends StatefulWidget {
   const GetClientPage({super.key});
@@ -30,19 +32,30 @@ class _GetClientPageState extends State<GetClientPage> {
   final _picker = ImagePicker();
   String? _imagePath;
 
+// Método de cierre de sesión con confirmación
   Future<void> _logout() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    _loginGetx.logout();
+    QuickAlert.show(
+      context: Get.context!,
+      type: QuickAlertType.confirm,
+      title: 'Cerrar sesión',
+      text: '¿Estás seguro de que deseas cerrar sesión?',
+      confirmBtnText: 'Sí',
+      cancelBtnText: 'No',
+      onConfirmBtnTap: () async {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        _loginGetx.logout();
 
-    await prefs.remove('auth_token');
-    await Get.offAll(() => LoginClientsPage());
+        await prefs.remove('auth_token');
+        await Get.offAll(() => LoginClientsPage());
+      },
+    );
   }
 
   @override
   void initState() {
     super.initState();
- WidgetsBinding.instance.addPostFrameCallback((_) {
-    getClientGetx.fetchCoDetails(FetchgetDetailsEvent());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getClientGetx.fetchCoDetails(FetchgetDetailsEvent());
     });
     subscription = Connectivity()
         .onConnectivityChanged
@@ -214,21 +227,6 @@ class _GetClientPageState extends State<GetClientPage> {
                     ),
                     _buildCardButton(
                       context,
-                      icon: Icons.payment,
-                      label: 'Pago',
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (BuildContext context) {
-                            return AnimatedModalBottomSheet();
-                          },
-                        );
-                      },
-                    ),
-                    _buildCardButton(
-                      context,
                       icon: Icons.info_outline,
                       label: 'Información',
                       onPressed: () {
@@ -260,6 +258,13 @@ class _GetClientPageState extends State<GetClientPage> {
                   icon: Icons.payment,
                   title: 'Mis Tarjetas',
                   subtitle: 'Metodos de pagos agregador',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => PaymentMethodPage()),
+                    );
+                  },
                 ),
                 _buildListOption(
                   icon: Icons.card_membership,
@@ -276,7 +281,6 @@ class _GetClientPageState extends State<GetClientPage> {
                   title: 'Revisión de privacidad',
                   subtitle: 'Haz un recorrido interactivo por tu configuración',
                 ),
-                
                 const SizedBox(height: 80),
               ],
             );
@@ -314,14 +318,18 @@ class _GetClientPageState extends State<GetClientPage> {
       {required IconData icon,
       required String title,
       required String subtitle,
-      Widget? trailing}) {
+      Widget? trailing,
+      VoidCallback? onPressed}) {
     return Card(
+      
       margin: const EdgeInsets.symmetric(vertical: 8),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
+      
       child: ListTile(
+         onTap: onPressed ?? () {},
         leading: Icon(icon, color: Colors.black, size: 30),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle),

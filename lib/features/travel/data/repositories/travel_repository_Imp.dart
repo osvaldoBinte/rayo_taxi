@@ -51,5 +51,15 @@ class TravelRepositoryImp implements TravelRepository{
  Future<void> deleteTravel(String id, bool connection) async {
     return await travelLocalDataSource.deleteTravel(id,connection);
   }
+  
+  @override
+  Future<List<Map<String, String>>> getSearchHistory() async {
+    return await travelLocalDataSource.getSearchHistory();
+  }
+  
+  @override
+  Future<void> saveSearchHistory(Map<String, String> searchItem) async {
+   return await travelLocalDataSource.saveSearchHistory(searchItem);
+  }
 
 }

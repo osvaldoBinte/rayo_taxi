@@ -12,4 +12,10 @@ abstract class TravelRepository {
   Future<void> getPlaceDetailsAndMove(String placeId,
       Function(LatLng) moveToLocation, Function(LatLng) addMarker);
   Future<String> getEncodedPoints();
+
+
+  Future<void> saveSearchHistory(Map<String, String> searchItem);
+  
+  Future<List<Map<String, String>>> getSearchHistory();
+  
 }

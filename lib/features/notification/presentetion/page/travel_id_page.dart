@@ -92,6 +92,7 @@ class _TravelRouteState extends State<TravelIdPage> {
     double? endLatitude = double.tryParse(travel.end_latitude);
     double? endLongitude = double.tryParse(travel.end_longitude);
 
+    print('status desde travel_id_page ${travel.id_status}');
     if (startLatitude != null &&
         startLongitude != null &&
         endLatitude != null &&

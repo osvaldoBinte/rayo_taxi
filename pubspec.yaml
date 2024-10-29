@@ -104,6 +104,10 @@ flutter:
      - assets/images/Logo_client.png
      - assets/images/rayo_taxi2.png
      - assets/images/logo-new.png
+     - assets/images/viajes/viaje-aceptado.gif
+     - assets/images/viajes/viaje-desconocido.gif
+     - assets/images/viajes/viaje-en-curso.gif
+     - assets/images/viajes/viaje-finalizado.gif
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

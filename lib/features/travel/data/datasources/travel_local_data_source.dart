@@ -20,6 +20,11 @@ abstract class TravelLocalDataSource {
   Future<String> getEncodedPoints();
   Future<Map<String, dynamic>> getPlaceDetails(String placeId); // Nueva función
    double getDuration();
+
+
+
+  Future<void> saveSearchHistory(Map<String, String> searchItem);
+  Future<List<Map<String, String>>> getSearchHistory();
 }
 
 class TravelLocalDataSourceImp implements TravelLocalDataSource {
@@ -30,6 +35,7 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
 
   double _routeDuration =
       0.0; // Añade esta variable a tu clase para almacenar la duración
+  static const String _searchHistoryKey = 'search_history';
 
   @override
   Future<void> getRoute(LatLng startLocation, LatLng endLocation) async {
@@ -83,6 +89,40 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
   }
 }
 
+  @override
+  Future<void> saveSearchHistory(Map<String, String> searchItem) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> history = prefs.getStringList(_searchHistoryKey) ?? [];
+
+    // Convertimos el objeto a una cadena JSON
+    String searchItemJson = jsonEncode(searchItem);
+
+    // Evitar duplicados
+    if (!history.contains(searchItemJson)) {
+      history.insert(0, searchItemJson); // Insertar al inicio
+    } else {
+      // Mover la búsqueda al inicio si ya existe
+      history.remove(searchItemJson);
+      history.insert(0, searchItemJson);
+    }
+
+    // Opcional: limitar el historial a las últimas N búsquedas
+    if (history.length > 10) {
+      history = history.sublist(0, 10);
+    }
+
+    await prefs.setStringList(_searchHistoryKey, history);
+  }
+
+  @override
+  Future<List<Map<String, String>>> getSearchHistory() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> history = prefs.getStringList(_searchHistoryKey) ?? [];
+    List<Map<String, String>> historyItems = history.map((item) {
+      return Map<String, String>.from(jsonDecode(item));
+    }).toList();
+    return historyItems;
+  }
 
   double getDuration() {
     return _routeDuration;

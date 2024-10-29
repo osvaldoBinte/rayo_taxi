@@ -32,26 +32,27 @@ class TravelAlertModel extends TravelAlert {
             cost: cost,
             client: client,
             drivers: drivers);
-  factory TravelAlertModel.fromJson(Map<String, dynamic> json) {
-    return TravelAlertModel(
-      id: json['id'] ?? '',
-      date: json['date'] ?? '',
-      start_longitude: json['start_longitude'] ?? '',
-      start_latitude: json['start_latitude'] ?? '',
-      end_longitude: json['end_longitude'] ?? '',
-      end_latitude: json['end_latitude'] ?? '',
-      kilometers: json['kilometers'] ?? '',
-      id_client: json['id_client'] ?? '',
-      id_company: json['id_company'] ?? '',
-      id_status: json['id_status'] ?? '',
-      status: json['status'] ?? '',
-      cost: json['cost'] ?? '',
-      client: json['client'] ?? '',
-      drivers: json['drivers'] != null
-          ? List<DriverModel>.from(json['drivers'].map((x) => DriverModel.fromJson(x)))
-          : [],
-    );
-  }
+factory TravelAlertModel.fromJson(Map<String, dynamic> json) {
+  return TravelAlertModel(
+    id: json['id'] ?? 0,
+    date: json['date'] ?? '',
+    start_longitude: json['start_longitude']?.toString() ?? '',
+    start_latitude: json['start_latitude']?.toString() ?? '',
+    end_longitude: json['end_longitude']?.toString() ?? '',
+    end_latitude: json['end_latitude']?.toString() ?? '',
+    kilometers: json['kilometers'] ?? 0,
+    id_client: json['id_client'] ?? 0,
+    id_company: json['id_company'] ?? 0,
+    id_status: json['id_status'] ?? 0,
+    status: json['status'] ?? '',
+    cost: json['cost'] ?? 0,
+    client: json['client'] ?? '',
+    drivers: json['drivers'] != null
+        ? List<DriverModel>.from(json['drivers'].map((x) => DriverModel.fromJson(x)))
+        : [],
+  );
+}
+
 
   factory TravelAlertModel.fromEntity(TravelAlert travelAlert) {
     return TravelAlertModel(

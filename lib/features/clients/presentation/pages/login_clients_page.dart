@@ -57,7 +57,7 @@ class _LoginClientsPage extends State<LoginClientsPage> {
           // Redirigir al HomePage
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => HomePage()),
+            MaterialPageRoute(builder: (context) => HomePage(selectedIndex: 1,)),
           );
         } else if (_clientGetx.state.value is LoginclientFailure) {
           // Mostrar error (ya manejado en el Obx)
@@ -142,7 +142,7 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => HomePage()),
+                                    builder: (context) => HomePage(selectedIndex: 1,)),
                               );
                             });
                             return Padding(

@@ -1,11 +1,10 @@
-
-
 class Driver {
   final int id;
   final String name;
-  final String id_user;
+  final int id_user; // Cambiado a int
   final String birthdate;
-  final String years_old;
+  final int years_old; // Cambiado a int
+
   Driver({
     required this.id,
     required this.name,

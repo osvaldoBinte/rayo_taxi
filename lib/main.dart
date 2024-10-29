@@ -11,7 +11,10 @@ import 'package:rayo_taxi/features/notification/presentetion/getx/TravelAlert/tr
 import 'package:rayo_taxi/features/notification/presentetion/getx/TravelById/travel_by_id_alert_getx.dart';
 import 'package:rayo_taxi/features/notification/presentetion/getx/TravelsAlert/travels_alert_getx.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/delete/delete_travel_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/getx/mapa/destino_controller.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/mapa.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/mapa/destino_page.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/travel/accept_travel_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -24,6 +27,7 @@ import 'package:rayo_taxi/features/clients/presentation/getxs/client/client_getx
 import 'package:rayo_taxi/features/clients/presentation/getxs/login/loginclient_getx.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/get/get_client_getx.dart';
 import 'package:rayo_taxi/usecase_config.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -31,28 +35,27 @@ UsecaseConfig usecaseConfig = UsecaseConfig();
 final connectivityService = ConnectivityService();
 RemoteMessage? initialMessage;
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 AndroidNotificationChannel? channel;
 
-// Declara el navigatorKey
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Inicializa Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // Crea el canal de notificaciones
   channel = const AndroidNotificationChannel(
-    'high_importance_channel', // id del canal
-    'Notificaciones Importantes', // nombre del canal
-    description: 'Este canal se usa para notificaciones importantes.', // descripción del canal
+    'high_importance_channel', 
+    'Notificaciones Importantes', 
+    description:
+        'Este canal se usa para notificaciones importantes.',
     importance: Importance.high,
   );
 
-  // Inicializa FlutterLocalNotificationsPlugin
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
   final InitializationSettings initializationSettings = InitializationSettings(
@@ -60,7 +63,8 @@ void main() async {
   );
   await flutterLocalNotificationsPlugin.initialize(
     initializationSettings,
-    onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
+    onDidReceiveNotificationResponse:
+        (NotificationResponse notificationResponse) async {
       final String? payload = notificationResponse.payload;
       if (payload != null && payload.isNotEmpty) {
         _handleNotificationClick(json.decode(payload));
@@ -69,13 +73,15 @@ void main() async {
   );
 
   await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel!);
 
   // Inicializa controladores GetX
   Get.put(DeviceGetx(idDeviceUsecase: usecaseConfig.idDeviceUsecase!));
   Get.put(ClientGetx(createClientUsecase: usecaseConfig.createClientUsecase!));
-  Get.put(LoginclientGetx(loginClientUsecase: usecaseConfig.loginClientUsecase!));
+  Get.put(
+      LoginclientGetx(loginClientUsecase: usecaseConfig.loginClientUsecase!));
   Get.put(GetClientGetx(
       getClientUsecase: usecaseConfig.getClientUsecase!,
       connectivityService: connectivityService));
@@ -92,39 +98,80 @@ void main() async {
   Get.put(DeleteTravelGetx(
       deleteTravelUsecase: usecaseConfig.deleteTravelUsecase!,
       connectivityService: connectivityService));
-  Get.put(GetDeviceGetx(
-      getDeviceUsecase: usecaseConfig.getDeviceUsecase!));
+  Get.put(GetDeviceGetx(getDeviceUsecase: usecaseConfig.getDeviceUsecase!));
 
-  Get.put(TravelByIdAlertGetx(travelByIdUsecase: usecaseConfig.travelByIdUsecase!, connectivityService: connectivityService));
-  // Configura el listener para mensajes en primer plano
-FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-  print('Mensaje recibido en primer plano: ${message.messageId}');
-  RemoteNotification? notification = message.notification;
-  AndroidNotification? android = message.notification?.android;
+  Get.put(TravelByIdAlertGetx(
+      travelByIdUsecase: usecaseConfig.travelByIdUsecase!,
+      connectivityService: connectivityService));
+  
+  Get.put(DestinoController(getSearchHistoryUsecase: usecaseConfig.getSearchHistoryUsecase!,saveSearchHistoryUsecase: usecaseConfig.saveSearchHistoryUsecase!,getPlaceDetailsAndMoveUsecase: usecaseConfig.getPlaceDetailsAndMoveUsecase!, getPlacePredictionsUsecase: usecaseConfig.getPlacePredictionsUsecase!, ));
+ //Get.put( MapController(getSearchHistoryUsecase: usecaseConfig.getSearchHistoryUsecase!,saveSearchHistoryUsecase: usecaseConfig.saveSearchHistoryUsecase!,getPlaceDetailsAndMoveUsecase: usecaseConfig.getPlaceDetailsAndMoveUsecase!, getPlacePredictionsUsecase: usecaseConfig.getPlacePredictionsUsecase!, ),);
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print('Mensaje recibido en primer plano: ${message.messageId}');
 
-  if (notification != null && android != null) {
-    flutterLocalNotificationsPlugin.show(
-      notification.hashCode,
-      notification.title,
-      notification.body,
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          channel!.id,
-          channel!.name,
-          channelDescription: channel!.description,
-          icon: '@mipmap/ic_launcher',
-        ),
-      ),
-      payload: jsonEncode(message.data),
-    );
-  }
-});
+    final context = navigatorKey.currentState?.overlay?.context;
 
+    if (context != null) {
+      final title = message.notification?.title ?? 'Notificación';
+      final body =
+          message.notification?.body ?? 'Tienes una nueva notificación';
+
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.info,
+        title: title,
+        text: body,
+        confirmBtnText: 'OK',
+        onConfirmBtnTap: () {
+          if (title == 'Viaje terminado') {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => HomePage(
+                        selectedIndex: 0,
+                      )),
+              (Route<dynamic> route) => false,
+            );
+          } else {
+            Navigator.of(context).pop();
+          }
+        },
+      );
+    } else {
+      print('El contexto es nulo');
+    }
+  });
 
   FirebaseMessaging messaging = FirebaseMessaging.instance;
 
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print('Mensaje recibido en primer plano: ${message.messageId}');
+    RemoteNotification? notification = message.notification;
+    AndroidNotification? android = message.notification?.android;
+
+    if (notification != null && android != null) {
+      flutterLocalNotificationsPlugin.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            channel!.id,
+            channel!.name,
+            channelDescription: channel!.description,
+            icon: '@mipmap/ic_launcher',
+          ),
+        ),
+        payload: jsonEncode(message.data),
+      );
+    }
+  });
+
+  String? fcmToken = await messaging.getToken();
+  print('Token FCM: $fcmToken');
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    print('El usuario hizo clic en una notificación mientras la app estaba en segundo plano');
+    print(
+        'El usuario hizo clic en una notificación mientras la app estaba en segundo plano');
     _handleNotificationClick(message.data);
     initialMessage = message;
   });
@@ -132,19 +179,22 @@ FirebaseMessaging.onMessage.listen((RemoteMessage message) {
   initialMessage = await messaging.getInitialMessage();
   if (initialMessage != null) {
     print('La aplicación se inició desde una notificación');
-    // Maneja el mensaje inicial
   }
 
   runApp(MyApp());
 }
 
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
 void _handleNotificationClick(Map<String, dynamic> data) {
   int? travelId = int.tryParse(data['travel'] ?? '');
   print('Datos del mensaje: $data');
+  print('el id desde _handleLoadedState ${travelId}');
 
-  if (travelId != null) {
-    // Navega a la página deseada
-     Get.to(() => AcceptTravelPage(idTravel: travelId));
+  if (travelId != null) {   
+    Get.to(() => AcceptTravelPage(idTravel: travelId));
   } else {
     print('Error: El travelId no es un entero válido');
   }
@@ -161,10 +211,9 @@ class MyApp extends StatelessWidget {
     );
 
     return GetMaterialApp(
-      navigatorKey: navigatorKey, // Añade el navigatorKey aquí
+      navigatorKey: navigatorKey, 
       debugShowCheckedModeBanner: false,
 
-      // Añade las configuraciones de localización aquí
       locale: const Locale('es', 'ES'),
       supportedLocales: [
         const Locale('es', 'ES'),
@@ -196,7 +245,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// El resto de tu código permanece igual...
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -222,7 +270,9 @@ class _SplashScreenState extends State<SplashScreen> {
       await prefs.remove('auth_token');
       Get.offAll(() => LoginClientsPage());
     } else if (token != null && token!.isNotEmpty) {
-      Get.offAll(() => HomePage());
+      Get.offAll(() => HomePage(
+            selectedIndex: 1,
+          ));
     } else {
       Get.offAll(() => LoginClientsPage());
     }
@@ -269,5 +319,7 @@ extension CustomColorScheme on ColorScheme {
   Color get TextAler => Colors.white;
   Color get button => Color.fromARGB(255, 10, 10, 10);
   Color get buttontext => Colors.white;
+
+    Color get iconhistory => Color(0xFFEFC300);
+  Color get iconlocation_on => Colors.red;
 }
-  
