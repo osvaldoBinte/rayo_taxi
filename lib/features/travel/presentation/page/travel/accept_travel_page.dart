@@ -9,6 +9,7 @@ import 'package:rayo_taxi/features/clients/presentation/pages/home_page.dart';
 import 'package:rayo_taxi/features/notification/data/models/travel_alert_model.dart';
 import 'package:rayo_taxi/features/notification/presentetion/getx/TravelById/travel_by_id_alert_getx.dart';
 import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
+import 'package:lottie/lottie.dart'; // Agrega esta línea para el paquete Lottie
 
 class AcceptTravelPage extends StatefulWidget {
   final int? idTravel;
@@ -34,7 +35,7 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
   final TravelByIdAlertGetx travelByIdController =
       Get.find<TravelByIdAlertGetx>();
   late StreamSubscription<ConnectivityResult> subscription;
-  
+
   // Make idStatus an observable variable
   RxInt idStatus = 0.obs;
 
@@ -48,13 +49,11 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
       );
     });
 
-    // Check if the state is already loaded
     if (travelByIdController.state.value is TravelByIdAlertLoaded) {
       final state = travelByIdController.state.value as TravelByIdAlertLoaded;
       _handleLoadedState(state);
     }
 
-    // Listen to state changes
     ever<TravelByIdAlertState>(travelByIdController.state, (state) {
       if (state is TravelByIdAlertLoaded) {
         _handleLoadedState(state);
@@ -63,7 +62,6 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
       }
     });
 
-    // Subscribe to connectivity changes
     subscription = Connectivity()
         .onConnectivityChanged
         .listen((ConnectivityResult result) {
@@ -85,10 +83,8 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
     double? endLatitude = double.tryParse(travel.end_latitude);
     double? endLongitude = double.tryParse(travel.end_longitude);
 
-    // Update idStatus without setState
     idStatus.value = travel.id_status ?? 0;
 
-    // Update locations and map markers
     if (startLatitude != null &&
         startLongitude != null &&
         endLatitude != null &&
@@ -101,7 +97,6 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
 
       _traceRoute();
 
-      // Update camera position
       if (_mapController != null) {
         _updateCameraPosition();
       } else {
@@ -200,35 +195,29 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
     setState(() {
       if (isDriver) {
         _markers.removeWhere((m) => m.markerId.value == 'driver');
-        _markers.add(
-          gmaps.Marker(
-            markerId: gmaps.MarkerId('driver'),
-            position: latLng,
-            infoWindow: gmaps.InfoWindow(title: 'Conductor'),
-            icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(
-                gmaps.BitmapDescriptor.hueBlue),
-          ),
-        );
+        _markers.add(gmaps.Marker(
+          markerId: gmaps.MarkerId('driver'),
+          position: latLng,
+          infoWindow: gmaps.InfoWindow(title: 'Conductor'),
+          icon: gmaps.BitmapDescriptor.defaultMarkerWithHue(
+              gmaps.BitmapDescriptor.hueBlue),
+        ));
         _driverLocation = latLng;
       } else if (isStartPlace) {
         _markers.removeWhere((m) => m.markerId.value == 'start');
-        _markers.add(
-          gmaps.Marker(
-            markerId: gmaps.MarkerId('start'),
-            position: latLng,
-            infoWindow: gmaps.InfoWindow(title: 'Inicio'),
-          ),
-        );
+        _markers.add(gmaps.Marker(
+          markerId: gmaps.MarkerId('start'),
+          position: latLng,
+          infoWindow: gmaps.InfoWindow(title: 'Inicio'),
+        ));
         _startLocation = latLng;
       } else {
         _markers.removeWhere((m) => m.markerId.value == 'destination');
-        _markers.add(
-          gmaps.Marker(
-            markerId: gmaps.MarkerId('destination'),
-            position: latLng,
-            infoWindow: gmaps.InfoWindow(title: 'Destino'),
-          ),
-        );
+        _markers.add(gmaps.Marker(
+          markerId: gmaps.MarkerId('destination'),
+          position: latLng,
+          infoWindow: gmaps.InfoWindow(title: 'Destino'),
+        ));
         _endLocation = latLng;
       }
     });
@@ -241,7 +230,6 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
       body: SafeArea(
         child: Stack(
           children: [
-            // Always display the map
             gmaps.GoogleMap(
               onMapCreated: _onMapCreated,
               initialCameraPosition: gmaps.CameraPosition(
@@ -253,105 +241,110 @@ class _AcceptTravelPageState extends State<AcceptTravelPage> {
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
             ),
-            // Show a loading indicator if locations are not ready
             if (_startLocation == null || _endLocation == null)
               Center(child: CircularProgressIndicator()),
-            // Image and text based on idStatus
             Obx(() {
               String statusText;
-              String gifPath;
+              String lottieUrl;
 
               if (idStatus.value == 3) {
                 statusText =
                     'Viaje aceptado, espera al conductor en la ubicación acordada';
-                gifPath = 'assets/images/viajes/viaje-aceptado.gif';
+                lottieUrl =
+                    'https://lottie.host/4b6efc1d-1021-48a4-a3dd-df0eecbd8949/1CzFNvYv69.json';
               } else if (idStatus.value == 4) {
                 statusText = 'Viaje en curso';
-                gifPath = 'assets/images/viajes/viaje-en-curso.gif';
+                lottieUrl =
+                    'https://lottie.host/4a367cbb-4834-44ba-997a-9a8a62408a99/keSVai2cNe.json';
               } else if (idStatus.value == 5) {
                 statusText = 'Viaje fue terminado';
-                gifPath = 'assets/images/viajes/viaje-finalizado.gif';
+                lottieUrl =
+                    'https://lottie.host/6e431316-eca7-442c-8dc1-260ba57c2329/ds9skaDTtN.json';
               } else {
-                statusText = 'Estado desconocido';
-                gifPath = 'assets/images/viajes/viaje-desconocido.gif';
+                statusText = '';
+                lottieUrl =
+                    'https://lottie.host/570427d7-38f8-4de4-bacf-bb19b51afb5a/FyXEfSV0rb.json';
               }
 
-              return Positioned(
-                bottom: 100,
-                left: 20,
-                right: 20,
-                child: Column(
-                  children: [
-                    Text(
-                      statusText,
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 10),
-                    Container(
-                      height: 200,
-                      width: 200,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Image.asset(
-                          gifPath,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-            // Button to return to the application
-            Positioned(
-              bottom: 30,
-              left: 20,
-              right: 20,
-              child: Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      // Navigate to HomePage and remove all previous routes
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => HomePage(
-                                  selectedIndex: 1,
-                                )),
-                        (Route<dynamic> route) => false,
-                      );
-                    },
-                    child: Text('Regresar a la aplicación'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context)
-                          .primaryColor, // Adjust the color according to your theme
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                      textStyle: TextStyle(fontSize: 18),
-                    ),
-                  ),
-                ],
+              return Column(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    Spacer(), // Esto empuja los elementos al centro verticalmente
+
+    Container(
+      width: 150,
+      height: 150,
+      child: Lottie.network(lottieUrl),
+    ),
+    SizedBox(height: 16),
+    Text(
+      statusText,
+      style: TextStyle(fontSize: 18),
+    ),
+
+    Spacer(), // Agrega espacio entre el texto y el botón para centrar los elementos
+    
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 30.0), // Centra horizontalmente
+      child: ElevatedButton(
+        onPressed: () {
+          // Navega a HomePage y elimina todas las rutas anteriores
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomePage(
+                selectedIndex: 1,
               ),
             ),
-            // Information button
-            Positioned(
+            (Route<dynamic> route) => false,
+          );
+        },
+        child: Text('Regresar a la aplicación'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).primaryColor,
+          padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+          textStyle: TextStyle(fontSize: 18),
+        ),
+      ),
+    ),
+  ],
+);
+
+            }),
+             Positioned(
               top: 10,
               left: 10,
               child: IconButton(
                 icon: Icon(Icons.info_outline, size: 40),
                 onPressed: () {
-                  QuickAlert.show(
-                    context: context,
-                    type: QuickAlertType.info,
-                    title: 'Información del Viaje',
-                    text: travelByIdController.state.value
-                            is TravelByIdAlertLoaded
-                        ? 'Cliente: ${(travelByIdController.state.value as TravelByIdAlertLoaded).travels[0].client}\nFecha: ${(travelByIdController.state.value as TravelByIdAlertLoaded).travels[0].date}\nCosto: ${(travelByIdController.state.value as TravelByIdAlertLoaded).travels[0].cost}'
-                        : 'Sin información de cliente',
-                    confirmBtnText: 'Cerrar',
-                  );
+                  if (travelByIdController.state.value
+                      is TravelByIdAlertLoaded) {
+                    var travel = (travelByIdController.state.value
+                            as TravelByIdAlertLoaded)
+                        .travels[0];
+                    var driverName = 'Sin conductor asignado';
+
+                    if (travel.drivers!.isNotEmpty) {
+                      driverName = travel.drivers![0].name;
+                    }
+
+                    QuickAlert.show(
+                      context: context,
+                      type: QuickAlertType.info,
+                      title: 'Información del Viaje',
+                      text:
+                          'Conductor: $driverName\nFecha: ${travel.date}\nCosto: ${travel.cost}',
+                      confirmBtnText: 'Cerrar',
+                    );
+                  } else {
+                    QuickAlert.show(
+                      context: context,
+                      type: QuickAlertType.info,
+                      title: 'Información del Viaje',
+                      text: 'Sin información de conductor',
+                      confirmBtnText: 'Cerrar',
+                    );
+                  }
                 },
               ),
             ),

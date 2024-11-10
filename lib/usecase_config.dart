@@ -5,6 +5,7 @@ import 'package:rayo_taxi/features/clients/domain/usecases/calculate_age_usecase
 import 'package:rayo_taxi/features/clients/domain/usecases/create_client_usecase.dart';
 import 'package:rayo_taxi/features/clients/domain/usecases/get_client_usecase.dart';
 import 'package:rayo_taxi/features/clients/domain/usecases/login_client_usecase.dart';
+import 'package:rayo_taxi/features/clients/domain/usecases/login_google_usecase.dart';
 import 'package:rayo_taxi/features/clients/domain/usecases/update_client_usecase.dart';
 import 'package:rayo_taxi/features/notification/data/datasources/notification_local_data_source.dart';
 import 'package:rayo_taxi/features/notification/data/repositories/notification_repository_imp.dart';
@@ -37,6 +38,7 @@ class UsecaseConfig {
   GetClientUsecase? getClientUsecase;
   UpdateClientUsecase? updateClientUsecase;
   CalculateAgeUsecase? calculateAgeUsecase;
+  LoginGoogleUsecase? loginGoogleUsecase;
 
   PoshTravelUsecase? poshTravelUsecase;
   
@@ -67,6 +69,7 @@ class UsecaseConfig {
     getClientUsecase = GetClientUsecase(clientRepository: clientRepositoryImpl!);
     updateClientUsecase = UpdateClientUsecase(clientRepository: clientRepositoryImpl!);
     calculateAgeUsecase = CalculateAgeUsecase(clientRepository: clientRepositoryImpl!);
+    loginGoogleUsecase = LoginGoogleUsecase(clientRepository: clientRepositoryImpl!);
    
     poshTravelUsecase = PoshTravelUsecase(travelRepository: travelRepositoryImp!);
     deleteTravelUsecase = DeleteTravelUsecase(travelRepository: travelRepositoryImp!);

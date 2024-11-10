@@ -265,7 +265,6 @@ class _RegisterClientsPageState extends State<RegisterClientsPage> {
     );
   }
 
-  // Método para crear un TextFormField normal
   Widget _buildTextFormField({
     required TextEditingController controller,
     required String label,

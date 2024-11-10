@@ -13,6 +13,7 @@ import 'package:rayo_taxi/features/notification/presentetion/getx/TravelsAlert/t
 import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/travel.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/delete/delete_travel_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/getx/notification/notificationcontroller.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.dart';
 import 'package:rayo_taxi/main.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
@@ -49,7 +50,10 @@ class MapController extends GetxController {
   TextEditingController startController = TextEditingController();
   TextEditingController endController = TextEditingController();
   TravelLocalDataSource travelLocalDataSource = TravelLocalDataSourceImp();
-
+  final NotificationController notificationController =
+      Get.find<NotificationController>();
+ final ModalController modalController =
+      Get.find<ModalController>();
   late ConnectivityService connectivityService;
 
   FocusNode startFocusNode = FocusNode();
@@ -60,6 +64,11 @@ class MapController extends GetxController {
   // Para manejar el historial de búsqueda
   RxList<Map<String, String>> searchHistory = <Map<String, String>>[].obs;
   RxBool isButtonVisible = true.obs;
+
+  RxString lottieUrl =
+      'https://lottie.host/e44ab786-30a1-48ee-96eb-bb2e002f3ae8/NtzqQeAN8j.json'
+          .obs;
+  RxString modalText = 'Buscando chofer...'.obs;
 
   @override
   void onInit() {
@@ -78,26 +87,25 @@ class MapController extends GetxController {
       searchAndSelectPlace(endController.text, isStartPlace: false);
     }
 
- startController.addListener(() {
-  if (currentInputField.value == 'start') {
-    searchPlace(startController.text, isStartPlace: true);
+    startController.addListener(() {
+      if (currentInputField.value == 'start') {
+        searchPlace(startController.text, isStartPlace: true);
 
-    // Oculta el botón si hay predicciones o historial de búsqueda
-    isButtonVisible.value = startPredictions.isEmpty && 
-                            (startController.text.isNotEmpty || searchHistory.isEmpty);
-  }
-});
+        // Oculta el botón si hay predicciones o historial de búsqueda
+        isButtonVisible.value = startPredictions.isEmpty &&
+            (startController.text.isNotEmpty || searchHistory.isEmpty);
+      }
+    });
 
-endController.addListener(() {
-  if (currentInputField.value == 'end') {
-    searchPlace(endController.text, isStartPlace: false);
+    endController.addListener(() {
+      if (currentInputField.value == 'end') {
+        searchPlace(endController.text, isStartPlace: false);
 
-    // Oculta el botón si hay predicciones o historial de búsqueda
-    isButtonVisible.value = endPredictions.isEmpty && 
-                            (endController.text.isNotEmpty || searchHistory.isEmpty);
-  }
-});
-
+        // Oculta el botón si hay predicciones o historial de búsqueda
+        isButtonVisible.value = endPredictions.isEmpty &&
+            (endController.text.isNotEmpty || searchHistory.isEmpty);
+      }
+    });
 
     Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
       if (result == ConnectivityResult.none) {
@@ -182,7 +190,8 @@ endController.addListener(() {
     }
   }
 
-  void searchAndSelectPlace(String placeName, {required bool isStartPlace}) async {
+  void searchAndSelectPlace(String placeName,
+      {required bool isStartPlace}) async {
     if (placeName.isEmpty) return;
 
     // Obtiene las predicciones de lugares basadas en el nombre
@@ -192,7 +201,7 @@ endController.addListener(() {
     if (predictions.isNotEmpty) {
       String placeId = predictions.first['place_id'];
       // Selecciona el lugar y agrega el marcador en el mapa
-       selectPlace(placeId, isStartPlace);
+      selectPlace(placeId, isStartPlace);
 
       // Actualiza el texto del controlador con la descripción del lugar
       if (isStartPlace) {
@@ -213,7 +222,8 @@ endController.addListener(() {
   Future<void> traceRoute() async {
     if (startLocation.value != null && endLocation.value != null) {
       try {
-        await travelLocalDataSource.getRoute(startLocation.value!, endLocation.value!);
+        await travelLocalDataSource.getRoute(
+            startLocation.value!, endLocation.value!);
         String encodedPoints = await travelLocalDataSource.getEncodedPoints();
         List<LatLng> polylineCoordinates =
             travelLocalDataSource.decodePolyline(encodedPoints);
@@ -229,9 +239,10 @@ endController.addListener(() {
       }
     }
   }
-
-  void showRouteDetails(BuildContext context) async {
-    if (startLocation.value != null && endLocation.value != null) {
+void showRouteDetails(BuildContext context) async {
+  if (startLocation.value != null && endLocation.value != null) {
+    if (!notificationController.tripAccepted.value) {
+      // Si `tripAccepted` es falso, ejecutamos `poshTravel`
       double distance = travelLocalDataSource.calculateDistance(
           startLocation.value!, endLocation.value!);
       double duration = travelLocalDataSource.getDuration();
@@ -247,82 +258,91 @@ endController.addListener(() {
 
       await travelGetx.poshTravel(CreateTravelEvent(post));
       await travelAlertGetx.fetchCoDetails(FetchtravelsDetailsEvent());
+    }
 
-      // Mostrar el modal
-      Get.bottomSheet(
-  FractionallySizedBox(
-    heightFactor: 0.75,
-    child: ClipRRect(
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(20),
-      ),
-      child: SizedBox.expand( // Asegura que el modal ocupe todo el ancho disponible
-        child: Container(
-          color: Colors.white,
-          padding: EdgeInsets.all(20),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                SizedBox(
-                  height: 300,
-                  child: Lottie.network(
-                    'https://lottie.host/e44ab786-30a1-48ee-96eb-bb2e002f3ae8/NtzqQeAN8j.json',
-                    fit: BoxFit.contain,
-                    repeat: true,
-                  ),
+    // Mostrar el modal
+    Get.bottomSheet(
+      FractionallySizedBox(
+        heightFactor: 0.75,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(20),
+          ),
+          child: SizedBox.expand(
+            child: Container(
+              color: Colors.white,
+              padding: EdgeInsets.all(20),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Obx(() => SizedBox(
+                          height: 300,
+                          child: Lottie.network(
+                            modalController.lottieUrl.value,
+                            fit: BoxFit.contain,
+                            repeat: true,
+                          ),
+                        )),
+                    SizedBox(height: 20),
+                    Obx(() => Align(
+                          alignment: Alignment.center,
+                          child: Text(
+                            modalController.modalText.value,
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        )),
+                    SizedBox(height: 20),
+                    Obx(() {
+                      return notificationController.tripAccepted.value
+                          ? SizedBox.shrink()
+                          : ElevatedButton(
+                              onPressed: () async {
+                                int? savedTravelId = await getSavedTravelId();
+
+                                if (savedTravelId != null) {
+                                  print('ID del viaje a cancelar: $savedTravelId');
+
+                                  await deleteTravelGetx.deleteTravel(
+                                      DeleteTravelEvent(savedTravelId.toString()));
+
+                                  Get.back(); // Cierra el modal
+                                } else {
+                                  Get.snackbar(
+                                    'Error',
+                                    'No se encontró un ID de viaje válido',
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.buttonColor,
+                                  foregroundColor:
+                                      Theme.of(context).colorScheme.buttontext),
+                              child: Text('Cancelar viaje'),
+                            );
+                    })
+                  ],
                 ),
-                SizedBox(height: 20),
-                Text(
-                  'Buscando chofer...',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-               
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () async {
-                    int? savedTravelId = await getSavedTravelId();
-
-                    if (savedTravelId != null) {
-                      print('ID del viaje a cancelar: $savedTravelId');
-
-                      await deleteTravelGetx.deleteTravel(
-                          DeleteTravelEvent(savedTravelId.toString()));
-
-                      Get.back(); // Cierra el modal
-                    } else {
-                      Get.snackbar(
-                        'Error',
-                        'No se encontró un ID de viaje válido',
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Theme.of(context).colorScheme.buttonColor,
-                      foregroundColor:
-                          Theme.of(context).colorScheme.buttontext),
-                  child: Text('Cancelar viaje'),
-                ),
-              ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  ),
-  isScrollControlled: true,
-  backgroundColor: Colors.transparent,
-);
-
-    } else {
-      Get.snackbar(
-        'Error',
-        'Por favor, ingresa la dirección de inicio y destino.',
-        duration: Duration(seconds: 3),
-      );
-    }
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  } else {
+    Get.snackbar(
+      'Error',
+      'Por favor, ingresa la dirección de inicio y destino.',
+      duration: Duration(seconds: 3),
+    );
   }
+}
+
+
 
   Future<void> searchPlace(String input, {required bool isStartPlace}) async {
     if (input.isEmpty) {
@@ -339,8 +359,7 @@ endController.addListener(() {
       locationBias = startLatLng;
     }
 
-    List<dynamic> predictions =
-        await travelLocalDataSource.getPlacePredictions(
+    List<dynamic> predictions = await travelLocalDataSource.getPlacePredictions(
       input,
       location: locationBias,
     );
@@ -374,12 +393,11 @@ endController.addListener(() {
     // Guardar en el historial de búsqueda
     await travelLocalDataSource.saveSearchHistory({
       'place_id': placeId,
-      'description':
-          isStartPlace ? startController.text : endController.text,
+      'description': isStartPlace ? startController.text : endController.text,
     });
     loadSearchHistory();
-      isButtonVisible.value = startController.text.isNotEmpty && endController.text.isNotEmpty;
-
+    isButtonVisible.value =
+        startController.text.isNotEmpty && endController.text.isNotEmpty;
   }
 
   void getUserLocation() async {
@@ -406,8 +424,8 @@ endController.addListener(() {
       LatLng userLocation = LatLng(position.latitude, position.longitude);
 
       // Realiza la geocodificación inversa para obtener la dirección
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-          position.latitude, position.longitude);
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(position.latitude, position.longitude);
       String address = '';
       if (placemarks.isNotEmpty) {
         Placemark placemark = placemarks.first;
@@ -722,43 +740,43 @@ class MapScreen extends StatelessWidget {
             ),
             // Botón de "Buscar conductor"
             Obx(() {
-     return controller.isButtonVisible.value
-
-      ? Positioned(
-          bottom: 80.0,
-          left: 20.0,
-          right: 20.0,
-          child: ElevatedButton(
-            onPressed: () => controller.showRouteDetails(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  Theme.of(context).colorScheme.buttonColormap,
-              padding: EdgeInsets.symmetric(vertical: 18.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25.0),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.directions,
-                  color: Colors.white,
-                ),
-                SizedBox(width: 10.0),
-                Text(
-                  controller.buttonText.value,
-                  style: TextStyle(
-                    fontSize: 18.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        )
-      : SizedBox.shrink(); // Renderiza un espacio vacío cuando el botón está oculto
-}),
+              return controller.isButtonVisible.value
+                  ? Positioned(
+                      bottom: 80.0,
+                      left: 20.0,
+                      right: 20.0,
+                      child: ElevatedButton(
+                        onPressed: () => controller.showRouteDetails(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.buttonColormap,
+                          padding: EdgeInsets.symmetric(vertical: 18.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25.0),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.directions,
+                              color: Colors.white,
+                            ),
+                            SizedBox(width: 10.0),
+                            Text(
+                              controller.buttonText.value,
+                              style: TextStyle(
+                                fontSize: 18.0,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : SizedBox
+                      .shrink(); // Renderiza un espacio vacío cuando el botón está oculto
+            }),
 
             // Botón de ubicación del usuario
             Positioned(

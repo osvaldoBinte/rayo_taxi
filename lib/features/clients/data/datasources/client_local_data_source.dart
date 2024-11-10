@@ -9,6 +9,7 @@ import 'dart:io';
 import 'dart:convert' as convert;
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 
 abstract class ClientLocalDataSource {
   Future<void> createClient(Client client);
@@ -17,11 +18,13 @@ abstract class ClientLocalDataSource {
   Future<bool> verifyToken();
   Future<List<ClientModel>> getClient(bool conection);
   int calcularEdad(String birthdate);
+  Future<void> loginGoogle(Client client);
 }
 
 class ClientLocalDataSourceImp implements ClientLocalDataSource {
   final String _baseUrl =
       'https://developer.binteapi.com:3009/api/app_clients/users';
+final logger = Logger();
 
   @override
   int calcularEdad(String birthdate) {
@@ -71,7 +74,7 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
             List<ClientModel> clients = [ClientModel.fromJson(data)];
 
             sharedPreferences.setString('clients', jsonEncode(clients));
-            print("holaaa  aa");
+            print("");
             return clients;
           } else {
             throw Exception('Estructura de respuesta inesperada');
@@ -159,7 +162,7 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
       print(message);
     } else {
       String message = body['message'].toString();
-      print(body);
+      print('error en login client${body}');
       throw Exception(message);
     }
   }
@@ -216,7 +219,6 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
     try {
       var response = await request.send();
 
-      // Transformar la respuesta
       var responseData = await http.Response.fromStream(response);
       if (response.statusCode == 200) {
         dynamic body = jsonDecode(responseData.body);
@@ -253,4 +255,46 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
       throw Exception('Error al actualizar cliente: ${e.toString()}');
     }
   }
+@override
+Future<void> loginGoogle(Client client) async {
+  final DeviceGetx _driverGetx = Get.find<DeviceGetx>();
+
+  logger.i('Iniciando solicitud HTTP POST a $_baseUrl/auth/loginWithGoogle');
+
+  final requestStartTime = DateTime.now();
+  var response = await http.post(
+    Uri.parse('$_baseUrl/auth/loginWithGoogle'),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode(ClientModel.fromEntity(client).toJson()),
+  );
+  final requestDuration = DateTime.now().difference(requestStartTime);
+  logger.i('Solicitud HTTP completada en ${requestDuration.inMilliseconds} ms');
+
+  dynamic body = jsonDecode(response.body);
+
+  logger.i('Código de estado de la respuesta: ${response.statusCode}');
+
+  if (response.statusCode == 200) {
+    String message = body['message'].toString();
+    logger.i('Mensaje Google: $message');
+    String token = body['data']['token'].toString();
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auth_token', token);
+    await prefs.setString('login_message', message);
+    logger.i('auth_token google: $token');
+
+    logger.i('Iniciando _driverGetx.getDeviceId()');
+    final deviceIdStartTime = DateTime.now();
+    await _driverGetx.getDeviceId();
+    final deviceIdDuration = DateTime.now().difference(deviceIdStartTime);
+    logger.i('_driverGetx.getDeviceId() completado en ${deviceIdDuration.inMilliseconds} ms');
+  } else {
+    String message = body['message'].toString();
+    logger.e('Error en la respuesta: $message');
+    throw Exception(message);
+  }
+}
 }

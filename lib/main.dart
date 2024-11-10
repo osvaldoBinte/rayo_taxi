@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/calculateAge/calculateAge_getx.dart';
+import 'package:rayo_taxi/features/clients/presentation/getxs/loginGoogle/loginGoogle_getx.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/update/Update_getx.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/home_page.dart';
 import 'package:rayo_taxi/features/notification/presentetion/getx/Device/device_getx.dart';
@@ -12,6 +13,7 @@ import 'package:rayo_taxi/features/notification/presentetion/getx/TravelById/tra
 import 'package:rayo_taxi/features/notification/presentetion/getx/TravelsAlert/travels_alert_getx.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/delete/delete_travel_getx.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/mapa/destino_controller.dart';
+import 'package:rayo_taxi/features/travel/presentation/getx/notification/notificationcontroller.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/mapa.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/mapa/destino_page.dart';
@@ -47,12 +49,11 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
+await Firebase.initializeApp();
   channel = const AndroidNotificationChannel(
-    'high_importance_channel', 
-    'Notificaciones Importantes', 
-    description:
-        'Este canal se usa para notificaciones importantes.',
+    'high_importance_channel',
+    'Notificaciones Importantes',
+    description: 'Este canal se usa para notificaciones importantes.',
     importance: Importance.high,
   );
 
@@ -99,13 +100,22 @@ void main() async {
       deleteTravelUsecase: usecaseConfig.deleteTravelUsecase!,
       connectivityService: connectivityService));
   Get.put(GetDeviceGetx(getDeviceUsecase: usecaseConfig.getDeviceUsecase!));
-
+  
   Get.put(TravelByIdAlertGetx(
       travelByIdUsecase: usecaseConfig.travelByIdUsecase!,
       connectivityService: connectivityService));
-  
-  Get.put(DestinoController(getSearchHistoryUsecase: usecaseConfig.getSearchHistoryUsecase!,saveSearchHistoryUsecase: usecaseConfig.saveSearchHistoryUsecase!,getPlaceDetailsAndMoveUsecase: usecaseConfig.getPlaceDetailsAndMoveUsecase!, getPlacePredictionsUsecase: usecaseConfig.getPlacePredictionsUsecase!, ));
- //Get.put( MapController(getSearchHistoryUsecase: usecaseConfig.getSearchHistoryUsecase!,saveSearchHistoryUsecase: usecaseConfig.saveSearchHistoryUsecase!,getPlaceDetailsAndMoveUsecase: usecaseConfig.getPlaceDetailsAndMoveUsecase!, getPlacePredictionsUsecase: usecaseConfig.getPlacePredictionsUsecase!, ),);
+
+  Get.put(DestinoController(
+    getSearchHistoryUsecase: usecaseConfig.getSearchHistoryUsecase!,
+    saveSearchHistoryUsecase: usecaseConfig.saveSearchHistoryUsecase!,
+    getPlaceDetailsAndMoveUsecase: usecaseConfig.getPlaceDetailsAndMoveUsecase!,
+    getPlacePredictionsUsecase: usecaseConfig.getPlacePredictionsUsecase!,
+  ));
+  Get.put(LogingoogleGetx(loginGoogleUsecase: usecaseConfig.loginGoogleUsecase!));
+
+  //Get.put( MapController(getSearchHistoryUsecase: usecaseConfig.getSearchHistoryUsecase!,saveSearchHistoryUsecase: usecaseConfig.saveSearchHistoryUsecase!,getPlaceDetailsAndMoveUsecase: usecaseConfig.getPlaceDetailsAndMoveUsecase!, getPlacePredictionsUsecase: usecaseConfig.getPlacePredictionsUsecase!, ),);
+  Get.put(NotificationController());
+  Get.put(ModalController());
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     print('Mensaje recibido en primer plano: ${message.messageId}');
 
@@ -124,6 +134,10 @@ void main() async {
         confirmBtnText: 'OK',
         onConfirmBtnTap: () {
           if (title == 'Viaje terminado') {
+            Get.find<NotificationController>().tripAccepted.value = false;
+            Get.find<ModalController>().lottieUrl.value =
+                'https://lottie.host/e44ab786-30a1-48ee-96eb-bb2e002f3ae8/NtzqQeAN8j.json';
+            Get.find<ModalController>().modalText.value = 'Buscando chofer...';
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
@@ -150,6 +164,32 @@ void main() async {
     AndroidNotification? android = message.notification?.android;
 
     if (notification != null && android != null) {
+      if (notification.title == 'Tu viaje fue aceptado') {
+        Get.find<NotificationController>().tripAccepted.value = true;
+        Get.find<ModalController>().lottieUrl.value =
+            'https://lottie.host/4b6efc1d-1021-48a4-a3dd-df0eecbd8949/1CzFNvYv69.json';
+        Get.find<ModalController>().modalText.value =
+            'Viaje aceptado, espera al conductor en el punto de encuentro';
+      }
+      if (notification.title == 'Tu viaje ha comenzado') {
+        Get.find<NotificationController>().tripAccepted.value = true;
+        Get.find<ModalController>().lottieUrl.value =
+            'https://lottie.host/4a367cbb-4834-44ba-997a-9a8a62408a99/keSVai2cNe.json';
+        Get.find<ModalController>().modalText.value = 'Tu viaje ha comenzado';
+      }
+     
+       if (notification.title == 'El taxi llego') {
+        Get.find<NotificationController>().tripAccepted.value = true;
+        Get.find<ModalController>().lottieUrl.value =
+            "https://lottie.host/bcf4608b-5b35-4c48-b2c9-c0126124a159/CFerLgDKdO.json";
+        Get.find<ModalController>().modalText.value = 'El taxi ha llegado al punto de encuentro';
+      }
+       if (notification.title == 'Viaje terminado') {
+        Get.find<NotificationController>().tripAccepted.value = false;
+        Get.find<ModalController>().lottieUrl.value =
+            'https://lottie.host/e44ab786-30a1-48ee-96eb-bb2e002f3ae8/NtzqQeAN8j.json';
+        Get.find<ModalController>().modalText.value = 'Buscando chofer...';
+      }
       flutterLocalNotificationsPlugin.show(
         notification.hashCode,
         notification.title,
@@ -186,6 +226,51 @@ void main() async {
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
+ if (!Get.isRegistered<NotificationController>()) {
+    Get.put(NotificationController());
+  }
+  if (!Get.isRegistered<ModalController>()) {
+    Get.put(ModalController());
+  }
+  RemoteNotification? notification = message.notification;
+  AndroidNotification? android = message.notification?.android;
+print(" en segundo plano");
+  if (notification != null && android != null) {
+    print(" en segundo plano 2");
+
+         if (notification.title == 'Tu viaje fue aceptado') {
+        Get.find<NotificationController>().tripAccepted.value = true;
+        Get.find<ModalController>().lottieUrl.value =
+            'https://lottie.host/4b6efc1d-1021-48a4-a3dd-df0eecbd8949/1CzFNvYv69.json';
+        Get.find<ModalController>().modalText.value =
+            'Viaje aceptado, espera al conductor en el punto de encuentro';
+                print(" Tu viaje fue aceptado");
+
+      }
+      if (notification.title == 'Tu viaje ha comenzado') {
+                        print(" Tu viaje ha comenzad");
+
+        Get.find<NotificationController>().tripAccepted.value = true;
+        Get.find<ModalController>().lottieUrl.value =
+            'https://lottie.host/4a367cbb-4834-44ba-997a-9a8a62408a99/keSVai2cNe.json';
+        Get.find<ModalController>().modalText.value = 'Tu viaje ha comenzado';
+      }
+     
+       if (notification.title == 'El taxi llego') {
+                                print("El taxi llego");
+
+        Get.find<NotificationController>().tripAccepted.value = true;
+        Get.find<ModalController>().lottieUrl.value =
+            "https://lottie.host/bcf4608b-5b35-4c48-b2c9-c0126124a159/CFerLgDKdO.json";
+        Get.find<ModalController>().modalText.value = 'El taxi ha llegado al punto de encuentro';
+      }
+       if (notification.title == 'Viaje terminado') {
+        Get.find<NotificationController>().tripAccepted.value = false;
+        Get.find<ModalController>().lottieUrl.value =
+            'https://lottie.host/e44ab786-30a1-48ee-96eb-bb2e002f3ae8/NtzqQeAN8j.json';
+        Get.find<ModalController>().modalText.value = 'Buscando chofer...';
+      }
+  }
 }
 
 void _handleNotificationClick(Map<String, dynamic> data) {
@@ -193,7 +278,7 @@ void _handleNotificationClick(Map<String, dynamic> data) {
   print('Datos del mensaje: $data');
   print('el id desde _handleLoadedState ${travelId}');
 
-  if (travelId != null) {   
+  if (travelId != null) {
     Get.to(() => AcceptTravelPage(idTravel: travelId));
   } else {
     print('Error: El travelId no es un entero válido');
@@ -211,9 +296,8 @@ class MyApp extends StatelessWidget {
     );
 
     return GetMaterialApp(
-      navigatorKey: navigatorKey, 
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
-
       locale: const Locale('es', 'ES'),
       supportedLocales: [
         const Locale('es', 'ES'),
@@ -223,7 +307,6 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-
       theme: ThemeData(
         primaryColor: Color(0xFF3F3F3F),
         colorScheme: colorScheme,
@@ -245,7 +328,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
 class SplashScreen extends StatefulWidget {
   @override
   _SplashScreenState createState() => _SplashScreenState();
@@ -257,7 +339,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   void initState() {
+    
     super.initState();
+    
     _initializeApp();
   }
 
@@ -266,10 +350,17 @@ class _SplashScreenState extends State<SplashScreen> {
     token = prefs.getString('auth_token');
     idDevice = await Get.find<GetDeviceGetx>().fetchDeviceId();
 
-    if (idDevice == null || idDevice!.isEmpty) {
+  /*  if (idDevice == null || idDevice!.isEmpty) {
       await prefs.remove('auth_token');
       Get.offAll(() => LoginClientsPage());
     } else if (token != null && token!.isNotEmpty) {
+      Get.offAll(() => HomePage(
+            selectedIndex: 1,
+          ));
+    } else {
+      Get.offAll(() => LoginClientsPage());
+    }*/
+    if (token != null && token!.isNotEmpty) {
       Get.offAll(() => HomePage(
             selectedIndex: 1,
           ));
@@ -320,6 +411,6 @@ extension CustomColorScheme on ColorScheme {
   Color get button => Color.fromARGB(255, 10, 10, 10);
   Color get buttontext => Colors.white;
 
-    Color get iconhistory => Color(0xFFEFC300);
+  Color get iconhistory => Color(0xFFEFC300);
   Color get iconlocation_on => Colors.red;
 }

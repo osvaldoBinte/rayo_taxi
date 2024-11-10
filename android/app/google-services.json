@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "142272499428",
     "project_id": "rayo-taxi-d58f6",
-    "storage_bucket": "rayo-taxi-d58f6.appspot.com"
+    "storage_bucket": "rayo-taxi-d58f6.firebasestorage.app"
   },
   "client": [
     {
@@ -12,7 +12,28 @@
           "package_name": "com.rayo.taxi"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "142272499428-63ue1fkho391enh8236092iur6c5t1ck.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rayo.taxi",
+            "certificate_hash": "d90911d76304e331b957e38d9667f9a294e143b5"
+          }
+        },
+        {
+          "client_id": "142272499428-ssavonqe5fj75c50fga5fj7at6efh2vn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rayo.taxi",
+            "certificate_hash": "b9441fa0cae6915d37cb54c0b457f5ed509f4bd2"
+          }
+        },
+        {
+          "client_id": "142272499428-ft4asl531fjlf0n5n7qb947m9o11hrg5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD9ujivJZkEzGrX_WALZ7Jg9oRSE2mOvZM"
@@ -20,7 +41,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "142272499428-ft4asl531fjlf0n5n7qb947m9o11hrg5.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "142272499428-937p04c8id7dvboov7sfmr8npc2b3ao8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.rayo.taxi"
+              }
+            }
+          ]
         }
       }
     }

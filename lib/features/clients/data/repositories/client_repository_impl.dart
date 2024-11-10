@@ -37,4 +37,12 @@ class ClientRepositoryImpl implements ClientRepository {
   int calcularEdad(String birthdate)  {
    return clientLocalDataSource.calcularEdad(birthdate);
   }
+  
+  @override
+  Future<void> loginGoogle(Client client) async {
+    return await clientLocalDataSource.loginGoogle(client);
+  }
+  
+ 
+  
 }

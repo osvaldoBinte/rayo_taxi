@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rayo_taxi/features/clients/presentation/getxs/login/loginclient_getx.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/edit_porfile_modal.dart';
@@ -32,24 +33,46 @@ class _GetClientPageState extends State<GetClientPage> {
   final _picker = ImagePicker();
   String? _imagePath;
 
-// Método de cierre de sesión con confirmación
-  Future<void> _logout() async {
-    QuickAlert.show(
-      context: Get.context!,
-      type: QuickAlertType.confirm,
-      title: 'Cerrar sesión',
-      text: '¿Estás seguro de que deseas cerrar sesión?',
-      confirmBtnText: 'Sí',
-      cancelBtnText: 'No',
-      onConfirmBtnTap: () async {
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        _loginGetx.logout();
 
-        await prefs.remove('auth_token');
-        await Get.offAll(() => LoginClientsPage());
-      },
-    );
-  }
+Future<void> _logout() async {
+  QuickAlert.show(
+    context: Get.context!,
+    type: QuickAlertType.confirm,
+    title: 'Cerrar sesión',
+    text: '¿Estás seguro de que deseas cerrar sesión?',
+    confirmBtnText: 'Sí',
+    cancelBtnText: 'No',
+    onConfirmBtnTap: () async {
+      // Obtener instancia de GoogleSignIn
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+
+      try {
+        // Cerrar sesión de Google
+        await googleSignIn.signOut();
+                print("se cerro la sesion");
+
+      } catch (e) {
+        print("Error al cerrar sesión de Google: $e");
+      }
+
+      // Intentar desconectar, pero manejar la excepción si falla
+      try {
+        await googleSignIn.disconnect();
+      } catch (e) {
+        print("No se pudo revocar el acceso de Google: $e");
+      }
+
+      // Limpiar el token de autenticación
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      _loginGetx.logout();
+      await prefs.remove('auth_token');
+
+      // Navegar a la página de inicio de sesión
+      await Get.offAll(() => LoginClientsPage());
+    },
+  );
+}
+
 
   @override
   void initState() {

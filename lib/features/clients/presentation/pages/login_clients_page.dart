@@ -1,13 +1,18 @@
+import 'dart:convert';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:intl/intl.dart';
+import 'package:rayo_taxi/features/clients/presentation/getxs/loginGoogle/loginGoogle_getx.dart';
 import 'package:rayo_taxi/features/clients/presentation/pages/home_page.dart';
 import 'package:rayo_taxi/main.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart'; 
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../../domain/entities/client.dart';
 import '../getxs/login/loginclient_getx.dart';
 import 'register_clients_page.dart';
-
 
 class LoginClientsPage extends StatefulWidget {
   @override
@@ -16,6 +21,12 @@ class LoginClientsPage extends StatefulWidget {
 
 class _LoginClientsPage extends State<LoginClientsPage> {
   final LoginclientGetx _clientGetx = Get.find<LoginclientGetx>();
+  final FirebaseAuth _auth =
+      FirebaseAuth.instance; // Instancia de Firebase Auth
+  //final GoogleSignIn _googleSignIn = GoogleSignIn(); // Instancia de Google Sign In
+  bool _isGoogleLoading =
+      false; // Nueva variable para controlar el indicador de carga
+  final TextEditingController _birthdateController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
@@ -23,7 +34,16 @@ class _LoginClientsPage extends State<LoginClientsPage> {
 
   bool _isEmailEntered = false;
   bool _obscureText = true;
-  bool _isLoading = false; 
+  bool _isLoading = false;
+  final loginController = Get.find<LogingoogleGetx>();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: [
+      'email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+    ],
+  );
+
+  get http => null;
 
   void _nextStep() {
     if (_formKey.currentState!.validate()) {
@@ -50,26 +70,187 @@ class _LoginClientsPage extends State<LoginClientsPage> {
       final client = Client(email: email, password: password);
 
       try {
-        // Asumiendo que createClient es una función asíncrona
         await _clientGetx.createClient(LoginClientEvent(client));
 
         if (_clientGetx.state.value is LoginclientSuccessfully) {
-          // Redirigir al HomePage
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => HomePage(selectedIndex: 1,)),
+            MaterialPageRoute(
+                builder: (context) => HomePage(
+                      selectedIndex: 1,
+                    )),
           );
-        } else if (_clientGetx.state.value is LoginclientFailure) {
-          // Mostrar error (ya manejado en el Obx)
-        }
+        } else if (_clientGetx.state.value is LoginclientFailure) {}
       } catch (e) {
-        // Manejar excepciones si es necesario
         print('Error durante el inicio de sesión: $e');
       } finally {
         setState(() {
           _isLoading = false; // Finalizar carga
         });
       }
+    }
+  }
+
+// Inicializa GoogleSignIn con los scopes necesarios
+  Future<void> _showBirthdateModal() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible:
+          false, // El usuario no puede cerrar el modal tocando fuera de él
+      builder: (BuildContext context) {
+        DateTime? selectedDate;
+
+        return AlertDialog(
+          title: Text('Fecha de Nacimiento'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Por favor, ingresa tu fecha de nacimiento:'),
+                SizedBox(height: 20),
+                TextFormField(
+                  controller: _birthdateController,
+                  readOnly: true,
+                  decoration: InputDecoration(
+                    hintText: 'Seleccionar fecha',
+                    suffixIcon: Icon(Icons.calendar_today),
+                    border: OutlineInputBorder(),
+                  ),
+                  onTap: () async {
+                    final DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime(2000),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                      builder: (BuildContext context, Widget? child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: ColorScheme.light(
+                              primary: Color(0xFFEFC300),
+                              onPrimary: Colors.white,
+                              onSurface: Colors.black,
+                            ),
+                            dialogBackgroundColor: Colors.white,
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    if (picked != null) {
+                      selectedDate = picked;
+                      String formattedDate =
+                          DateFormat('dd/MM/yyyy').format(picked);
+                      setState(() {
+                        _birthdateController.text = formattedDate;
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor:
+                    Theme.of(context).colorScheme.backgroundColorLogin,
+              ),
+              child: Text(
+                'Continuar',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.textButton,
+                ),
+              ),
+              onPressed: () {
+                if (_birthdateController.text.isEmpty) {
+                  // Mostrar mensaje de error si no se ha seleccionado una fecha
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Por favor, selecciona una fecha'),
+                    ),
+                  );
+                } else {
+                  Navigator.of(context).pop();
+                }
+              },
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  void _loginWithGoogle() async {
+    setState(() {
+      _isGoogleLoading = true;
+    });
+    print('${DateTime.now()}: Iniciando Google Sign-In');
+
+    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) {
+      setState(() {
+        _isGoogleLoading = false;
+      });
+      return;
+    }
+    print('${DateTime.now()}: Google Sign-In exitoso');
+
+    GoogleSignInAuthentication? googleAuth;
+    try {
+      googleAuth = await googleUser.authentication;
+    } catch (e) {
+      print('Error al obtener la autenticación de Google: $e');
+      setState(() {
+        _isGoogleLoading = false;
+      });
+      return;
+    }
+
+    final AuthCredential credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    try {
+      print('${DateTime.now()}: Iniciando Firebase Sign-In');
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+      print('${DateTime.now()}: Firebase Sign-In exitoso');
+
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        // Mostrar el modal para ingresar la fecha de nacimiento
+        await _showBirthdateModal();
+
+        final client = Client(
+          email: user.email ?? '',
+          name: user.displayName ?? '',
+          birthdate: _birthdateController.text, // Utiliza la fecha ingresada
+        );
+
+        final loginEvent = LoginGoogleEvent(client: client);
+        print('${DateTime.now()}: Iniciando loginController.logingoogle()');
+        await loginController.logingoogle(loginEvent);
+        print('${DateTime.now()}: loginController.logingoogle() completado');
+
+        if (loginController.state.value is LogingoogleSuccessfully) {
+          print('${DateTime.now()}: Navegando a HomePage');
+          Get.off(() => HomePage(selectedIndex: 1));
+        } else {
+          print('loginController ${loginController.state.value}');
+          print(
+              "${DateTime.now()}: Error: loginController.state no es LogingoogleSuccessfully");
+        }
+      } else {
+        print(
+            "${DateTime.now()}: Error: Usuario es nulo después de iniciar sesión con Google");
+      }
+    } catch (e) {
+      print('${DateTime.now()}: Error al iniciar sesión con Google: $e');
+    } finally {
+      setState(() {
+        _isGoogleLoading = false;
+      });
     }
   }
 
@@ -106,7 +287,7 @@ class _LoginClientsPage extends State<LoginClientsPage> {
               ),
               Expanded(
                 child: Container(
-                      margin: EdgeInsets.only(bottom: 25.0) ,//
+                  margin: EdgeInsets.only(bottom: 25.0), //
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.only(
@@ -125,8 +306,7 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                       horizontal: 16.0, vertical: 20.0),
                   child: SingleChildScrollView(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment
-                          .stretch, // Para que los botones ocupen todo el ancho
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         Text(
                           'INICIAR SESIÓN',
@@ -142,7 +322,9 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => HomePage(selectedIndex: 1,)),
+                                    builder: (context) => HomePage(
+                                          selectedIndex: 1,
+                                        )),
                               );
                             });
                             return Padding(
@@ -356,6 +538,7 @@ class _LoginClientsPage extends State<LoginClientsPage> {
                               _buildSocialLoginButton(
                                 imagePath: 'assets/images/google.png',
                                 text: 'Iniciar sesión con Google',
+                                onPressed: _loginWithGoogle,
                               ),
                               SizedBox(height: 20),
                               _buildSocialLoginButton(
@@ -374,6 +557,16 @@ class _LoginClientsPage extends State<LoginClientsPage> {
             ],
           ),
           // Indicador de Carga Overlay
+          if (_isGoogleLoading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: Center(
+                child: SpinKitFadingCube(
+                  color: Theme.of(context).colorScheme.buttonColor,
+                  size: 50.0,
+                ),
+              ),
+            ),
           if (_isLoading)
             Container(
               color: Colors.black.withOpacity(0.5),
@@ -424,31 +617,36 @@ class _LoginClientsPage extends State<LoginClientsPage> {
     IconData? icon,
     required String text,
     Color? color,
+    VoidCallback? onPressed, // Añade este parámetro
   }) {
-    return Container(
-      width: double.infinity,
-      height: 50,
-      decoration: BoxDecoration(
-        color: Color(0xFFD9D9D9),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (imagePath != null)
-            Image.asset(
-              imagePath,
-              width: 24,
-              height: 24,
-            ),
-          if (icon != null)
-            Icon(
-              icon,
-              color: color ?? Colors.black,
-            ),
-          SizedBox(width: 10),
-          Text(text),
-        ],
+    return GestureDetector(
+      onTap:
+          onPressed ?? () {}, // Llama a la función cuando se presiona el botón
+      child: Container(
+        width: double.infinity,
+        height: 50,
+        decoration: BoxDecoration(
+          color: Color(0xFFD9D9D9),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (imagePath != null)
+              Image.asset(
+                imagePath,
+                width: 24,
+                height: 24,
+              ),
+            if (icon != null)
+              Icon(
+                icon,
+                color: color ?? Colors.black,
+              ),
+            SizedBox(width: 10),
+            Text(text),
+          ],
+        ),
       ),
     );
   }

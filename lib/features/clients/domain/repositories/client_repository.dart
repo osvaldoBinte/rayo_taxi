@@ -8,4 +8,6 @@ abstract class ClientRepository {
   Future<void> loginClient(Client client);
   Future<bool> verifyToken();
   int calcularEdad(String birthdate);
+    Future <void> loginGoogle(Client client);
+
 }

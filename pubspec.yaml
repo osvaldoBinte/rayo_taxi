@@ -59,6 +59,9 @@ dependencies:
   flutter_spinkit: ^5.2.1
   permission_handler: ^10.2.0
   device_info_plus: ^9.0.2
+  google_sign_in: ^6.2.1
+  firebase_auth: ^5.3.1
+  logger: ^2.4.0
 
 flutter_native_splash:
   color: "#EFC300"

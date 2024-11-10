@@ -18,9 +18,9 @@ abstract class NotificationLocalDataSource {
 
 class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
   final String _baseUrl =
-      'https://developer.binteapi.com:3009/api/app_clients/users';
+      'https://5bsgwh36-3010.usw3.devtunnels.ms/api/app_clients/users';
   final String _baseUrl2 =
-      'https://developer.binteapi.com:3009/api/app_clients/travels';
+      'https://5bsgwh36-3010.usw3.devtunnels.ms/api/app_clients/travels';
   late Device device;
 
   @override
