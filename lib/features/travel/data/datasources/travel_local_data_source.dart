@@ -1,298 +1,66 @@
 import 'dart:convert';
-import 'dart:math';
-import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
-import 'package:rayo_taxi/features/travel/data/models/travel_model.dart';
-import 'package:rayo_taxi/features/travel/domain/entities/travel.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:rayo_taxi/common/constants/constants.dart';
+import 'package:rayo_taxi/features/AuthS/AuthService.dart';
+import 'package:rayo_taxi/features/travel/data/models/Travelwithtariff/Travelwithtariff_model.dart';
+import 'package:rayo_taxi/features/travel/data/models/Travelwithtariff/confirmar_tariff_model.dart';
+import 'package:rayo_taxi/features/travel/data/models/getcosttravel/getcosttravel_model.dart';
+import 'package:rayo_taxi/features/travel/data/models/travel/travel_alert_model.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/deviceEntitie/device.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/getcosttraveEntitie/getcosttravel_entitie.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/travelwithtariffEntitie/confirmar_tariff_entitie.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/travelwithtariffEntitie/travelwithtariff_entitie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert' as convert;
+import '../models/device/device_model.dart';
+import 'dart:convert';
 
-abstract class TravelLocalDataSource {
-  Future<void> poshTravel(Travel travel);
-  Future<void> deleteTravel(String id, bool connection);
-  Future<void> getRoute(LatLng startLocation, LatLng endLocation);
-  List<LatLng> decodePolyline(String encoded);
-  double calculateDistance(LatLng start, LatLng end);
-  double degreesToRadians(double degrees);
-  Future<List<dynamic>> getPlacePredictions(String input, {LatLng? location});
-  Future<void> getPlaceDetailsAndMove(String placeId,
-      Function(LatLng) moveToLocation, Function(LatLng) addMarker);
-  Future<String> getEncodedPoints();
-  Future<Map<String, dynamic>> getPlaceDetails(String placeId); // Nueva función
-   double getDuration();
-
-
-
-  Future<void> saveSearchHistory(Map<String, String> searchItem);
-  Future<List<Map<String, String>>> getSearchHistory();
+abstract class NotificationLocalDataSource {
+  Future<void> updateIdDevice();
+  Future<List<TravelAlertModel>> getNotification(bool connection);
+  Future<List<TravelAlertModel>> current_travel();
+  Future<String?> fetchDeviceId();
+  Future<List<TravelAlertModel>> getbyIdtravelid(
+      int? idTravel, bool connection);
+  Future<void> confirmTravelWithTariff(ConfirmarTariffEntitie confirmarTariffEntitie);
+  Future<void> rejectTravelOffer(TravelwithtariffEntitie travelwithtariffEntitie);
+  Future<void> removedataaccount();
+  Future<void> offerNegotiation(TravelwithtariffEntitie travelwithtariffEntitie);
+   Future<GetcosttravelEntitie> getcosttravel(GetcosttravelEntitie getcosttravelEntitie);
 }
 
-class TravelLocalDataSourceImp implements TravelLocalDataSource {
-  final String _apiKey = 'AIzaSyBAVJDSpCXiLRhVTq-MA3RgZqbmxm1wD1I';
-  String? _encodedPoints;
-  final String _baseUrl =
-      'https://developer.binteapi.com:3009/api/app_clients/travels/travels';
+class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
+    String _baseUrl = AppConstants.serverBase;
 
-  double _routeDuration =
-      0.0; // Añade esta variable a tu clase para almacenar la duración
-  static const String _searchHistoryKey = 'search_history';
+  late Device device;
 
   @override
-  Future<void> getRoute(LatLng startLocation, LatLng endLocation) async {
-  final String url =
-      'https://maps.googleapis.com/maps/api/directions/json?origin=${startLocation.latitude},${startLocation.longitude}&destination=${endLocation.latitude},${endLocation.longitude}&key=$_apiKey';
+  Future<void> updateIdDevice() async {
+    String? savedToken = await AuthService().getToken();
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    String? token = await messaging.getToken();
+    print('Device Token: $token');
 
-  // Imprimir la URL de la solicitud para verificar que se está construyendo correctamente
-  print('--- Solicitando ruta ---');
-  print('URL de la solicitud: $url');
+    device = Device(id_device: token);
 
-  try {
-    final response = await http.get(Uri.parse(url));
-
-    // Imprimir el código de estado de la respuesta
-    print('Código de estado de la respuesta: ${response.statusCode}');
-
-    // Imprimir el cuerpo completo de la respuesta para analizar posibles errores
-    print('Cuerpo de la respuesta: ${response.body}');
-
-    if (response.statusCode == 200) {
-      final result = json.decode(response.body);
-
-      // Verificar que la ruta y el polyline existan en la respuesta
-      if (result['routes'] != null && result['routes'].isNotEmpty) {
-        _encodedPoints = result['routes'][0]['overview_polyline']['points'];
-        print('Encoded Points obtenidos: $_encodedPoints');
-
-        // Extraer la duración de la respuesta
-        final legs = result['routes'][0]['legs'];
-        if (legs.isNotEmpty) {
-          final durationInSeconds = legs[0]['duration']['value']; // Duración en segundos
-          _routeDuration = durationInSeconds / 60.0; // Convertir a minutos
-          print('Duración de la ruta: $_routeDuration minutos');
-        } else {
-          print('No se encontraron legs en la ruta.');
-        }
-      } else {
-        print('No se encontraron rutas en la respuesta.');
-      }
-    } else {
-      // Manejar errores específicos de la API
-      final errorResult = json.decode(response.body);
-      final errorMessage = errorResult['error_message'] ?? 'Error desconocido';
-      print('Error al obtener la ruta: $errorMessage');
-      throw Exception('Error al obtener la ruta: $errorMessage');
-    }
-  } catch (e) {
-    // Capturar y imprimir cualquier excepción que ocurra durante la solicitud
-    print('Excepción durante la solicitud de la ruta: $e');
-    throw Exception('Excepción durante la solicitud de la ruta: $e');
-  }
-}
-
-  @override
-  Future<void> saveSearchHistory(Map<String, String> searchItem) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> history = prefs.getStringList(_searchHistoryKey) ?? [];
-
-    // Convertimos el objeto a una cadena JSON
-    String searchItemJson = jsonEncode(searchItem);
-
-    // Evitar duplicados
-    if (!history.contains(searchItemJson)) {
-      history.insert(0, searchItemJson); // Insertar al inicio
-    } else {
-      // Mover la búsqueda al inicio si ya existe
-      history.remove(searchItemJson);
-      history.insert(0, searchItemJson);
-    }
-
-    // Opcional: limitar el historial a las últimas N búsquedas
-    if (history.length > 10) {
-      history = history.sublist(0, 10);
-    }
-
-    await prefs.setStringList(_searchHistoryKey, history);
-  }
-
-  @override
-  Future<List<Map<String, String>>> getSearchHistory() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> history = prefs.getStringList(_searchHistoryKey) ?? [];
-    List<Map<String, String>> historyItems = history.map((item) {
-      return Map<String, String>.from(jsonDecode(item));
-    }).toList();
-    return historyItems;
-  }
-
-  double getDuration() {
-    return _routeDuration;
-  }
-
-  @override
-  List<LatLng> decodePolyline(String encoded) {
-    List<LatLng> polyline = [];
-    int index = 0, len = encoded.length;
-    int lat = 0, lng = 0;
-
-    while (index < len) {
-      int b, shift = 0, result = 0;
-      do {
-        b = encoded.codeUnitAt(index++) - 63;
-        result |= (b & 0x1F) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-      lat += dlat;
-
-      shift = 0;
-      result = 0;
-      do {
-        b = encoded.codeUnitAt(index++) - 63;
-        result |= (b & 0x1F) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-      lng += dlng;
-
-      polyline.add(LatLng(lat / 1E5, lng / 1E5));
-    }
-
-    return polyline;
-  }
-
-  @override
-  double calculateDistance(LatLng start, LatLng end) {
-    const double earthRadius = 6371;
-
-    double dLat = degreesToRadians(end.latitude - start.latitude);
-    double dLon = degreesToRadians(end.longitude - start.longitude);
-
-    double a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(degreesToRadians(start.latitude)) *
-            cos(degreesToRadians(end.latitude)) *
-            sin(dLon / 2) *
-            sin(dLon / 2);
-    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    return earthRadius * c;
-  }
-
-  @override
-  double degreesToRadians(double degrees) {
-    return degrees * pi / 180;
-  }
-
-  @override
-Future<List<dynamic>> getPlacePredictions(String input, {LatLng? location}) async {
-  if (input.isEmpty) return [];
-
-  try {
-    String encodedInput = Uri.encodeComponent(input);
-    String url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$encodedInput&key=$_apiKey';
-
-    if (location != null) {
-      url += '&location=${location.latitude},${location.longitude}&radius=500';
-    }
-
-    print('Solicitud a Places API: $url'); // Debug
-
-    final response = await http.get(Uri.parse(url));
-
-    print('Respuesta de Places API: ${response.statusCode}'); // Debug
-    print('Cuerpo de la respuesta: ${response.body}'); // Debug
-
-    if (response.statusCode == 200) {
-      final predictions = json.decode(response.body)['predictions'];
-      print('Predicciones recibidas: ${predictions.length}'); // Debug
-      return predictions;
-    } else {
-      print('Error en la respuesta de la API: ${response.body}');
-      throw Exception('Error obteniendo predicciones: ${response.reasonPhrase}');
-    }
-  } catch (e) {
-    print('Excepción al obtener predicciones: $e');
-    throw Exception('Excepción al obtener predicciones: $e');
-  }
-}
-
-  @override
-  Future<void> getPlaceDetailsAndMove(String placeId,
-      Function(LatLng) moveToLocation, Function(LatLng) addMarker) async {
-    final String url =
-        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$_apiKey';
-
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final result = json.decode(response.body)['result'];
-      final location = result['geometry']['location'];
-      final LatLng latLng = LatLng(location['lat'], location['lng']);
-      moveToLocation(latLng);
-      addMarker(latLng);
-    } else {
-      throw Exception('Error obteniendo detalles del lugar');
-    }
-  }
-
-  @override
-  Future<String> getEncodedPoints() async {
-    if (_encodedPoints != null) {
-      return _encodedPoints!;
-    } else {
-      throw Exception('Encoded points no disponibles');
-    }
-  }
-
-  @override
-  Future<Map<String, dynamic>> getPlaceDetails(String placeId) async {
-    final String url =
-        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$_apiKey';
-
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final result = json.decode(response.body)['result'];
-      return {
-        'name': result['name'],
-        'lat': result['geometry']['location']['lat'],
-        'lng': result['geometry']['location']['lng'],
-      };
-    } else {
-      throw Exception('Error obteniendo detalles del lugar');
-    }
-  }
-
-  Future<String?> _getToken() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('auth_token');
-  }
-
-  @override
-  Future<void> poshTravel(Travel travel) async {
-    String? savedToken = await _getToken();
-
-    var response = await http.post(
-      Uri.parse('$_baseUrl'),
+    var response = await http.put(
+      Uri.parse('$_baseUrl/app_clients/users/clients/device'),
       headers: {
         'Content-Type': 'application/json',
         'x-token': savedToken ?? '',
       },
-      body: jsonEncode(TravelModel.fromEntity(travel).toJson()),
+      body: jsonEncode(DeviceModel.fromEntity(device).toJson()),
     );
 
     dynamic body = jsonDecode(response.body);
     print(body);
     print(response.statusCode);
+
     if (response.statusCode == 200) {
       String message = body['message'].toString();
       print(message);
-      if (body['data'] != null && body['data'] is int) {
-        int newTravelId = body['data'];
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('current_travel_id', newTravelId);
-        print('Nuevo ID de viaje guardado en SharedPreferences: $newTravelId');
-      } else {
-        print('El ID del viaje no se encontró en la respuesta del servidor.');
-        throw Exception(
-            'El ID del viaje no se encontró en la respuesta del servidor.');
-      }
+      print("si se ejecuto bien el id device");
     } else {
       String message = body['message'].toString();
       print(body);
@@ -300,71 +68,472 @@ Future<List<dynamic>> getPlacePredictions(String input, {LatLng? location}) asyn
     }
   }
 
-  Future<void> _sendPendingDeletions() async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      List<String>? storedData = prefs.getStringList('pendingDeletions');
-      if (storedData != null && storedData.isNotEmpty) {
-        for (String id in storedData) {
-          await http.delete(
-            Uri.parse('$_baseUrl/Student/$id'),
-          );
-        }
+  
+  
+  @override
+  Future<List<TravelAlertModel>> getNotification(bool connection) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
 
-        // Borra las operaciones pendientes después de enviarlas
-        await prefs.remove('pendingDeletions');
-        print('Pending deletions sent successfully');
+    String? token = await AuthService().getToken();
+    if (token == null) {
+      throw Exception('Token no disponible');
+    }
+
+    if (connection) {
+      try {
+        var headers = {
+          'x-token': token,
+          'Content-Type': 'application/json',
+        };
+
+        var response = await http.get(
+          Uri.parse('$_baseUrl/app_clients/users/auth/renew'),
+          headers: headers,
+        );
+
+        print(
+            'Código de estado de la respuesta de travel auth/renew : ${response.statusCode}');
+        if (response.statusCode == 200) {
+          final jsonResponse = convert.jsonDecode(response.body);
+          print('Respuesta JSON: $jsonResponse');
+
+          if (jsonResponse['data'] != null &&
+              jsonResponse['data']['travels'] != null) {
+            var travels = jsonResponse['data']['travels'];
+
+            print('Datos de viajes recibidos: $travels');
+
+            List<TravelAlertModel> travelsAlert = (travels as List)
+                .map((travel) => TravelAlertModel.fromJson(travel))
+                .toList();
+
+            print('Viajes mapeados de travel: $travelsAlert');
+            sharedPreferences.setString(
+                'travelsAlert', jsonEncode(travelsAlert));
+            print(
+                'Viajes guardados en SharedPreferences: ${travelsAlert.length}');
+
+            return travelsAlert;
+          } else {
+            throw Exception('Estructura de respuesta inesperada');
+          }
+        } else {
+          throw Exception('Error en la petición: ${response.statusCode}');
+        }
+      } catch (e) {
+        print('Error capturado: $e');
+        return _loadtravelsFromLocal(sharedPreferences);
       }
-    } catch (error) {
-      print('Error sending pending deletions: $error');
-      // Puedes manejar el error según tus necesidades
+    } else {
+      print('Conexión no disponible, cargando desde SharedPreferences...');
+      return _loadtravelsFromLocal(sharedPreferences);
+    }
+  }
+
+  Future<List<TravelAlertModel>> _loadtravelsFromLocal(
+      SharedPreferences sharedPreferences) async {
+    String clientsString = sharedPreferences.getString('travelsAlert') ?? "[]";
+    print('Cargando viajes de SharedPreferences: $clientsString');
+
+    List<dynamic> body = jsonDecode(clientsString);
+
+    if (body.isNotEmpty) {
+      return body
+          .map<TravelAlertModel>(
+              (travels) => TravelAlertModel.fromJson(travels))
+          .toList();
+    } else {
+      print(body);
+      throw Exception('No hay viajes. sharedPreferences');
+    }
+  }
+
+  Future<List<TravelAlertModel>> _loadtravelFromLocal(
+      SharedPreferences sharedPreferences) async {
+    String clientsString =
+        sharedPreferences.getString('current_travel') ?? "[]";
+    print('Cargando viajes de SharedPreferences: $clientsString');
+
+    List<dynamic> body = jsonDecode(clientsString);
+
+    if (body.isNotEmpty) {
+      return body
+          .map<TravelAlertModel>(
+              (travels) => TravelAlertModel.fromJson(travels))
+          .toList();
+    } else {
+      print(body);
+      throw Exception('No hay viajes. sharedPreferences');
     }
   }
 
   @override
-  Future<void> deleteTravel(String id, bool connection) async {
-    String? savedToken = await _getToken();
+  Future<List<TravelAlertModel>> current_travel() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+
+    String? token =  await AuthService().getToken();
+    if (token == null) {
+      throw Exception('Token no disponible');
+    }
+  //if (connection) {
+      try {
+        var headers = {
+          'x-token': token,
+          'Content-Type': 'application/json',
+        };
+
+        var response = await http.get(
+          Uri.parse('$_baseUrl/app_clients/users/auth/renew'),
+          headers: headers,
+        );
+
+        print('Código de estado de la respuesta: ${response.statusCode}');
+        if (response.statusCode == 200) {
+          final jsonResponse = convert.jsonDecode(response.body);
+          print('Respuesta JSON: $jsonResponse');
+
+          if (jsonResponse['data'] != null &&
+              jsonResponse['data']['current_travel'] != null) {
+            var travel = jsonResponse['data']['current_travel'];
+
+            print('hola soy current_travel: $travel');
+
+            TravelAlertModel travelAlert = TravelAlertModel.fromJson(travel);
+
+            print('Viaje mapeado: $travelAlert');
+            sharedPreferences.setString(
+                'current_travel', jsonEncode(travelAlert.toJson()));
+
+           print(
+                'ID del viaje guardado en SharedPreferences: ${travelAlert.id}');
+            print("ultimo viaje 200");
+            return [travelAlert];
+          } else {
+            throw Exception('Estructura de respuesta inesperada  ultimo viaje');
+          }
+        } else {
+          throw Exception(
+              'Error en la petición de ultimo viaje: ${response.statusCode}');
+        }
+      } catch (e) {
+        print('Error capturado: $e');
+        return _loadtravelFromLocal(sharedPreferences);
+      }
+  //}else {print('Conexión no disponible, cargando desde SharedPreferences...');
+    //  return _loadtravelFromLocal(sharedPreferences);
+    //}
+  }
+
+@override
+Future<String?> fetchDeviceId() async {
+  try {
+    final String url = '$_baseUrl/app_clients/users/auth/renew';
+    print('Realizando la solicitud a $url...');
+
+    String? token =  await AuthService().getToken();
+    if (token == null) {
+      throw Exception('Token no disponible');
+    }
+
+    print('Token obtenido: $token'); 
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'x-token': 'Bearer $token', 
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> jsonResponse = json.decode(response.body);
+
+      String? idDevice = jsonResponse['data']['id_device'];
+      print('ID del dispositivo obtenido: $idDevice');
+
+      return idDevice;
+    } else {
+      print('Error en la solicitud id_device: ${response.statusCode}');
+      print('Respuesta del servidor: ${response.body}'); 
+      return null;
+    }
+  } catch (e) {
+    print('Error obteniendo el id_device: $e');
+    return null;
+  }
+}
+
+
+  @override
+  Future<List<TravelAlertModel>> getbyIdtravelid(
+      int? idTravel, bool connection) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+
+    String? token =  await AuthService().getToken();
+    if (token == null) {
+      throw Exception('Token no disponible');
+    }
 
     if (connection) {
       try {
-        final http.Response response = await http.put(
-          Uri.parse('$_baseUrl/cancel/$id'),
-          headers: {
-            'Content-Type': 'application/json',
-            'x-token': savedToken ?? '',
-          },
+        var headers = {
+          'x-token': token,
+          'Content-Type': 'application/json',
+        };
+        final String url = '$_baseUrl/app_clients/travels/travels/$idTravel';
+
+        print('Realizando la solicitud a $url');
+        var response = await http.get(
+          Uri.parse(url),
+          headers: headers,
         );
 
-        if (response.statusCode != 200) {
-          print(response);
-          print("error a update travel");
-          throw Exception('Failed to delete user');
+        print('Código de estado de la respuesta: ${response.statusCode}');
+        if (response.statusCode == 200) {
+          final jsonResponse = json.decode(response.body);
+          print('Respuesta JSON completa: $jsonResponse');
+
+          if (jsonResponse['data'] != null) {
+            var travelData = jsonResponse['data'];
+
+
+            print('Datos de viaje recibido: $travelData');
+            print('Conductores recibidos: ${travelData['drivers']}');
+
+            TravelAlertModel travelAlertbyid =
+                TravelAlertModel.fromJson(travelData);
+
+
+
+            print('El id_status es: ${travelAlertbyid.id_status}');
+            SharedPreferences sharedPreferences =
+                await SharedPreferences.getInstance();
+            int id_statuss = jsonResponse['data']['id_status'];
+
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.setInt('id_status', id_statuss);
+            //  int? idStatus = sharedPreferences.getInt('id_status',id_statuss);
+
+            print('El id_status guardado es: $id_statuss');
+
+            print('Viaje mapeado: $travelAlertbyid');
+            sharedPreferences.setString(
+              'getalltravelid',
+              jsonEncode(travelAlertbyid.toJson()),
+            );
+
+            print('Viaje guardado en SharedPreferences: getalltravelid');
+            return [travelAlertbyid];
+          } else {
+            throw Exception('Estructura de respuesta inesperada');
+          }
         } else {
-          print(response);
-
-          print("update bien travel");
+          throw Exception('Error en la petición: ${response.body}');
         }
-
-        await _sendPendingDeletions();
       } catch (e) {
-        print('Error during network call: $e');
-        throw Exception('Network error');
+        print('Error capturado: $e');
+        return _loadtravelbyIDFromLocal(sharedPreferences);
       }
     } else {
-      try {
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        List<String>? storedData = prefs.getStringList('pendingDeletions');
-        if (storedData == null) {
-          storedData = [];
-        }
-
-        storedData.add(id);
-
-        await prefs.setStringList('pendingDeletions', storedData);
-        print('Delete operation saved to SharedPreferences');
-      } catch (error) {
-        print('Error saving delete operation to SharedPreferences: $error');
-      }
+      print('Conexión no disponible, cargando desde SharedPreferences...');
+      return _loadtravelbyIDFromLocal(sharedPreferences);
     }
   }
+
+  Future<List<TravelAlertModel>> _loadtravelbyIDFromLocal(
+      SharedPreferences sharedPreferences) async {
+    String travelString = sharedPreferences.getString('getalltravelid') ?? "";
+
+    if (travelString.isNotEmpty) {
+      print('Cargando viaje de SharedPreferences: $travelString');
+
+      Map<String, dynamic> travelMap = convert.jsonDecode(travelString);
+      TravelAlertModel travelAlert = TravelAlertModel.fromJson(travelMap);
+
+      return [travelAlert]; 
+    } else {
+      print('No hay viajes en SharedPreferences');
+      throw Exception('No hay viajes en SharedPreferences');
+    }
+  }
+
+  
+@override
+Future<void> confirmTravelWithTariff(ConfirmarTariffEntitie confirmarTariffEntitie) async {
+  try {
+    String? savedToken = await AuthService().getToken();
+
+    if (savedToken == null || savedToken.isEmpty) {
+      throw Exception('Token de autenticación no disponible.');
+    }
+
+    final uri = Uri.parse('$_baseUrl/app_clients/travels/travels/confirmTravelWithTariff');
+
+    final bodyJson = ConfirmarTariffModel.fromEntity(confirmarTariffEntitie).toJson();
+
+    print('--- ConfirmTravelWithTariff Request ---');
+    print('URL: ${uri.toString()}');
+    print('Headers: ${{
+      'Content-Type': 'application/json',
+      'x-token': savedToken,
+    }}');
+    print('Body: ${jsonEncode(bodyJson)}');
+    print('--------------------------------------');
+
+    var response = await http.put(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': savedToken,
+      },
+      body: jsonEncode(bodyJson),
+    );
+
+    print('--- ConfirmTravelWithTariff Response ---');
+    print('Status Code: ${response.statusCode}');
+    print('Headers: ${response.headers}');
+    print('Body: ${response.body}');
+    print('---------------------------------------');
+
+    if (response.headers['content-type']?.contains('application/json') ?? false) {
+      dynamic body = jsonDecode(response.body);
+      print('Parsed JSON Body: $body');
+
+      if (response.statusCode == 200) {
+        String message = body['message'].toString();
+        print("Confirmación exitosa: $message");
+      } else {
+        String message = body['message'].toString();
+        print('Error al confirmar el viaje: $message');
+        throw Exception(message);
+      }
+    } else {
+      print('Formato de respuesta inesperado: ${response.body}');
+      throw Exception('Formato de respuesta inesperado.');
+    }
+  } catch (e) {
+    print('Error en confirmTravelWithTariff: $e');
+    throw Exception('Error al confirmar el viaje: $e');
+  }
+}
+
+  @override
+  Future<void> rejectTravelOffer(TravelwithtariffEntitie travelwithtariffEntitie) async {
+    String? savedToken = await AuthService().getToken();
+
+    var response = await http.put(
+      Uri.parse(
+          '$_baseUrl/app_clients/travels/travels/rejectTravelOffer'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': savedToken ?? '',
+      },
+
+      body: jsonEncode(
+          TravelwithtariffModal.fromEntity(travelwithtariffEntitie).toJson()),
+    );
+
+    dynamic body = jsonDecode(response.body);
+    print(body);
+    print(response.statusCode);
+
+    if (response.statusCode == 200) {
+      String message = body['message'].toString();
+      print(message);
+      print("si se ejecuto bien el rejectTravelOffer");
+    } else {
+      String message = body['message'].toString();
+      print('error al rejectTravelOffer $body');
+      throw Exception(message);
+    }
+  }
+
+  @override
+  Future<void> removedataaccount() async {
+    String? savedToken = await AuthService().getToken();
+
+    var response = await http.put(
+      Uri.parse('$_baseUrl/app_clients/users/clients/remove'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': savedToken ?? '',
+      },
+    );
+
+    dynamic body = jsonDecode(response.body);
+    print(body);
+    print(response.statusCode);
+
+    if (response.statusCode == 200) {
+      String message = body['message'].toString();
+      print(message);
+      print("si se ejecuto bien el removedataaccount");
+    } else {
+      String message = body['message'].toString();
+      print('error al removedataaccount $body');
+      throw Exception(message);
+    }
+  }
+
+  @override
+  Future<void> offerNegotiation(
+      TravelwithtariffEntitie travelwithtariffEntitie) async {
+    String? savedToken = await AuthService().getToken();
+
+    var response = await http.put(
+      Uri.parse('$_baseUrl/app_clients/travels/travels/offerNegotiation'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': savedToken ?? '',
+      },
+      body: jsonEncode(
+          TravelwithtariffModal.fromEntity(travelwithtariffEntitie).toJson()),
+    );
+
+    dynamic body = jsonDecode(response.body);
+    print(body);
+    print(response.statusCode);
+
+    if (response.statusCode == 200) {
+      String message = body['message'].toString();
+      print(message);
+      print("si se ejecuto bien el offerNegotiation $message ");
+    } else {
+      String message = body['message'].toString();
+      print('error al offerNegotiation $body');
+      throw Exception(message);
+    }
+  }
+  @override
+Future<GetcosttravelEntitie> getcosttravel(GetcosttravelEntitie getcosttravelEntitie) async {
+  String? savedToken = await AuthService().getToken();
+  var response = await http.post(
+    Uri.parse('$_baseUrl/app_clients/travels/travels/cost'),
+    headers: {
+      'Content-Type': 'application/json',
+      'x-token': savedToken ?? '',
+    },
+    body: jsonEncode(
+        GetcosttravelModel.fromEntity(getcosttravelEntitie).toJson()),
+  );
+  
+  final jsonResponse = json.decode(response.body);
+  print('Respuesta JSON completa: $jsonResponse');
+  
+  if (response.statusCode == 200) {
+    if (jsonResponse['data'] != null) {
+             return GetcosttravelModel(
+          kilometers: getcosttravelEntitie.kilometers,
+          duration: getcosttravelEntitie.duration,
+          message: jsonResponse['message'],
+          data: jsonResponse['data'],
+        );
+ } else {
+      throw Exception("No se encontró la clave 'data' en la respuesta.");
+    }
+  } else {
+    String message = jsonResponse['message'].toString();
+    print('Error en el servidor: $jsonResponse');
+    throw Exception(message);
+  }
+}
 }

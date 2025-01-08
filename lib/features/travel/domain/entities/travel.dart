@@ -5,12 +5,16 @@ class Travel {
   double? end_latitude;
   String? kilometers;
   String? duration;
-
+  String? state;
+  String? municipality;
   Travel(
       {this.start_longitude,
       this.start_latitude,
       this.end_longitude,
       this.end_latitude,
       this.kilometers,
-      this.duration});
+      this.duration,
+      this.state,
+      this.municipality
+      });
 }

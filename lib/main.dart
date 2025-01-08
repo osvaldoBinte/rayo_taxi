@@ -1,37 +1,48 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:quickalert/quickalert.dart';
-import 'package:rayo_taxi/features/clients/presentation/getxs/calculateAge/calculateAge_getx.dart';
-import 'package:rayo_taxi/features/clients/presentation/getxs/loginGoogle/loginGoogle_getx.dart';
-import 'package:rayo_taxi/features/clients/presentation/getxs/update/Update_getx.dart';
-import 'package:rayo_taxi/features/clients/presentation/pages/home_page.dart';
-import 'package:rayo_taxi/features/notification/presentetion/getx/Device/device_getx.dart';
-import 'package:rayo_taxi/features/notification/presentetion/getx/Device/id_device_get.dart';
-import 'package:rayo_taxi/features/notification/presentetion/getx/TravelAlert/travel_alert_getx.dart';
-import 'package:rayo_taxi/features/notification/presentetion/getx/TravelById/travel_by_id_alert_getx.dart';
-import 'package:rayo_taxi/features/notification/presentetion/getx/TravelsAlert/travels_alert_getx.dart';
+import 'package:rayo_taxi/common/notification_service.dart';
+import 'package:rayo_taxi/common/settings/enviroment.dart';
+import 'package:rayo_taxi/common/theme/app_color.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/addTravel/map_data_controller.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/direcionDestino/search_modal.dart';
+import 'package:rayo_taxi/my_app.dart';
+import 'package:rayo_taxi/features/client/presentation/getxs/calculateAge/calculateAge_getx.dart';
+import 'package:rayo_taxi/features/client/presentation/getxs/loginGoogle/loginGoogle_getx.dart';
+import 'package:rayo_taxi/features/client/presentation/getxs/update/Update_getx.dart';
+import 'package:rayo_taxi/features/client/presentation/pages/add_client/get_genders_controller/get_genders_getx.dart';
+import 'package:rayo_taxi/features/client/presentation/pages/home_page/home_page.dart';
+import 'package:rayo_taxi/features/client/presentation/pages/recoveryPassword/create_recovery_code_controller.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/travelwithtariffEntitie/travelwithtariff_entitie.dart';
+import 'package:rayo_taxi/features/travel/presentation/Travelgetx/Device/device_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/Travelgetx/Device/id_device_get.dart';
+import 'package:rayo_taxi/features/travel/presentation/Travelgetx/Device/renew_token.dart';
+import 'package:rayo_taxi/features/travel/presentation/Travelgetx/TravelAlert/travel_alert_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/Travelgetx/TravelById/travel_by_id_alert_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/Travelgetx/TravelWithTariff/travelWithTariff_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/Travelgetx/TravelsAlert/travels_alert_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/Travelgetx/offerNegotiation/offerNegotiation_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/Travelgetx/rejectTravelOffer/rejectTravelOffer_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/Travelgetx/removeDataAccount/removeDataAccount_getx.dart';
+
 import 'package:rayo_taxi/features/travel/presentation/getx/delete/delete_travel_getx.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/mapa/destino_controller.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/notification/notificationcontroller.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.dart';
-import 'package:rayo_taxi/features/travel/presentation/page/mapa.dart';
-import 'package:rayo_taxi/features/travel/presentation/page/mapa/destino_page.dart';
-import 'package:rayo_taxi/features/travel/presentation/page/travel/accept_travel_page.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/addTravel/mapa.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/direcionDestino/destino_page.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/acceptTravel/accept_travel_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:rayo_taxi/firebase_options.dart';
-import 'connectivity_service.dart';
-import 'package:rayo_taxi/features/clients/presentation/pages/login_clients_page.dart';
-import 'package:rayo_taxi/features/clients/presentation/getxs/client/client_getx.dart';
-import 'package:rayo_taxi/features/clients/presentation/getxs/login/loginclient_getx.dart';
-import 'package:rayo_taxi/features/clients/presentation/getxs/get/get_client_getx.dart';
+import 'features/AuthS/connectivity_service.dart';
+import 'package:rayo_taxi/features/client/presentation/pages/login_clients_page.dart';
+import 'package:rayo_taxi/features/client/presentation/pages/add_client/addclient/client_getx.dart';
+import 'package:rayo_taxi/features/client/presentation/getxs/login/loginclient_getx.dart';
+import 'package:rayo_taxi/features/client/presentation/getxs/get/get_client_getx.dart';
 import 'package:rayo_taxi/usecase_config.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
-
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 UsecaseConfig usecaseConfig = UsecaseConfig();
 final connectivityService = ConnectivityService();
@@ -40,16 +51,15 @@ RemoteMessage? initialMessage;
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 AndroidNotificationChannel? channel;
-
+String enviromentSelect = Enviroment.development.value;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();                        
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-await Firebase.initializeApp();
+  await Firebase.initializeApp();
   channel = const AndroidNotificationChannel(
     'high_importance_channel',
     'Notificaciones Importantes',
@@ -57,29 +67,14 @@ await Firebase.initializeApp();
     importance: Importance.high,
   );
 
-  const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
-  final InitializationSettings initializationSettings = InitializationSettings(
-    android: initializationSettingsAndroid,
-  );
-  await flutterLocalNotificationsPlugin.initialize(
-    initializationSettings,
-    onDidReceiveNotificationResponse:
-        (NotificationResponse notificationResponse) async {
-      final String? payload = notificationResponse.payload;
-      if (payload != null && payload.isNotEmpty) {
-        _handleNotificationClick(json.decode(payload));
-      }
-    },
-  );
-
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(channel!);
-
-  // Inicializa controladores GetX
+  print('=========ENVIROMENT SELECTED: $enviromentSelect');
+  await dotenv.load(fileName: enviromentSelect);
+    Get.testMode = true; 
+    //Current_TravelGetx
+   // Get.put(CurrentTravelnotificationGetx(travelAlertUsecase: usecaseConfig.currentTravelUsecase!));
   Get.put(DeviceGetx(idDeviceUsecase: usecaseConfig.idDeviceUsecase!));
+    Get.put(RenewTokenGetx(renewTokenUsecase: usecaseConfig.renewTokenUsecase!));
+
   Get.put(ClientGetx(createClientUsecase: usecaseConfig.createClientUsecase!));
   Get.put(
       LoginclientGetx(loginClientUsecase: usecaseConfig.loginClientUsecase!));
@@ -91,8 +86,8 @@ await Firebase.initializeApp();
   Get.put(TravelsAlertGetx(
       travelsAlertUsecase: usecaseConfig.travelsAlertUsecase!,
       connectivityService: connectivityService));
-  Get.put(TravelAlertGetx(
-      travelAlertUsecase: usecaseConfig.travelAlertUsecase!,
+  Get.put(CurrentTravelGetx(
+      currentTravelUsecase: usecaseConfig.currentTravelUsecase!,
       connectivityService: connectivityService));
   Get.put(CalculateAgeGetx(
       calculateAgeUsecase: usecaseConfig.calculateAgeUsecase!));
@@ -100,7 +95,7 @@ await Firebase.initializeApp();
       deleteTravelUsecase: usecaseConfig.deleteTravelUsecase!,
       connectivityService: connectivityService));
   Get.put(GetDeviceGetx(getDeviceUsecase: usecaseConfig.getDeviceUsecase!));
-  
+
   Get.put(TravelByIdAlertGetx(
       travelByIdUsecase: usecaseConfig.travelByIdUsecase!,
       connectivityService: connectivityService));
@@ -111,306 +106,32 @@ await Firebase.initializeApp();
     getPlaceDetailsAndMoveUsecase: usecaseConfig.getPlaceDetailsAndMoveUsecase!,
     getPlacePredictionsUsecase: usecaseConfig.getPlacePredictionsUsecase!,
   ));
-  Get.put(LogingoogleGetx(loginGoogleUsecase: usecaseConfig.loginGoogleUsecase!));
+  Get.put(MapDataController(getSearchHistoryUsecase: usecaseConfig.getSearchHistoryUsecase!, saveSearchHistoryUsecase: usecaseConfig.saveSearchHistoryUsecase!, getPlaceDetailsAndMoveUsecase: usecaseConfig.getPlaceDetailsAndMoveUsecase!, getPlacePredictionsUsecase: usecaseConfig.getPlacePredictionsUsecase!, calculateDistanceUsecase: usecaseConfig.calculateDistanceUsecase, getRouteUsecase: usecaseConfig.getRouteUsecase, getEncodedPointsUsecase: usecaseConfig.getEncodedPointsUsecase, decodePolylineUsecase: usecaseConfig.decodePolylineUsecase, getDurationUsecase: usecaseConfig.getDurationUsecase));
+  Get.put(
+      LogingoogleGetx(loginGoogleUsecase: usecaseConfig.loginGoogleUsecase!));
 
+  Get.put(RejecttravelofferGetx(
+      rejectTravelOfferUsecase: usecaseConfig.rejectTravelOfferUsecase!));
+  Get.put(TravelwithtariffGetx(
+      confirmTravelWithTariffUsecase:
+          usecaseConfig.confirmTravelWithTariffUsecase!));
+  Get.put(GetGendersGetx(getGendersUsecase: usecaseConfig.getGendersUsecase!));
   //Get.put( MapController(getSearchHistoryUsecase: usecaseConfig.getSearchHistoryUsecase!,saveSearchHistoryUsecase: usecaseConfig.saveSearchHistoryUsecase!,getPlaceDetailsAndMoveUsecase: usecaseConfig.getPlaceDetailsAndMoveUsecase!, getPlacePredictionsUsecase: usecaseConfig.getPlacePredictionsUsecase!, ),);
   Get.put(NotificationController());
   Get.put(ModalController());
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    print('Mensaje recibido en primer plano: ${message.messageId}');
 
-    final context = navigatorKey.currentState?.overlay?.context;
+  Get.put(RemovedataaccountGetx(
+      removeDataAccountUsecase: usecaseConfig.removeDataAccountUsecase!));
 
-    if (context != null) {
-      final title = message.notification?.title ?? 'Notificación';
-      final body =
-          message.notification?.body ?? 'Tienes una nueva notificación';
+  Get.put(OffernegotiationGetx(
+      offerNegotiationUsecase: usecaseConfig.offerNegotiationUsecase!));
+  Get.put(CreateRecoveryCodeController(
+      createRecoveryCodeUsecase: usecaseConfig.createRecoveryCodeUsecase!,
+      checkRecoveryCodeUsecase: usecaseConfig.checkRecoveryCodeUsecase!,
+      updatePasswordUsecase: usecaseConfig.updatePasswordUsecase!));
 
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.info,
-        title: title,
-        text: body,
-        confirmBtnText: 'OK',
-        onConfirmBtnTap: () {
-          if (title == 'Viaje terminado') {
-            Get.find<NotificationController>().tripAccepted.value = false;
-            Get.find<ModalController>().lottieUrl.value =
-                'https://lottie.host/e44ab786-30a1-48ee-96eb-bb2e002f3ae8/NtzqQeAN8j.json';
-            Get.find<ModalController>().modalText.value = 'Buscando chofer...';
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => HomePage(
-                        selectedIndex: 0,
-                      )),
-              (Route<dynamic> route) => false,
-            );
-          } else {
-            Navigator.of(context).pop();
-          }
-        },
-      );
-    } else {
-      print('El contexto es nulo');
-    }
-  });
-
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    print('Mensaje recibido en primer plano: ${message.messageId}');
-    RemoteNotification? notification = message.notification;
-    AndroidNotification? android = message.notification?.android;
-
-    if (notification != null && android != null) {
-      if (notification.title == 'Tu viaje fue aceptado') {
-        Get.find<NotificationController>().tripAccepted.value = true;
-        Get.find<ModalController>().lottieUrl.value =
-            'https://lottie.host/4b6efc1d-1021-48a4-a3dd-df0eecbd8949/1CzFNvYv69.json';
-        Get.find<ModalController>().modalText.value =
-            'Viaje aceptado, espera al conductor en el punto de encuentro';
-      }
-      if (notification.title == 'Tu viaje ha comenzado') {
-        Get.find<NotificationController>().tripAccepted.value = true;
-        Get.find<ModalController>().lottieUrl.value =
-            'https://lottie.host/4a367cbb-4834-44ba-997a-9a8a62408a99/keSVai2cNe.json';
-        Get.find<ModalController>().modalText.value = 'Tu viaje ha comenzado';
-      }
-     
-       if (notification.title == 'El taxi llego') {
-        Get.find<NotificationController>().tripAccepted.value = true;
-        Get.find<ModalController>().lottieUrl.value =
-            "https://lottie.host/bcf4608b-5b35-4c48-b2c9-c0126124a159/CFerLgDKdO.json";
-        Get.find<ModalController>().modalText.value = 'El taxi ha llegado al punto de encuentro';
-      }
-       if (notification.title == 'Viaje terminado') {
-        Get.find<NotificationController>().tripAccepted.value = false;
-        Get.find<ModalController>().lottieUrl.value =
-            'https://lottie.host/e44ab786-30a1-48ee-96eb-bb2e002f3ae8/NtzqQeAN8j.json';
-        Get.find<ModalController>().modalText.value = 'Buscando chofer...';
-      }
-      flutterLocalNotificationsPlugin.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            channel!.id,
-            channel!.name,
-            channelDescription: channel!.description,
-            icon: '@mipmap/ic_launcher',
-          ),
-        ),
-        payload: jsonEncode(message.data),
-      );
-    }
-  });
-
-  String? fcmToken = await messaging.getToken();
-  print('Token FCM: $fcmToken');
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    print(
-        'El usuario hizo clic en una notificación mientras la app estaba en segundo plano');
-    _handleNotificationClick(message.data);
-    initialMessage = message;
-  });
-
-  initialMessage = await messaging.getInitialMessage();
-  if (initialMessage != null) {
-    print('La aplicación se inició desde una notificación');
-  }
+  Get.put(NotificationService(navigatorKey));
+  await Get.find<NotificationService>().initialize();
 
   runApp(MyApp());
-}
-
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
- if (!Get.isRegistered<NotificationController>()) {
-    Get.put(NotificationController());
-  }
-  if (!Get.isRegistered<ModalController>()) {
-    Get.put(ModalController());
-  }
-  RemoteNotification? notification = message.notification;
-  AndroidNotification? android = message.notification?.android;
-print(" en segundo plano");
-  if (notification != null && android != null) {
-    print(" en segundo plano 2");
-
-         if (notification.title == 'Tu viaje fue aceptado') {
-        Get.find<NotificationController>().tripAccepted.value = true;
-        Get.find<ModalController>().lottieUrl.value =
-            'https://lottie.host/4b6efc1d-1021-48a4-a3dd-df0eecbd8949/1CzFNvYv69.json';
-        Get.find<ModalController>().modalText.value =
-            'Viaje aceptado, espera al conductor en el punto de encuentro';
-                print(" Tu viaje fue aceptado");
-
-      }
-      if (notification.title == 'Tu viaje ha comenzado') {
-                        print(" Tu viaje ha comenzad");
-
-        Get.find<NotificationController>().tripAccepted.value = true;
-        Get.find<ModalController>().lottieUrl.value =
-            'https://lottie.host/4a367cbb-4834-44ba-997a-9a8a62408a99/keSVai2cNe.json';
-        Get.find<ModalController>().modalText.value = 'Tu viaje ha comenzado';
-      }
-     
-       if (notification.title == 'El taxi llego') {
-                                print("El taxi llego");
-
-        Get.find<NotificationController>().tripAccepted.value = true;
-        Get.find<ModalController>().lottieUrl.value =
-            "https://lottie.host/bcf4608b-5b35-4c48-b2c9-c0126124a159/CFerLgDKdO.json";
-        Get.find<ModalController>().modalText.value = 'El taxi ha llegado al punto de encuentro';
-      }
-       if (notification.title == 'Viaje terminado') {
-        Get.find<NotificationController>().tripAccepted.value = false;
-        Get.find<ModalController>().lottieUrl.value =
-            'https://lottie.host/e44ab786-30a1-48ee-96eb-bb2e002f3ae8/NtzqQeAN8j.json';
-        Get.find<ModalController>().modalText.value = 'Buscando chofer...';
-      }
-  }
-}
-
-void _handleNotificationClick(Map<String, dynamic> data) {
-  int? travelId = int.tryParse(data['travel'] ?? '');
-  print('Datos del mensaje: $data');
-  print('el id desde _handleLoadedState ${travelId}');
-
-  if (travelId != null) {
-    Get.to(() => AcceptTravelPage(idTravel: travelId));
-  } else {
-    print('Error: El travelId no es un entero válido');
-  }
-}
-
-class MyApp extends StatelessWidget {
-  MyApp();
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colorScheme = ColorScheme.fromSwatch().copyWith(
-      primary: Color.fromARGB(255, 254, 255, 255),
-      secondary: Color(0xFF007BFF),
-    );
-
-    return GetMaterialApp(
-      navigatorKey: navigatorKey,
-      debugShowCheckedModeBanner: false,
-      locale: const Locale('es', 'ES'),
-      supportedLocales: [
-        const Locale('es', 'ES'),
-      ],
-      localizationsDelegates: [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      theme: ThemeData(
-        primaryColor: Color(0xFF3F3F3F),
-        colorScheme: colorScheme,
-        scaffoldBackgroundColor: Color.fromARGB(255, 255, 255, 255),
-        textTheme: TextTheme(
-          displayLarge: TextStyle(
-              fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-          titleMedium: TextStyle(fontSize: 18, color: Color(0xFF333333)),
-          bodyLarge: TextStyle(fontSize: 16, color: Colors.black87),
-          bodyMedium: TextStyle(fontSize: 12, color: Colors.grey[600]),
-          bodySmall: TextStyle(
-            color: Colors.blueAccent,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      home: SplashScreen(),
-    );
-  }
-}
-
-class SplashScreen extends StatefulWidget {
-  @override
-  _SplashScreenState createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  String? idDevice;
-  String? token;
-
-  @override
-  void initState() {
-    
-    super.initState();
-    
-    _initializeApp();
-  }
-
-  void _initializeApp() async {
-    final prefs = await SharedPreferences.getInstance();
-    token = prefs.getString('auth_token');
-    idDevice = await Get.find<GetDeviceGetx>().fetchDeviceId();
-
-  /*  if (idDevice == null || idDevice!.isEmpty) {
-      await prefs.remove('auth_token');
-      Get.offAll(() => LoginClientsPage());
-    } else if (token != null && token!.isNotEmpty) {
-      Get.offAll(() => HomePage(
-            selectedIndex: 1,
-          ));
-    } else {
-      Get.offAll(() => LoginClientsPage());
-    }*/
-    if (token != null && token!.isNotEmpty) {
-      Get.offAll(() => HomePage(
-            selectedIndex: 1,
-          ));
-    } else {
-      Get.offAll(() => LoginClientsPage());
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-  }
-}
-
-extension CustomColorScheme on ColorScheme {
-  Color get buttonColor => Color.fromARGB(255, 0, 0, 0);
-  Color get textButton => Color(0xFFEFC300);
-
-  Color get Statuscancelled => Colors.red;
-  Color get Statusaccepted => Colors.green;
-  Color get StatusLookingfor => Colors.orange;
-  Color get StatusCompletado => Colors.blue;
-  Color get Statusrecognized => Colors.grey;
-  Color get getStatusIcon => Colors.white;
-
-  Color get iconred => Colors.red;
-  Color get icongreen => Colors.green;
-  Color get iconorange => Colors.orange;
-  Color get iconblue => Colors.blue;
-  Color get icongrey => Colors.grey;
-  Color get iconwhite => Colors.white;
-  Color get buttonColormap => Color.fromARGB(255, 10, 10, 10);
-  Color get buttonColormap2 => Color(0xFF1e88e5);
-  Color get blueAccent => const Color.fromARGB(255, 0, 0, 0);
-  Color get backgroundColor => Color.fromARGB(255, 0, 0, 0);
-  Color get backgroundColorLogin => Color.fromARGB(255, 5, 5, 5);
-  Color get CurvedNavigationIcono => Color.fromARGB(255, 5, 5, 5);
-  Color get CurvedNavigationIcono2 => Colors.white;
-  Color get CurvedIconback => Color(0xFFEFC300);
-
-  Color get error => Colors.red;
-  Color get Success => Colors.green;
-  Color get TextAler => Colors.white;
-  Color get button => Color.fromARGB(255, 10, 10, 10);
-  Color get buttontext => Colors.white;
-
-  Color get iconhistory => Color(0xFFEFC300);
-  Color get iconlocation_on => Colors.red;
 }

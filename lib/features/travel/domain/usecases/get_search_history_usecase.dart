@@ -1,6 +1,6 @@
 
 
-import 'package:rayo_taxi/features/travel/domain/repository/travel_repository.dart';
+import 'package:rayo_taxi/features/travel/domain/repository/mapa_repository.dart';
 
 class GetSearchHistoryUsecase {
     final TravelRepository travelRepository;

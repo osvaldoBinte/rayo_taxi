@@ -1,7 +1,7 @@
 import 'package:meta/meta.dart';
 import 'package:get/get.dart';
-import 'package:rayo_taxi/connectivity_service.dart';
-import 'package:rayo_taxi/features/clients/domain/usecases/create_client_usecase.dart';
+import 'package:rayo_taxi/features/AuthS/connectivity_service.dart';
+import 'package:rayo_taxi/features/client/domain/usecases/create_client_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/travel.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/delete_travel_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/posh_travel_usecase.dart';

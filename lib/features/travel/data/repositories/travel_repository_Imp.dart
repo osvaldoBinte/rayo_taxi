@@ -1,7 +1,7 @@
 import 'package:google_maps_flutter_platform_interface/src/types/location.dart';
-import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
+import 'package:rayo_taxi/features/travel/data/datasources/mapa_local_data_source.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/travel.dart';
-import 'package:rayo_taxi/features/travel/domain/repository/travel_repository.dart';
+import 'package:rayo_taxi/features/travel/domain/repository/mapa_repository.dart';
 
 class TravelRepositoryImp implements TravelRepository{
   final TravelLocalDataSource travelLocalDataSource;
@@ -33,7 +33,7 @@ class TravelRepositoryImp implements TravelRepository{
   }
 
   @override
-  Future<List> getPlacePredictions(String input) async {
+    Future<List<dynamic>>  getPlacePredictions(String input, {LatLng? location})  async {
     return await travelLocalDataSource.getPlacePredictions(input);
   }
 
@@ -61,5 +61,12 @@ class TravelRepositoryImp implements TravelRepository{
   Future<void> saveSearchHistory(Map<String, String> searchItem) async {
    return await travelLocalDataSource.saveSearchHistory(searchItem);
   }
+  
+  @override
+  double getDuration() {
+    return travelLocalDataSource.getDuration();
+  }
+  
+ 
 
 }

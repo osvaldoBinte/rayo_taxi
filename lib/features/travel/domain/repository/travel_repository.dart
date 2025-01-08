@@ -1,21 +1,20 @@
-import 'package:rayo_taxi/features/travel/domain/entities/travel.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/deviceEntitie/device.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/getcosttraveEntitie/getcosttravel_entitie.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/travelalert/travel_alert.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/travelwithtariffEntitie/confirmar_tariff_entitie.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/travelwithtariffEntitie/travelwithtariff_entitie.dart';
 
-abstract class TravelRepository {
-  Future<void> poshTravel(Travel travel);
- Future<void> deleteTravel(String id, bool connection);
-  Future<void> getRoute(LatLng startLocation, LatLng endLocation);
-  List<LatLng> decodePolyline(String encoded);
-  double calculateDistance(LatLng start, LatLng end);
-  double degreesToRadians(double degrees);
-  Future<List<dynamic>> getPlacePredictions(String input);
-  Future<void> getPlaceDetailsAndMove(String placeId,
-      Function(LatLng) moveToLocation, Function(LatLng) addMarker);
-  Future<String> getEncodedPoints();
+import '../../data/models/travel/travel_alert_model.dart';
 
-
-  Future<void> saveSearchHistory(Map<String, String> searchItem);
-  
-  Future<List<Map<String, String>>> getSearchHistory();
-  
+abstract class NotificationRepository {
+  Future<void> updateIdDevice();
+  Future<List<TravelAlertModel>> getNotification(bool connection);
+  Future<List<TravelAlertModel>> current_travel();
+  Future<String?> fetchDeviceId();
+  Future<List<TravelAlertModel>> getbyIdtravelid(int? idTravel, bool connection);
+  Future<void> confirmTravelWithTariff(ConfirmarTariffEntitie confirmarTariffEntitie);
+  Future<void> rejectTravelOffer(TravelwithtariffEntitie travelwithtariffEntitie);
+  Future<void> removedataaccount();
+  Future<void> offerNegotiation(TravelwithtariffEntitie travelwithtariffEntitie);
+  Future<GetcosttravelEntitie> getcosttravel(GetcosttravelEntitie getcosttravelEntitie);
 }
