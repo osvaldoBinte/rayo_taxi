@@ -13,11 +13,13 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'dart:convert';
 import 'package:get/get.dart';
+
 class DestinoController extends GetxController {
   TextEditingController mainDestinoController = TextEditingController();
   FocusNode mainFocusNode = FocusNode();
   TextEditingController modalController = TextEditingController();
   FocusNode modalFocusNode = FocusNode();
+  bool isInitializing = true;
 
   RxnString selectedPlaceId = RxnString();
   RxnString selectedDescription = RxnString();
@@ -30,13 +32,13 @@ class DestinoController extends GetxController {
   RxList<Map<String, String>> modalSearchHistory =
       RxList<Map<String, String>>();
   RxString debugCoordinates = ''.obs;
- 
+
   final RxSet<Marker> markers = <Marker>{}.obs;
   final RxBool isDebugMode = true.obs; // Para mostrar el punto exacto
   Timer? _debounceTimer;
 
   final markerId = const MarkerId('destination_marker');
-    bool isMarkerMoving = false; 
+  bool isMarkerMoving = false;
   GoogleMapController? mapController;
   RxBool hasMapMoved = false.obs;
   final GetSearchHistoryUsecase getSearchHistoryUsecase;
@@ -54,20 +56,27 @@ class DestinoController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    getUserAddress();
     loadSearchHistory();
     mainDestinoController.clear();
+    getUserAddress();
   }
+
   @override
   void onClose() {
+    _debounceTimer?.cancel();
+    if (mapController != null) {
+      mapController!.dispose();
+      mapController = null;
+    }
     mainDestinoController.dispose();
     mainFocusNode.dispose();
     modalController.dispose();
     modalFocusNode.dispose();
     super.onClose();
   }
- void _initializeMarker(LatLng position) {
-    markers.clear();  // Limpiar marcadores existentes
+
+  void _initializeMarker(LatLng position) {
+    markers.clear(); // Limpiar marcadores existentes
     markers.add(
       Marker(
         markerId: markerId,
@@ -84,11 +93,51 @@ class DestinoController extends GetxController {
     );
   }
 
-   void updateMarkerPosition(LatLng position) async {
-    if (isMarkerMoving) return;  // No actualizar si el marcador se está moviendo
-
+  void _initializeMap() async {
     try {
-      // Actualizar posición del marcador
+      if (mapController == null) {
+        return;
+      }
+
+      await Future.delayed(Duration(milliseconds: 500));
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          Get.snackbar('Error', 'Permisos de ubicación denegados');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        Get.snackbar(
+            'Error', 'Permisos de ubicación denegados permanentemente');
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      currentLatLng.value = LatLng(position.latitude, position.longitude);
+
+      if (mapController != null) {
+        mapController?.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: currentLatLng.value!,
+              zoom: 16.0,
+            ),
+          ),
+        );
+        // Ya no actualizamos la dirección aquí
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Error al obtener la ubicación: $e');
+    }
+  }
+
+  void updateMarkerPosition(LatLng position) async {
+    if (isMarkerMoving) return;
+    try {
       markers.clear();
       markers.add(
         Marker(
@@ -114,7 +163,7 @@ class DestinoController extends GetxController {
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks.first;
         String address = '';
-        
+
         if (place.thoroughfare?.isNotEmpty ?? false) {
           address += place.thoroughfare!;
         }
@@ -131,9 +180,10 @@ class DestinoController extends GetxController {
           address += ', ${place.postalCode!}';
         }
 
-        address = address.replaceAll(RegExp(r'null,?\s*'), '')
-                        .replaceAll(RegExp(r',\s*,'), ',')
-                        .trim();
+        address = address
+            .replaceAll(RegExp(r'null,?\s*'), '')
+            .replaceAll(RegExp(r',\s*,'), ',')
+            .trim();
 
         selectedLatLng.value = position;
         selectedDescription.value = address;
@@ -141,13 +191,14 @@ class DestinoController extends GetxController {
       }
     } catch (e) {
       print('Error actualizando posición: $e');
-      Get.snackbar('Error', 'No se pudo obtener la dirección');
+      //  Get.snackbar('Error', 'No se pudo obtener la dirección');
     }
   }
 
   Future<void> loadSearchHistory() async {
     searchHistory.value = await getSearchHistoryUsecase.execute();
   }
+
   Widget buildCenterMarker() {
     return Center(
       child: Icon(
@@ -156,24 +207,20 @@ class DestinoController extends GetxController {
         color: Colors.black,
       ),
     );
-  } 
+  }
 
- void onCameraMove(CameraPosition position) {
-    print('Centro exacto - Lat: ${position.target.latitude}, Lng: ${position.target.longitude}');
-    
-    // Actualizar el marcador en el centro exacto
+  void onCameraMove(CameraPosition position) {
+    // No actualizamos nada si estamos en la inicialización
+    if (isInitializing) return;
+
     markers.clear();
-   
 
-    // Actualizar la dirección con debounce
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       updateAddressFromPosition(position.target);
     });
   }
-  void onCameraIdle() {
-    // No necesitamos hacer nada aquí
-  }
+
   void getUserAddress() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
@@ -186,7 +233,8 @@ class DestinoController extends GetxController {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        Get.snackbar('Error', 'Permisos de ubicación denegados permanentemente');
+        Get.snackbar(
+            'Error', 'Permisos de ubicación denegados permanentemente');
         return;
       }
 
@@ -195,7 +243,8 @@ class DestinoController extends GetxController {
       currentLatLng.value = LatLng(position.latitude, position.longitude);
 
       if (mapController != null) {
-        mapController?.animateCamera(
+        isInitializing = true;
+        await mapController?.animateCamera(
           CameraUpdate.newCameraPosition(
             CameraPosition(
               target: currentLatLng.value!,
@@ -203,16 +252,22 @@ class DestinoController extends GetxController {
             ),
           ),
         );
-        // Actualizar la dirección inicial
-       // updateAddressFromPosition(currentLatLng.value!);
+        // Esperamos un momento y marcamos que la inicialización terminó
+        await Future.delayed(Duration(milliseconds: 500));
+        isInitializing = false;
       }
     } catch (e) {
+      isInitializing = false;
       Get.snackbar('Error', 'Error al obtener la ubicación: $e');
     }
   }
- void updateAddressFromPosition(LatLng position) async {
+
+  void updateAddressFromPosition(LatLng position) async {
+    if (isInitializing || mapController == null) return;
+
     try {
-            print('Centro exacto - Lat: ${position.latitude}, Lng: ${position.longitude}');
+      print(
+          'Centro exacto - Lat: ${position.latitude}, Lng: ${position.longitude}');
       List<Placemark> placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
@@ -228,7 +283,7 @@ class DestinoController extends GetxController {
         print('Locality: ${place.locality}');
         print('SubLocality: ${place.subLocality}');
         print('PostalCode: ${place.postalCode}');
-        
+
         if (place.thoroughfare?.isNotEmpty ?? false) {
           address += place.thoroughfare!;
         }
@@ -245,9 +300,10 @@ class DestinoController extends GetxController {
           address += ', ${place.postalCode!}';
         }
 
-        address = address.replaceAll(RegExp(r'null,?\s*'), '')
-                        .replaceAll(RegExp(r',\s*,'), ',')
-                        .trim();
+        address = address
+            .replaceAll(RegExp(r'null,?\s*'), '')
+            .replaceAll(RegExp(r',\s*,'), ',')
+            .trim();
         print('Dirección final: $address');
         selectedLatLng.value = position;
         selectedDescription.value = address;
@@ -255,43 +311,43 @@ class DestinoController extends GetxController {
       }
     } catch (e) {
       print('Error actualizando dirección: $e');
-      Get.snackbar('Error', 'No se pudo obtener la dirección');
+      //  Get.snackbar('Error', 'No se pudo obtener la dirección');
     }
   }
-  void navigateToMapScreen(BuildContext context) {
-    if (Get.isRegistered<MapController>()) {
-      final mapController = Get.find<MapController>();
-      mapController.isTravelRequested.value = false;
-      mapController.isModalOpen.value = false;
-    }
-    if (Get.isRegistered<NotificationController>()) {
-      final notificationController = Get.find<NotificationController>();
-    }
-    if (!Get.isRegistered<ModalController>()) {
-      Get.put(ModalController());
-    }
-    Get.find<NotificationController>().tripAccepted.value = false;
-    Get.find<ModalController>().lottieUrl.value =
-        'https://lottie.host/e44ab786-30a1-48ee-96eb-bb2e002f3ae8/NtzqQeAN8j.json';
-    Get.find<ModalController>().modalText.value = 'Buscando chofer...';
 
-    if (selectedLatLng.value != null && selectedDescription.value != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MapScreen(
-            endController: TextEditingController(text: selectedDescription.value),
+  void navigateToMapScreen() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      /* if (Get.isRegistered<MapController>()) {
+      final mapController = Get.find<MapController>();
+      mapController.cleanupController();
+      Get.delete<MapController>();
+    }*/
+
+      if (!Get.isRegistered<ModalController>()) {
+        Get.put(ModalController());
+      }
+
+      Get.find<NotificationController>().tripAccepted.value = false;
+      Get.find<ModalController>().lottieUrl.value =
+          'https://lottie.host/a811be92-b006-48ce-ad3e-c20bfffc3d7e/NzmrksnYZW.json';
+      Get.find<ModalController>().modalText.value = 'Buscando chofer...';
+      Get.find<NotificationController>().clearNotification();
+
+      if (selectedLatLng.value != null && selectedDescription.value != null) {
+        Get.to(
+          () => MapScreen(
+            endController:
+                TextEditingController(text: selectedDescription.value),
             startAddress: currentAddress.value,
             startLatLng: currentLatLng.value,
             endLatLng: selectedLatLng.value,
           ),
-        ),
-      );
-    } else {
-      Get.snackbar('Error', 'Por favor, selecciona un destino primero');
-    }
+        );
+      } else {
+        Get.snackbar('Error', 'Por favor, selecciona un destino primero');
+      }
+    });
   }
-
 
   void onMarkerDragEnd(LatLng newPosition) async {
     try {
@@ -345,7 +401,6 @@ class DestinoController extends GetxController {
       ),
     );
   }
-
 
   void handlePlaceSelection(String placeId, String description) async {
     try {
@@ -488,7 +543,11 @@ class DestinoController extends GetxController {
                                       handleModalPlaceSelection(
                                           placeId, description, context);
                                     },
-                                    leading: Icon(Icons.location_on),
+                                    leading: Image.asset(
+                                      'assets/images/mapa/marker-destino.png',
+                                      width: 24,
+                                      height: 24,
+                                    ),
                                     title: Text(prediction['description']),
                                   );
                                 },

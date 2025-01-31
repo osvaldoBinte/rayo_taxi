@@ -12,30 +12,24 @@ import 'package:rayo_taxi/features/client/presentation/pages/home_page/home_page
 enum RecoveryStep { Email, Code, UpdatePassword }
 
 class CreateRecoveryCodeController extends GetxController {
-  // Controladores para los campos de texto
   final emailController = TextEditingController();
   final codeController = TextEditingController();
   final newPasswordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
-  // Variables observables para determinar el paso actual
   var currentStep = RecoveryStep.Email.obs;
 
-  // Variables observables para manejar el estado de carga
   var isLoading = false.obs;
 
-  // Variables observables para manejar la visibilidad de las contraseñas
   var isNewPasswordVisible = false.obs;
   var isConfirmPasswordVisible = false.obs;
 
-  // Casos de uso
   final CreateRecoveryCodeUsecase createRecoveryCodeUsecase;
   final CheckRecoveryCodeUsecase checkRecoveryCodeUsecase;
   final UpdatePasswordUsecase updatePasswordUsecase;
-  var remainingSeconds = 180.obs; // 3 minutos en segundos
-  Timer? timer; // Temporizador
+  var remainingSeconds = 60.obs; 
+  Timer? timer; 
 
-  // Constructor con inyección de dependencias
   CreateRecoveryCodeController({
     required this.createRecoveryCodeUsecase,
     required this.checkRecoveryCodeUsecase,
@@ -51,14 +45,13 @@ class CreateRecoveryCodeController extends GetxController {
     isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
   }
 void startTimer() {
-    remainingSeconds.value = 180; // Reinicia el tiempo
-    timer?.cancel(); // Cancela cualquier temporizador previo
+    remainingSeconds.value = 60;
+    timer?.cancel(); 
     timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (remainingSeconds.value > 0) {
         remainingSeconds.value--;
       } else {
         timer.cancel();
-        // Tiempo agotado, regresa al paso de email
         currentStep.value = RecoveryStep.Email;
         QuickAlert.show(
           context: Get.context!,
@@ -74,7 +67,6 @@ void startTimer() {
     timer?.cancel();
   }
   
-  // Método para enviar el código de recuperación
    Future<void> sendRecoveryCode() async {
     final email = emailController.text.trim();
     if (_validateEmail(email)) {
@@ -83,7 +75,7 @@ void startTimer() {
         final recoveryPasswordEntitie = RecoveryPasswordEntitie(email: email);
         await createRecoveryCodeUsecase.execute(recoveryPasswordEntitie);
         currentStep.value = RecoveryStep.Code;
-        startTimer(); // Inicia el temporizador aquí
+        startTimer(); 
         QuickAlert.show(
           context: Get.context!,
           type: QuickAlertType.success,
@@ -114,7 +106,6 @@ void startTimer() {
   }
 
 
-  // Método para validar el código de recuperación
   Future<void> validateRecoveryCode() async {
     final email = emailController.text.trim();
     final code = codeController.text.trim();
@@ -124,7 +115,7 @@ void startTimer() {
         final recoveryPasswordEntitie = RecoveryPasswordEntitie(email: email, recovery_code: code);
         await checkRecoveryCodeUsecase.execute(recoveryPasswordEntitie);
         currentStep.value = RecoveryStep.UpdatePassword;
-        cancelTimer(); // Cancela el temporizador aquí
+        cancelTimer();
         QuickAlert.show(
           context: Get.context!,
           type: QuickAlertType.success,
@@ -153,7 +144,6 @@ void startTimer() {
       );
     }
   }
-  // Método para actualizar la contraseña
   Future<void> updatePassword() async {
     final newPassword = newPasswordController.text.trim();
     final confirmPassword = confirmPasswordController.text.trim();
@@ -198,23 +188,19 @@ void startTimer() {
     }
   }
 
-  // Método de validación del correo electrónico
   bool _validateEmail(String email) {
     if (email.isEmpty) return false;
     final regex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
     return regex.hasMatch(email);
   }
 
-  // Método de validación del código
   bool _validateCode(String code) {
     final regex = RegExp(r'^\d{6}$');
     return regex.hasMatch(code);
   }
 
-  // Método de validación de las contraseñas
   bool _validatePasswords(String password, String confirmPassword) {
     if (password.isEmpty || confirmPassword.isEmpty) return false;
-  //  if (password.length < 6) return false; // Por ejemplo, mínimo 6 caracteres
     return password == confirmPassword;
   }
 
@@ -224,7 +210,7 @@ void startTimer() {
     codeController.dispose();
     newPasswordController.dispose();
     confirmPasswordController.dispose();
-    cancelTimer(); // Asegúrate de cancelar el temporizador al cerrar
+    cancelTimer(); 
     super.onClose();
   }
 }

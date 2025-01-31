@@ -19,7 +19,7 @@ class AyudaPage extends StatelessWidget {
   void _abrirWhatsApp(BuildContext context) async {
     final phone_support = client.phone_support?.replaceAll(RegExp(r'[^\d]'), '');
 
-    final whatsappUrl = 'https://wa.me/+ 52$phone_support?text=${'¿Como funciona la aplicación?'}';
+    final whatsappUrl = 'https://wa.me/+ 52$phone_support?text=${'Hola!! necesito ayuda'}';
     
     try {
       Uri uri = Uri.parse(whatsappUrl);

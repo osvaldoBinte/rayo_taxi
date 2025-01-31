@@ -28,22 +28,25 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 class TravelIdPage extends StatelessWidget {
   final TravelAlertModel travel;
   final String tag;
+  final bool showInfoButton;
+  final bool isPreview;
 
   TravelIdPage({
     required this.travel,
     String? tag,
+    this.showInfoButton = true,
+    this.isPreview = false,
   }) : this.tag = tag ?? travel.hashCode.toString();
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(
-      TravelController(travel: travel),
+      TravelController(travel: travel, isPreview: isPreview),  // Pass isPreview to controller
       tag: tag,
       permanent: false,
     );
 
     return Scaffold(
-     
       body: SafeArea(
         child: Stack(
           children: [
@@ -59,10 +62,13 @@ class TravelIdPage extends StatelessWidget {
                     polylines: controller.polylines.value,
                     myLocationEnabled: false,
                     myLocationButtonEnabled: false,
+                    zoomControlsEnabled: !isPreview, 
+                    scrollGesturesEnabled: !isPreview, 
                   )),
-                  InfoButtonWidget(
-              travel: travel,
-            ),
+            if (showInfoButton)
+              InfoButtonWidget(
+                travel: travel,
+              ),
           ],
         ),
       ),

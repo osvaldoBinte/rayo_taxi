@@ -56,7 +56,7 @@ void initState() {
     if (title == 'Nuevo precio para tu viaje') {
       notificationService.showNewPriceDialog(context);
     } else if (title == 'Tu viaje fue aceptado' || title == "Contraoferta aceptada por el conductor") {
-      notificationService.showacept(context, title, body);
+     // notificationService.showacept(context, title, body);
     } else {
       notificationService.showQuickAlert(context, title, body);
     } } else {

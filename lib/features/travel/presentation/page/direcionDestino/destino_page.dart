@@ -13,43 +13,40 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/direcionDestino/search_modal.dart';
 
-
-
 class DestinoPage extends StatelessWidget {
-  
   final DestinoController controller = Get.find<DestinoController>();
+  Widget buildCenterMarker() {
+    return Center(
+      child: Transform.translate(
+        offset: Offset(0, -25),
+        child: Image.asset(
+          'assets/images/mapa/marker-destino.png',
+          width: 50,
+          height: 50,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-
-    
     return Scaffold(
       body: Stack(
         children: [
-         Obx(() => GoogleMap(
-      onMapCreated: (GoogleMapController mapController) {
-        controller.mapController = mapController;
-        controller.getUserAddress();
-      },
-      onCameraMove: controller.onCameraMove,
-      onCameraIdle: controller.onCameraIdle,
-      initialCameraPosition: CameraPosition(
-        target: controller.currentLatLng.value ?? 
-            const LatLng(20.6596988, -103.3496092),
-        zoom: 15,
-      ),
-      markers: controller.markers, 
-    )),
-          
-       Center(
-      child: Icon(
-        Icons.location_on,
-        size: 48,
-        color: Colors.black.withOpacity(0.5), 
-      ),
-    ),
-    
-   
+          Obx(() => GoogleMap(
+                onMapCreated: (GoogleMapController mapController) {
+                  controller.mapController = mapController;
+                  controller.getUserAddress();
+                },
+                onCameraMove: controller.onCameraMove,
+                initialCameraPosition: CameraPosition(
+                  target: controller.currentLatLng.value ??
+                      const LatLng(20.6596988, -103.3496092),
+                  zoom: 15,
+                ),
+                markers: controller.markers,
+              )),
+          buildCenterMarker(),
           Positioned(
             bottom: 0,
             left: 0,
@@ -81,6 +78,14 @@ class DestinoPage extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  Text(
+                    'Arrastra el mapa para mover el marcador',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                   SizedBox(height: 16),
                   TextField(
                     controller: controller.mainDestinoController,
@@ -88,13 +93,24 @@ class DestinoPage extends StatelessWidget {
                     onTap: () => controller.showSearchModal(context),
                     decoration: InputDecoration(
                       hintText: '¿A dónde quieres ir?',
-                      prefixIcon: Icon(Icons.search, color: Colors.grey),
                       filled: true,
                       fillColor: Colors.grey[200],
                       contentPadding: EdgeInsets.symmetric(vertical: 0),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.0),
                         borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Image.asset(
+                          'assets/images/mapa/destino.png',
+                          width: 5,
+                          height: 5,
+                        ),
+                      ),
+                      suffixIcon: Icon(
+                        Icons.search,
+                        color: Colors.grey,
                       ),
                     ),
                     readOnly: true,
@@ -108,7 +124,7 @@ class DestinoPage extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: isEnabled
-                            ? () => controller.navigateToMapScreen(context)
+                            ? () => controller.navigateToMapScreen()
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
@@ -138,43 +154,4 @@ class DestinoPage extends StatelessWidget {
       ),
     );
   }
-}
-class MarkerPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.fill;
-
-    final path = Path()
-      ..moveTo(size.width / 2, 0)  // Empezar desde arriba
-      ..lineTo(size.width, size.height / 3)  // Línea a la derecha
-      ..quadraticBezierTo(
-        size.width / 2, size.height / 2,  // Punto de control
-        size.width / 2, size.height  // Punto final
-      )
-      ..quadraticBezierTo(
-        size.width / 2, size.height / 2,  // Punto de control
-        0, size.height / 3  // Punto final
-      )
-      ..close();
-
-    // Dibujar sombra
-    canvas.drawShadow(path, Colors.black, 4, true);
-    // Dibujar pin
-    canvas.drawPath(path, paint);
-
-    // Círculo blanco en el centro
-    final Paint circlePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(
-      Offset(size.width / 2, size.height / 3),
-      size.width / 6,
-      circlePaint
-    );
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

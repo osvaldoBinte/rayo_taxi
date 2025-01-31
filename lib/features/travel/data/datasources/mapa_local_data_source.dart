@@ -20,7 +20,7 @@ abstract class TravelLocalDataSource {
   Future<void> getPlaceDetailsAndMove(String placeId,
       Function(LatLng) moveToLocation, Function(LatLng) addMarker);
   Future<String> getEncodedPoints();
-  Future<Map<String, dynamic>> getPlaceDetails(String placeId); // Nueva función
+  Future<Map<String, dynamic>> getPlaceDetails(String placeId);
    double getDuration();
 
 
@@ -37,7 +37,7 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
     String _baseUrl = AppConstants.serverBase;
 
   double _routeDuration =
-      0.0; // Añade esta variable a tu clase para almacenar la duración
+      0.0; 
   static const String _searchHistoryKey = 'search_history';
 
   @override
@@ -45,32 +45,27 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
   final String url =
       'https://maps.googleapis.com/maps/api/directions/json?origin=${startLocation.latitude},${startLocation.longitude}&destination=${endLocation.latitude},${endLocation.longitude}&key=$_apiKey';
 
-  // Imprimir la URL de la solicitud para verificar que se está construyendo correctamente
   print('--- Solicitando ruta ---');
   print('URL de la solicitud: $url');
 
   try {
     final response = await http.get(Uri.parse(url));
 
-    // Imprimir el código de estado de la respuesta
     print('Código de estado de la respuesta: ${response.statusCode}');
 
-    // Imprimir el cuerpo completo de la respuesta para analizar posibles errores
     print('Cuerpo de la respuesta: ${response.body}');
 
     if (response.statusCode == 200) {
       final result = json.decode(response.body);
 
-      // Verificar que la ruta y el polyline existan en la respuesta
       if (result['routes'] != null && result['routes'].isNotEmpty) {
         _encodedPoints = result['routes'][0]['overview_polyline']['points'];
         print('Encoded Points obtenidos: $_encodedPoints');
 
-        // Extraer la duración de la respuesta
         final legs = result['routes'][0]['legs'];
         if (legs.isNotEmpty) {
-          final durationInSeconds = legs[0]['duration']['value']; // Duración en segundos
-          _routeDuration = durationInSeconds / 60.0; // Convertir a minutos
+          final durationInSeconds = legs[0]['duration']['value']; 
+          _routeDuration = durationInSeconds / 60.0; 
           print('Duración de la ruta: $_routeDuration minutos');
         } else {
           print('No se encontraron legs en la ruta.');
@@ -79,14 +74,12 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
         print('No se encontraron rutas en la respuesta.');
       }
     } else {
-      // Manejar errores específicos de la API
       final errorResult = json.decode(response.body);
       final errorMessage = errorResult['error_message'] ?? 'Error desconocido';
       print('Error al obtener la ruta: $errorMessage');
       throw Exception('Error al obtener la ruta: $errorMessage');
     }
   } catch (e) {
-    // Capturar y imprimir cualquier excepción que ocurra durante la solicitud
     print('Excepción durante la solicitud de la ruta: $e');
     throw Exception('Excepción durante la solicitud de la ruta: $e');
   }
@@ -97,19 +90,15 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> history = prefs.getStringList(_searchHistoryKey) ?? [];
 
-    // Convertimos el objeto a una cadena JSON
     String searchItemJson = jsonEncode(searchItem);
 
-    // Evitar duplicados
     if (!history.contains(searchItemJson)) {
-      history.insert(0, searchItemJson); // Insertar al inicio
+      history.insert(0, searchItemJson);
     } else {
-      // Mover la búsqueda al inicio si ya existe
       history.remove(searchItemJson);
       history.insert(0, searchItemJson);
     }
 
-    // Opcional: limitar el historial a las últimas N búsquedas
     if (history.length > 10) {
       history = history.sublist(0, 10);
     }
@@ -190,22 +179,21 @@ Future<List<dynamic>> getPlacePredictions(String input, {LatLng? location}) asyn
 
   try {
     String encodedInput = Uri.encodeComponent(input);
-    String url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$encodedInput&key=$_apiKey';
+    String url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$encodedInput&components=country:mx&key=$_apiKey';
 
     if (location != null) {
       url += '&location=${location.latitude},${location.longitude}&radius=500';
     }
 
-    print('Solicitud a Places API: $url'); // Debug
-
+    print('Solicitud a Places API: $url'); 
     final response = await http.get(Uri.parse(url));
 
-    print('Respuesta de Places API: ${response.statusCode}'); // Debug
-    print('Cuerpo de la respuesta: ${response.body}'); // Debug
+    print('Respuesta de Places API: ${response.statusCode}');
+    print('Cuerpo de la respuesta: ${response.body}'); 
 
     if (response.statusCode == 200) {
       final predictions = json.decode(response.body)['predictions'];
-      print('Predicciones recibidas: ${predictions.length}'); // Debug
+      print('Predicciones recibidas: ${predictions.length}');
       return predictions;
     } else {
       print('Error en la respuesta de la API: ${response.body}');
@@ -272,7 +260,7 @@ Future<List<dynamic>> getPlacePredictions(String input, {LatLng? location}) asyn
     String? savedToken = await AuthService().getToken();
 
     var response = await http.post(
-      Uri.parse('$_baseUrl/app_clients/travels/travels'),
+      Uri.parse('$_baseUrl/api/app_clients/travels/travels'),
       headers: {
         'Content-Type': 'application/json',
         'x-token': savedToken ?? '',
@@ -310,7 +298,7 @@ Future<List<dynamic>> getPlacePredictions(String input, {LatLng? location}) asyn
       if (storedData != null && storedData.isNotEmpty) {
         for (String id in storedData) {
           await http.delete(
-            Uri.parse('$_baseUrl/app_clients/travels/travels/Student/$id'),
+            Uri.parse('$_baseUrl/api/app_clients/travels/travels/Student/$id'),
           );
         }
 
@@ -331,7 +319,7 @@ Future<List<dynamic>> getPlacePredictions(String input, {LatLng? location}) asyn
     if (connection) {
       try {
         final http.Response response = await http.put(
-          Uri.parse('$_baseUrl/app_clients/travels/travels/cancel/$id'),
+          Uri.parse('$_baseUrl/api/app_clients/travels/travels/cancel/$id'),
           headers: {
             'Content-Type': 'application/json',
             'x-token': savedToken ?? '',

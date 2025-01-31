@@ -38,38 +38,9 @@ class _GetClientPageState extends State<GetClientPage> {
 
   final _picker = ImagePicker();
   String? _imagePath;
-
+ 
   Future<void> _logout() async {
-    QuickAlert.show(
-      context: Get.context!,
-      type: QuickAlertType.confirm,
-      title: 'Cerrar sesión',
-      text: '¿Estás seguro de que deseas cerrar sesión?',
-      confirmBtnText: 'Sí',
-      cancelBtnText: 'No',
-      onConfirmBtnTap: () async {
-        final GoogleSignIn googleSignIn = GoogleSignIn();
-
-        try {
-          await googleSignIn.signOut();
-          print("se cerro la sesion");
-        } catch (e) {
-          print("Error al cerrar sesión de Google: $e");
-        }
-
-        try {
-          await googleSignIn.disconnect();
-        } catch (e) {
-          print("No se pudo revocar el acceso de Google: $e");
-        }
-
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        _loginGetx.logout();
-        await prefs.remove('auth_token');
-
-        await Get.offAll(() => LoginClientsPage());
-      },
-    );
+   _loginGetx.logoutAlert();
   }
 
   @override
@@ -164,10 +135,13 @@ class _GetClientPageState extends State<GetClientPage> {
                                     errorBuilder: (BuildContext context,
                                         Object exception,
                                         StackTrace? stackTrace) {
-                                      return const Icon(
-                                        Icons.person,
-                                        size: 40,
-                                        color: Colors.grey,
+                                      return Text(
+                                        (client.name ?? '?')[0].toUpperCase(),
+                                        style:  TextStyle(
+                                          fontSize: 30,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context).colorScheme.avatar,
+                                        ),
                                       );
                                     },
                                   ),
@@ -190,13 +164,7 @@ class _GetClientPageState extends State<GetClientPage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 5),
-                          Text(
-                            'Fecha de nacimiento: ${client.birthdate ?? 'N/A'}',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.icongreen,
-                              fontSize: 16,
-                            ),
-                          ),
+                         
                           Text(
                             '${client.email ?? 'Sin email'}',
                             style: TextStyle(
@@ -257,49 +225,46 @@ class _GetClientPageState extends State<GetClientPage> {
                   ],
                 ),
                 const SizedBox(height: 30),
-                
-               ListOption(
-                  icon: Icons.help_outline,
-                  title: 'Ayuda',
-                  subtitle:
-                      '¿Te gustaría que te ayude con algo más relacionado con tu aplicación?',
-                 onPressed: (){
-                                       showModalBottomSheet<void>(
-                          context: context,
-                          isScrollControlled: true,
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.vertical(top: Radius.circular(20)),
-                          ),
-                          builder: (BuildContext context) {
-                            return FractionallySizedBox(
-                              heightFactor: 0.8,
-                              child: Column(
-                                children: <Widget>[
-                                  SizedBox(
-                                    height: 10,
-                                    width: 70,
-                                    child: DecoratedBox(
-                                        decoration: BoxDecoration(
-                                      color: Theme.of(context).primaryColor,
-                                      borderRadius:
-                                          BorderRadius.all(Radius.circular(8)),
-                                    )),
-                                  ),
-                                  Expanded(
-                                    child: AyudaPage(client: client),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                                    }
-                ),
-                
+                ListOption(
+                    icon: Icons.help_outline,
+                    title: 'Ayuda',
+                    subtitle:
+                        '¿Te gustaría que te ayude con algo más relacionado con tu aplicación?',
+                    onPressed: () {
+                      showModalBottomSheet<void>(
+                        context: context,
+                        isScrollControlled: true,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(20)),
+                        ),
+                        builder: (BuildContext context) {
+                          return FractionallySizedBox(
+                            heightFactor: 0.8,
+                            child: Column(
+                              children: <Widget>[
+                                SizedBox(
+                                  height: 10,
+                                  width: 70,
+                                  child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                    color: Theme.of(context).primaryColor,
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(8)),
+                                  )),
+                                ),
+                                Expanded(
+                                  child: AyudaPage(client: client),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    }),
                 ListOption(
                   icon: Icons.privacy_tip,
-                  title: 'Revisión de privacidad',
+                  title: 'Aviso de Privacidad',
                   subtitle: 'Detalles de nuestras políticas y condiciones',
                   onPressed: () => _showPdfModal(context),
                 ),

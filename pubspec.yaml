@@ -67,6 +67,7 @@ dependencies:
   pin_code_fields: ^8.0.1
   webview_flutter: ^3.0.0
   shimmer: ^3.0.0
+  socket_io_client: ^3.0.2
 
 flutter_native_splash:
   color: "#EFC300"
@@ -122,9 +123,17 @@ flutter:
      - assets/images/viajes/taxi-llego.gif
      - assets/images/viajes/add_travel.gif
      - assets/images/viajes/taxi.png
+     - assets/images/viajes/taxi2.png
+     - assets/images/viajes/marker.png
      - assets/images/logo-incos.png
      - assets/images/logo-adjusted.png
      - assets/images/mapa/marker.gif
+     - assets/images/mapa/destino.png
+     - assets/images/mapa/marker-destino.png
+     - assets/images/taxi/icon-taxi.png
+     - assets/images/taxi/icons-viaje.png
+     - assets/images/mapa/marker-inicio.png
+     - assets/images/mapa/origen.png
      - assets/images/whatsApp.png
      - test.env
      - dev.env

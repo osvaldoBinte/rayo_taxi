@@ -1,5 +1,6 @@
 import 'package:rayo_taxi/features/client/data/models/client_model.dart';
 import 'package:rayo_taxi/features/client/data/models/genders/genders_model.dart';
+import 'package:rayo_taxi/features/client/data/models/google/google_mensaje_model.dart';
 import 'package:rayo_taxi/features/client/domain/entities/client.dart';
 import 'package:rayo_taxi/features/client/domain/entities/recoveryPassword/recovery_password_entitie.dart';
 
@@ -10,13 +11,12 @@ abstract class ClientRepository {
   Future<void> loginClient(Client client);
   Future<bool> verifyToken();
   int calcularEdad(String birthdate);
-    Future <void> loginGoogle(Client client);
-Future<List<GendersModel>> getgenders() ;
+  Future<GoogleMensajeModel> loginGoogle(Client client);
+  Future<List<GendersModel>> getgenders();
 
   Future<void> CreaterecoveryCode(
       RecoveryPasswordEntitie recoveryPasswordEntitie);
   Future<void> checkRecoveryCode(
       RecoveryPasswordEntitie recoveryPasswordEntitie);
-  Future<void> updatePassword(
-      RecoveryPasswordEntitie recoveryPasswordEntitie);
+  Future<void> updatePassword(RecoveryPasswordEntitie recoveryPasswordEntitie);
 }

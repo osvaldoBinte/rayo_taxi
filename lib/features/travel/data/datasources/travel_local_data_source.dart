@@ -5,9 +5,11 @@ import 'package:rayo_taxi/features/AuthS/AuthService.dart';
 import 'package:rayo_taxi/features/travel/data/models/Travelwithtariff/Travelwithtariff_model.dart';
 import 'package:rayo_taxi/features/travel/data/models/Travelwithtariff/confirmar_tariff_model.dart';
 import 'package:rayo_taxi/features/travel/data/models/getcosttravel/getcosttravel_model.dart';
+import 'package:rayo_taxi/features/travel/data/models/qualification/qualification_model.dart';
 import 'package:rayo_taxi/features/travel/data/models/travel/travel_alert_model.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/deviceEntitie/device.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/getcosttraveEntitie/getcosttravel_entitie.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/qualification/qualification_entitie.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/travelwithtariffEntitie/confirmar_tariff_entitie.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/travelwithtariffEntitie/travelwithtariff_entitie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,15 +25,22 @@ abstract class NotificationLocalDataSource {
   Future<String?> fetchDeviceId();
   Future<List<TravelAlertModel>> getbyIdtravelid(
       int? idTravel, bool connection);
-  Future<void> confirmTravelWithTariff(ConfirmarTariffEntitie confirmarTariffEntitie);
-  Future<void> rejectTravelOffer(TravelwithtariffEntitie travelwithtariffEntitie);
+  Future<void> confirmTravelWithTariff(
+      ConfirmarTariffEntitie confirmarTariffEntitie);
+  Future<void> rejectTravelOffer(
+      TravelwithtariffEntitie travelwithtariffEntitie);
   Future<void> removedataaccount();
-  Future<void> offerNegotiation(TravelwithtariffEntitie travelwithtariffEntitie);
-   Future<GetcosttravelEntitie> getcosttravel(GetcosttravelEntitie getcosttravelEntitie);
+  Future<void> offerNegotiation(
+      TravelwithtariffEntitie travelwithtariffEntitie);
+  Future<GetcosttravelEntitie> getcosttravel(
+      GetcosttravelEntitie getcosttravelEntitie);
+  Future<void> qualification(QualificationEntitie aualificationEntitie);
+    Future<void> skipqualification(QualificationEntitie aualificationEntitie);
+
 }
 
 class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
-    String _baseUrl = AppConstants.serverBase;
+  String _baseUrl = AppConstants.serverBase;
 
   late Device device;
 
@@ -45,7 +54,7 @@ class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
     device = Device(id_device: token);
 
     var response = await http.put(
-      Uri.parse('$_baseUrl/app_clients/users/clients/device'),
+      Uri.parse('$_baseUrl/api/app_clients/users/clients/device'),
       headers: {
         'Content-Type': 'application/json',
         'x-token': savedToken ?? '',
@@ -68,8 +77,6 @@ class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
     }
   }
 
-  
-  
   @override
   Future<List<TravelAlertModel>> getNotification(bool connection) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
@@ -87,7 +94,7 @@ class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
         };
 
         var response = await http.get(
-          Uri.parse('$_baseUrl/app_clients/users/auth/renew'),
+          Uri.parse('$_baseUrl/api/app_clients/users/auth/renew'),
           headers: headers,
         );
 
@@ -171,104 +178,103 @@ class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
   Future<List<TravelAlertModel>> current_travel() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
 
-    String? token =  await AuthService().getToken();
+    String? token = await AuthService().getToken();
     if (token == null) {
       throw Exception('Token no disponible');
     }
-  //if (connection) {
-      try {
-        var headers = {
-          'x-token': token,
-          'Content-Type': 'application/json',
-        };
+    //if (connection) {
+    try {
+      var headers = {
+        'x-token': token,
+        'Content-Type': 'application/json',
+      };
 
-        var response = await http.get(
-          Uri.parse('$_baseUrl/app_clients/users/auth/renew'),
-          headers: headers,
-        );
+      var response = await http.get(
+        Uri.parse('$_baseUrl/api/app_clients/users/auth/renew'),
+        headers: headers,
+      );
 
-        print('Código de estado de la respuesta: ${response.statusCode}');
-        if (response.statusCode == 200) {
-          final jsonResponse = convert.jsonDecode(response.body);
-          print('Respuesta JSON: $jsonResponse');
+      print('Código de estado de la respuesta: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final jsonResponse = convert.jsonDecode(response.body);
+        print('Respuesta JSON: $jsonResponse');
 
-          if (jsonResponse['data'] != null &&
-              jsonResponse['data']['current_travel'] != null) {
-            var travel = jsonResponse['data']['current_travel'];
+        if (jsonResponse['data'] != null &&
+            jsonResponse['data']['current_travel'] != null) {
+          var travel = jsonResponse['data']['current_travel'];
 
-            print('hola soy current_travel: $travel');
+          print('hola soy current_travel: $travel');
 
-            TravelAlertModel travelAlert = TravelAlertModel.fromJson(travel);
+          TravelAlertModel travelAlert = TravelAlertModel.fromJson(travel);
 
-            print('Viaje mapeado: $travelAlert');
-            sharedPreferences.setString(
-                'current_travel', jsonEncode(travelAlert.toJson()));
+          print('Viaje mapeado: $travelAlert');
+          sharedPreferences.setString(
+              'current_travel', jsonEncode(travelAlert.toJson()));
 
-           print(
-                'ID del viaje guardado en SharedPreferences: ${travelAlert.id}');
-            print("ultimo viaje 200");
-            return [travelAlert];
-          } else {
-            throw Exception('Estructura de respuesta inesperada  ultimo viaje');
-          }
+          print(
+              'ID del viaje guardado en SharedPreferences: ${travelAlert.id}');
+          print("ultimo viaje 200");
+          return [travelAlert];
         } else {
-          throw Exception(
-              'Error en la petición de ultimo viaje: ${response.statusCode}');
+          throw Exception('Estructura de respuesta inesperada  ultimo viaje');
         }
-      } catch (e) {
-        print('Error capturado: $e');
-        return _loadtravelFromLocal(sharedPreferences);
+      } else {
+        throw Exception(
+            'Error en la petición de ultimo viaje: ${response.statusCode}');
       }
-  //}else {print('Conexión no disponible, cargando desde SharedPreferences...');
+    } catch (e) {
+      print('Error capturado: $e');
+      return _loadtravelFromLocal(sharedPreferences);
+    }
+    //}else {print('Conexión no disponible, cargando desde SharedPreferences...');
     //  return _loadtravelFromLocal(sharedPreferences);
     //}
   }
 
-@override
-Future<String?> fetchDeviceId() async {
-  try {
-    final String url = '$_baseUrl/app_clients/users/auth/renew';
-    print('Realizando la solicitud a $url...');
+  @override
+  Future<String?> fetchDeviceId() async {
+    try {
+      final String url = '$_baseUrl/api/app_clients/users/auth/renew';
+      print('Realizando la solicitud a $url...');
 
-    String? token =  await AuthService().getToken();
-    if (token == null) {
-      throw Exception('Token no disponible');
-    }
+      String? token = await AuthService().getToken();
+      if (token == null) {
+        throw Exception('Token no disponible');
+      }
 
-    print('Token obtenido: $token'); 
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {
-        'x-token': 'Bearer $token', 
-        'Content-Type': 'application/json',
-      },
-    );
+      print('Token obtenido: $token');
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'x-token': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> jsonResponse = json.decode(response.body);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
 
-      String? idDevice = jsonResponse['data']['id_device'];
-      print('ID del dispositivo obtenido: $idDevice');
+        String? idDevice = jsonResponse['data']['id_device'];
+        print('ID del dispositivo obtenido: $idDevice');
 
-      return idDevice;
-    } else {
-      print('Error en la solicitud id_device: ${response.statusCode}');
-      print('Respuesta del servidor: ${response.body}'); 
+        return idDevice;
+      } else {
+        print('Error en la solicitud id_device: ${response.statusCode}');
+        print('Respuesta del servidor: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Error obteniendo el id_device: $e');
       return null;
     }
-  } catch (e) {
-    print('Error obteniendo el id_device: $e');
-    return null;
   }
-}
-
 
   @override
   Future<List<TravelAlertModel>> getbyIdtravelid(
       int? idTravel, bool connection) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
 
-    String? token =  await AuthService().getToken();
+    String? token = await AuthService().getToken();
     if (token == null) {
       throw Exception('Token no disponible');
     }
@@ -279,7 +285,7 @@ Future<String?> fetchDeviceId() async {
           'x-token': token,
           'Content-Type': 'application/json',
         };
-        final String url = '$_baseUrl/app_clients/travels/travels/$idTravel';
+        final String url = '$_baseUrl/api/app_clients/travels/travels/$idTravel';
 
         print('Realizando la solicitud a $url');
         var response = await http.get(
@@ -295,14 +301,11 @@ Future<String?> fetchDeviceId() async {
           if (jsonResponse['data'] != null) {
             var travelData = jsonResponse['data'];
 
-
             print('Datos de viaje recibido: $travelData');
             print('Conductores recibidos: ${travelData['drivers']}');
 
             TravelAlertModel travelAlertbyid =
                 TravelAlertModel.fromJson(travelData);
-
-
 
             print('El id_status es: ${travelAlertbyid.id_status}');
             SharedPreferences sharedPreferences =
@@ -349,85 +352,87 @@ Future<String?> fetchDeviceId() async {
       Map<String, dynamic> travelMap = convert.jsonDecode(travelString);
       TravelAlertModel travelAlert = TravelAlertModel.fromJson(travelMap);
 
-      return [travelAlert]; 
+      return [travelAlert];
     } else {
       print('No hay viajes en SharedPreferences');
       throw Exception('No hay viajes en SharedPreferences');
     }
   }
 
-  
-@override
-Future<void> confirmTravelWithTariff(ConfirmarTariffEntitie confirmarTariffEntitie) async {
-  try {
-    String? savedToken = await AuthService().getToken();
+  @override
+  Future<void> confirmTravelWithTariff(
+      ConfirmarTariffEntitie confirmarTariffEntitie) async {
+    try {
+      String? savedToken = await AuthService().getToken();
 
-    if (savedToken == null || savedToken.isEmpty) {
-      throw Exception('Token de autenticación no disponible.');
-    }
+      if (savedToken == null || savedToken.isEmpty) {
+        throw Exception('Token de autenticación no disponible.');
+      }
 
-    final uri = Uri.parse('$_baseUrl/app_clients/travels/travels/confirmTravelWithTariff');
+      final uri = Uri.parse(
+          '$_baseUrl/api/app_clients/travels/travels/confirmTravelWithTariff');
 
-    final bodyJson = ConfirmarTariffModel.fromEntity(confirmarTariffEntitie).toJson();
+      final bodyJson =
+          ConfirmarTariffModel.fromEntity(confirmarTariffEntitie).toJson();
 
-    print('--- ConfirmTravelWithTariff Request ---');
-    print('URL: ${uri.toString()}');
-    print('Headers: ${{
-      'Content-Type': 'application/json',
-      'x-token': savedToken,
-    }}');
-    print('Body: ${jsonEncode(bodyJson)}');
-    print('--------------------------------------');
-
-    var response = await http.put(
-      uri,
-      headers: {
+      print('--- ConfirmTravelWithTariff Request ---');
+      print('URL: ${uri.toString()}');
+      print('Headers: ${{
         'Content-Type': 'application/json',
         'x-token': savedToken,
-      },
-      body: jsonEncode(bodyJson),
-    );
+      }}');
+      print('Body: ${jsonEncode(bodyJson)}');
+      print('--------------------------------------');
 
-    print('--- ConfirmTravelWithTariff Response ---');
-    print('Status Code: ${response.statusCode}');
-    print('Headers: ${response.headers}');
-    print('Body: ${response.body}');
-    print('---------------------------------------');
+      var response = await http.put(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-token': savedToken,
+        },
+        body: jsonEncode(bodyJson),
+      );
 
-    if (response.headers['content-type']?.contains('application/json') ?? false) {
-      dynamic body = jsonDecode(response.body);
-      print('Parsed JSON Body: $body');
+      print('--- ConfirmTravelWithTariff Response ---');
+      print('Status Code: ${response.statusCode}');
+      print('Headers: ${response.headers}');
+      print('Body: ${response.body}');
+      print('---------------------------------------');
 
-      if (response.statusCode == 200) {
-        String message = body['message'].toString();
-        print("Confirmación exitosa: $message");
+      if (response.headers['content-type']?.contains('application/json') ??
+          false) {
+        dynamic body = jsonDecode(response.body);
+        print('Parsed JSON Body: $body');
+
+        if (response.statusCode == 200) {
+          String message = body['message'].toString();
+          print("Confirmación exitosa: $message");
+        } else {
+          String message = body['message'].toString();
+          print('Error al confirmar el viaje: $message');
+          throw Exception(message);
+        }
       } else {
-        String message = body['message'].toString();
-        print('Error al confirmar el viaje: $message');
-        throw Exception(message);
+        print('Formato de respuesta inesperado: ${response.body}');
+        throw Exception('Formato de respuesta inesperado.');
       }
-    } else {
-      print('Formato de respuesta inesperado: ${response.body}');
-      throw Exception('Formato de respuesta inesperado.');
+    } catch (e) {
+      print('Error en confirmTravelWithTariff: $e');
+      throw Exception('Error al confirmar el viaje: $e');
     }
-  } catch (e) {
-    print('Error en confirmTravelWithTariff: $e');
-    throw Exception('Error al confirmar el viaje: $e');
   }
-}
 
   @override
-  Future<void> rejectTravelOffer(TravelwithtariffEntitie travelwithtariffEntitie) async {
+  Future<void> rejectTravelOffer(
+      TravelwithtariffEntitie travelwithtariffEntitie) async {
     String? savedToken = await AuthService().getToken();
 
     var response = await http.put(
-      Uri.parse(
-          '$_baseUrl/app_clients/travels/travels/rejectTravelOffer'),
+      Uri.parse('$_baseUrl/api/app_clients/travels/travels/rejectTravelOffer'),
       headers: {
         'Content-Type': 'application/json',
         'x-token': savedToken ?? '',
       },
-
       body: jsonEncode(
           TravelwithtariffModal.fromEntity(travelwithtariffEntitie).toJson()),
     );
@@ -452,7 +457,7 @@ Future<void> confirmTravelWithTariff(ConfirmarTariffEntitie confirmarTariffEntit
     String? savedToken = await AuthService().getToken();
 
     var response = await http.put(
-      Uri.parse('$_baseUrl/app_clients/users/clients/remove'),
+      Uri.parse('$_baseUrl/api/app_clients/users/clients/remove'),
       headers: {
         'Content-Type': 'application/json',
         'x-token': savedToken ?? '',
@@ -480,7 +485,7 @@ Future<void> confirmTravelWithTariff(ConfirmarTariffEntitie confirmarTariffEntit
     String? savedToken = await AuthService().getToken();
 
     var response = await http.put(
-      Uri.parse('$_baseUrl/app_clients/travels/travels/offerNegotiation'),
+      Uri.parse('$_baseUrl/api/app_clients/travels/travels/offerNegotiation'),
       headers: {
         'Content-Type': 'application/json',
         'x-token': savedToken ?? '',
@@ -503,37 +508,98 @@ Future<void> confirmTravelWithTariff(ConfirmarTariffEntitie confirmarTariffEntit
       throw Exception(message);
     }
   }
+
   @override
-Future<GetcosttravelEntitie> getcosttravel(GetcosttravelEntitie getcosttravelEntitie) async {
-  String? savedToken = await AuthService().getToken();
-  var response = await http.post(
-    Uri.parse('$_baseUrl/app_clients/travels/travels/cost'),
-    headers: {
-      'Content-Type': 'application/json',
-      'x-token': savedToken ?? '',
-    },
-    body: jsonEncode(
-        GetcosttravelModel.fromEntity(getcosttravelEntitie).toJson()),
-  );
-  
-  final jsonResponse = json.decode(response.body);
-  print('Respuesta JSON completa: $jsonResponse');
-  
-  if (response.statusCode == 200) {
-    if (jsonResponse['data'] != null) {
-             return GetcosttravelModel(
+  Future<GetcosttravelEntitie> getcosttravel(
+      GetcosttravelEntitie getcosttravelEntitie) async {
+    String? savedToken = await AuthService().getToken();
+    var response = await http.post(
+      Uri.parse('$_baseUrl/api/app_clients/travels/travels/cost'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': savedToken ?? '',
+      },
+      body: jsonEncode(
+          GetcosttravelModel.fromEntity(getcosttravelEntitie).toJson()),
+    );
+
+    final jsonResponse = json.decode(response.body);
+    print('Respuesta JSON completa: $jsonResponse');
+
+    if (response.statusCode == 200) {
+      if (jsonResponse['data'] != null) {
+        return GetcosttravelModel(
           kilometers: getcosttravelEntitie.kilometers,
           duration: getcosttravelEntitie.duration,
           message: jsonResponse['message'],
           data: jsonResponse['data'],
         );
- } else {
-      throw Exception("No se encontró la clave 'data' en la respuesta.");
+      } else {
+        throw Exception("No se encontró la clave 'data' en la respuesta.");
+      }
+    } else {
+      String message = jsonResponse['message'].toString();
+      print('Error en el servidor: $jsonResponse');
+      throw Exception(message);
     }
-  } else {
-    String message = jsonResponse['message'].toString();
-    print('Error en el servidor: $jsonResponse');
-    throw Exception(message);
   }
-}
+
+  @override
+  Future<void> qualification(QualificationEntitie qaualificationEntitie) async {
+    String? savedToken = await AuthService().getToken();
+
+    var response = await http.put(
+      Uri.parse('$_baseUrl/api/app_clients/travels/travels/qualification'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': savedToken ?? '',
+      },
+      body: jsonEncode(
+          QualificationModel.fromEntity(qaualificationEntitie).toJson()),
+    );
+
+    dynamic body = jsonDecode(response.body);
+    print(body);
+    print(response.statusCode);
+
+    if (response.statusCode == 200) {
+      String message = body['message'].toString();
+      print(message);
+      print("si se ejecuto bien el qualification $message ");
+    } else {
+      String message = body['message'].toString();
+      print('error al qualification $body');
+      throw Exception(message);
+    }
+  }
+
+
+  @override
+  Future<void> skipqualification(QualificationEntitie qaualificationEntitie) async {
+    String? savedToken = await AuthService().getToken();
+
+    var response = await http.put(
+      Uri.parse('$_baseUrl/api/app_clients/travels/travels/qualification'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': savedToken ?? '',
+      },
+      body: jsonEncode(
+          QualificationModel.fromEntity(qaualificationEntitie).toJson()),
+    );
+
+    dynamic body = jsonDecode(response.body);
+    print(body);
+    print(response.statusCode);
+
+    if (response.statusCode == 200) {
+      String message = body['message'].toString();
+      print(message);
+      print("si se ejecuto bien el qualification $message ");
+    } else {
+      String message = body['message'].toString();
+      print('error al qualification $body');
+      throw Exception(message);
+    }
+  }
 }

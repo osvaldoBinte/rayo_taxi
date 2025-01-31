@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:rayo_taxi/common/constants/constants.dart';
 import 'package:rayo_taxi/features/AuthS/AuthService.dart';
 import 'package:rayo_taxi/features/client/data/models/genders/genders_model.dart';
+import 'package:rayo_taxi/features/client/data/models/google/google_mensaje_model.dart';
 import 'package:rayo_taxi/features/client/data/models/recoveryPassword/recovery_password_model.dart';
 import 'package:rayo_taxi/features/client/domain/entities/client.dart';
 import 'package:http/http.dart' as http;
@@ -30,7 +31,7 @@ abstract class ClientLocalDataSource {
   Future<List<GendersModel>> getgenders();
 
   int calcularEdad(String birthdate);
-  Future<void> loginGoogle(Client client);
+  Future<GoogleMensajeModel> loginGoogle(Client client);
 }
 
 class ClientLocalDataSourceImp implements ClientLocalDataSource {
@@ -74,7 +75,7 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
         };
 
         var response = await http.get(
-          Uri.parse('$_baseUrl/app_clients/users/auth/renew'),
+          Uri.parse('$_baseUrl/api/app_clients/users/auth/renew'),
           headers: headers,
         );
     dynamic body = jsonDecode(response.body);
@@ -129,7 +130,7 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
     }
    try{
       var response = await http.get(
-        Uri.parse('$_baseUrl/app_clients/users/auth/renew'),
+        Uri.parse('$_baseUrl/api/app_clients/users/auth/renew'),
         headers: {
           'Content-Type': 'application/json',
           'x-token': token,
@@ -160,7 +161,7 @@ Future<void> loginClient(Client client) async {
   final DeviceGetx _driverGetx = Get.find<DeviceGetx>();
 
   var response = await http.post(
-    Uri.parse('$_baseUrl/app_clients/users/auth/login'),
+    Uri.parse('$_baseUrl/api/app_clients/users/auth/login'),
     headers: {
       'Content-Type': 'application/json',
     },
@@ -193,7 +194,7 @@ Future<void> loginClient(Client client) async {
   @override
   Future<void> createClient(Client client) async {
     var response = await http.post(
-      Uri.parse('$_baseUrl/app_clients/users/clients'),
+      Uri.parse('$_baseUrl/api/app_clients/users/clients'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -219,7 +220,7 @@ Future<void> loginClient(Client client) async {
   Future<void> updateClient(Client client) async {
     String? savedToken = await AuthService().getToken();
 
-    var uri = Uri.parse('$_baseUrl/app_clients/users/clients');
+    var uri = Uri.parse('$_baseUrl/api/app_clients/users/clients');
     var request = http.MultipartRequest('PUT', uri);
 
     request.headers['x-token'] = savedToken ?? '';
@@ -281,14 +282,14 @@ Future<void> loginClient(Client client) async {
   }
 
   @override
-  Future<void> loginGoogle(Client client) async {
+Future<GoogleMensajeModel> loginGoogle(Client client) async {
     final DeviceGetx _driverGetx = Get.find<DeviceGetx>();
 
-    logger.i('Iniciando solicitud HTTP POST a $_baseUrl/auth/loginWithGoogle');
+    logger.i('Iniciando solicitud HTTP POST a $_baseUrl/api/auth/loginWithGoogle');
 
     final requestStartTime = DateTime.now();
     var response = await http.post(
-      Uri.parse('$_baseUrl/app_clients/users/auth/loginWithGoogle'),
+      Uri.parse('$_baseUrl/api/app_clients/users/auth/loginWithGoogle'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -303,6 +304,9 @@ Future<void> loginClient(Client client) async {
     logger.i('Código de estado de la respuesta: ${response.statusCode}');
 
     if (response.statusCode == 200) {
+          final googleMensaje = GoogleMensajeModel.fromJson(body);
+    
+
       String message = body['message'].toString();
       logger.i('Mensaje Google: $message');
       String token = body['data']['token'].toString();
@@ -318,6 +322,8 @@ Future<void> loginClient(Client client) async {
       final deviceIdDuration = DateTime.now().difference(deviceIdStartTime);
       logger.i(
           '_driverGetx.getDeviceId() completado en ${deviceIdDuration.inMilliseconds} ms');
+    return googleMensaje;
+
     } else {
       String message = body['message'].toString();
       logger.e('Error en la respuesta: $message');
@@ -327,7 +333,7 @@ Future<void> loginClient(Client client) async {
 
   @override
   Future<List<GendersModel>> getgenders() async {
-    final url = Uri.parse('$_baseUrl/app_clients/catalogs/genders');
+    final url = Uri.parse('$_baseUrl/api/app_clients/catalogs/genders');
 
     try {
       final response = await http.get(url);
@@ -358,7 +364,7 @@ Future<void> loginClient(Client client) async {
   Future<void> CreaterecoveryCode(
       RecoveryPasswordEntitie recoveryPasswordEntitie) async {
     var response = await http.put(
-      Uri.parse('$_baseUrl/app_clients/users/auth/create/code'),
+      Uri.parse('$_baseUrl/api/app_clients/users/auth/create/code'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -383,7 +389,7 @@ Future<void> loginClient(Client client) async {
   Future<void> checkRecoveryCode(
       RecoveryPasswordEntitie recoveryPasswordEntitie) async {
     var response = await http.put(
-      Uri.parse('$_baseUrl/app_clients/users/auth/check/code'),
+      Uri.parse('$_baseUrl/api/app_clients/users/auth/check/code'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -414,7 +420,7 @@ Future<void> loginClient(Client client) async {
         String? savedToken = await AuthService().getToken();
 
     var response = await http.put(
-      Uri.parse('$_baseUrl/app_clients/users/auth/password'),
+      Uri.parse('$_baseUrl/api/app_clients/users/auth/password'),
         headers: {
         'Content-Type': 'application/json',
         'x-token': savedToken ?? '',

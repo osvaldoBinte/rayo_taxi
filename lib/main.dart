@@ -3,8 +3,10 @@ import 'package:get/get.dart';
 import 'package:rayo_taxi/common/notification_service.dart';
 import 'package:rayo_taxi/common/settings/enviroment.dart';
 import 'package:rayo_taxi/common/theme/app_color.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/addTravel/LifeCycleController.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/addTravel/map_data_controller.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/direcionDestino/search_modal.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/ratetrip/rate_trip_controller.dart';
 import 'package:rayo_taxi/my_app.dart';
 import 'package:rayo_taxi/features/client/presentation/getxs/calculateAge/calculateAge_getx.dart';
 import 'package:rayo_taxi/features/client/presentation/getxs/loginGoogle/loginGoogle_getx.dart';
@@ -59,6 +61,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
   await Firebase.initializeApp();
   channel = const AndroidNotificationChannel(
     'high_importance_channel',
@@ -74,10 +77,11 @@ void main() async {
    // Get.put(CurrentTravelnotificationGetx(travelAlertUsecase: usecaseConfig.currentTravelUsecase!));
   Get.put(DeviceGetx(idDeviceUsecase: usecaseConfig.idDeviceUsecase!));
     Get.put(RenewTokenGetx(renewTokenUsecase: usecaseConfig.renewTokenUsecase!));
-
+  Get.put(LifeCycleController());
+  Get.put(RateTripController(qualificationUsecase: usecaseConfig.qualificationUsecase!));
   Get.put(ClientGetx(createClientUsecase: usecaseConfig.createClientUsecase!));
   Get.put(
-      LoginclientGetx(loginClientUsecase: usecaseConfig.loginClientUsecase!));
+      LoginclientGetx(loginClientUsecase: usecaseConfig.loginClientUsecase!, loginGoogleUsecase: usecaseConfig.loginGoogleUsecase!));
   Get.put(GetClientGetx(
       getClientUsecase: usecaseConfig.getClientUsecase!,
       connectivityService: connectivityService));
@@ -117,8 +121,8 @@ void main() async {
           usecaseConfig.confirmTravelWithTariffUsecase!));
   Get.put(GetGendersGetx(getGendersUsecase: usecaseConfig.getGendersUsecase!));
   //Get.put( MapController(getSearchHistoryUsecase: usecaseConfig.getSearchHistoryUsecase!,saveSearchHistoryUsecase: usecaseConfig.saveSearchHistoryUsecase!,getPlaceDetailsAndMoveUsecase: usecaseConfig.getPlaceDetailsAndMoveUsecase!, getPlacePredictionsUsecase: usecaseConfig.getPlacePredictionsUsecase!, ),);
-  Get.put(NotificationController());
   Get.put(ModalController());
+  Get.put(NotificationController());
 
   Get.put(RemovedataaccountGetx(
       removeDataAccountUsecase: usecaseConfig.removeDataAccountUsecase!));

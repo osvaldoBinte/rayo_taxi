@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:rayo_taxi/features/client/presentation/getxs/login/loginclient_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/widgets/custom_alert_dialog.dart';
 
 import 'package:rayo_taxi/features/client/presentation/pages/login_clients_page.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/travel/confirm_travel_with_tariff_usecase.dart';
@@ -24,7 +25,6 @@ class RemovedataaccountGetx extends GetxController {
     print("removedataaccountGetx.Travelwithtariff: Start");
     state.value = RemovedataaccountLoading();
 
-    // Muestra el SpinKitFadingCube mientras se procesa la eliminación
     Get.dialog(
       Center(
         child: SpinKitFadingCube(
@@ -39,13 +39,10 @@ class RemovedataaccountGetx extends GetxController {
       await removeDataAccountUsecase.execute();
       print("removedataaccountGetx.Removedataaccount: After execute");
 
-      // Update state before navigation
       state.value = RemovedataaccountSuccessfully();
 
-      // Cierra el diálogo del SpinKit
       if (Get.isDialogOpen ?? false) Get.back();
 
-      // Navega a LoginClientsPage de forma segura
       await _logout();
       print("despues de microtask");
     } catch (e) {
@@ -67,7 +64,6 @@ class RemovedataaccountGetx extends GetxController {
   }
 
   Future<void> _logout() async {
-    // Obtener instancia de GoogleSignIn
     final GoogleSignIn googleSignIn = GoogleSignIn();
 
     try {
@@ -78,39 +74,37 @@ class RemovedataaccountGetx extends GetxController {
       print("Error al cerrar sesión de Google: $e");
     }
 
-    // Intentar desconectar, pero manejar la excepción si falla
     try {
       await googleSignIn.disconnect();
     } catch (e) {
       print("No se pudo revocar el acceso de Google: $e");
     }
 
-    // Limpiar el token de autenticación
     SharedPreferences prefs = await SharedPreferences.getInstance();
     _loginGetx.logout();
     await prefs.remove('auth_token');
 
-    // Navegar a la página de inicio de sesión
     await Get.offAll(() => LoginClientsPage());
   }
 
-  void confirmDeleteAccount() {
-    // Muestra alerta de confirmación
-    QuickAlert.show(
-      context: Get.context!,
-      type: QuickAlertType.confirm,
-      title: 'Eliminar Cuenta',
-      text: '¿Estás seguro de que deseas eliminar tu cuenta?',
-      confirmBtnText: 'Sí, eliminar',
-      cancelBtnText: 'Cancelar',
-      onConfirmBtnTap: () async {
-        Get.back(); // Cierra la alerta
-        await Future.delayed(Duration(milliseconds: 300)); // Espera breve
-        await removedataaccountGetx(RemoveDataaccountEvent());
-      },
-      onCancelBtnTap: () {
-        Get.back(); // Cierra la alerta
-      },
-    );
-  }
+  
+void confirmDeleteAccount() {
+  showCustomAlert(
+    context: Get.context!,
+    type: CustomAlertType.confirm,
+    title: 'Eliminar Cuenta',
+    message: '¿Estás seguro de que deseas eliminar tu cuenta?',
+        cancelText: 'Cancelar',
+
+    confirmText: 'Sí, eliminar',
+    onConfirm: () async {
+      Navigator.of(Get.context!).pop();
+      await Future.delayed(Duration(milliseconds: 300));
+      await removedataaccountGetx(RemoveDataaccountEvent());
+    },
+    onCancel: () {
+      Navigator.of(Get.context!).pop();
+    },
+  );
+}
 }

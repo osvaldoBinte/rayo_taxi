@@ -24,9 +24,11 @@ import 'package:rayo_taxi/features/travel/domain/usecases/travel/get_cost_travel
 import 'package:rayo_taxi/features/travel/domain/usecases/travel/get_device_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/travel/id_device_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/travel/offer_negotiation_usecase.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/travel/qualification_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/travel/reject_travel_offer_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/travel/remove_data_account_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/travel/current_travel_usecase.dart';
+import 'package:rayo_taxi/features/travel/domain/usecases/travel/skip_qualification_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/travel/travel_by_id_usecase.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/travel/travels_alert_usecase.dart';
 import 'package:rayo_taxi/features/travel/data/datasources/mapa_local_data_source.dart';
@@ -80,6 +82,8 @@ GetDurationUsecase? getDurationUsecase;
 
   ConfirmTravelWithTariffUsecase?confirmTravelWithTariffUsecase;
   RejectTravelOfferUsecase?rejectTravelOfferUsecase;
+  QualificationUsecase?qualificationUsecase;
+  SkipQualificationUsecase?skipQualificationUsecase;
 
   RemoveDataAccountUsecase? removeDataAccountUsecase;
   GetGendersUsecase? getGendersUsecase;
@@ -110,6 +114,9 @@ GetDurationUsecase? getDurationUsecase;
     deleteTravelUsecase = DeleteTravelUsecase(travelRepository: travelRepositoryImp!);
     offerNegotiationUsecase = OfferNegotiationUsecase(notificationRepository: notificationRepositoryImp!);
     getCostTravelUsecase = GetCostTravelUsecase(notificationRepository: notificationRepositoryImp!);
+    qualificationUsecase= QualificationUsecase(notificationRepository: notificationRepositoryImp!);
+    skipQualificationUsecase= SkipQualificationUsecase(notificationRepository: notificationRepositoryImp!);
+
 
     idDeviceUsecase = IdDeviceUsecase(notificationRepository: notificationRepositoryImp!);
     getDeviceUsecase = GetDeviceUsecase(notificationRepository: notificationRepositoryImp!);

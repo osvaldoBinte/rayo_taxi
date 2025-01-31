@@ -2,6 +2,7 @@ import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_sou
 import 'package:rayo_taxi/features/travel/data/models/travel/travel_alert_model.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/deviceEntitie/device.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/getcosttraveEntitie/getcosttravel_entitie.dart';
+import 'package:rayo_taxi/features/travel/domain/entities/qualification/qualification_entitie.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/travelwithtariffEntitie/confirmar_tariff_entitie.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/travelwithtariffEntitie/travelwithtariff_entitie.dart';
 import 'package:rayo_taxi/features/travel/domain/repository/travel_repository.dart';
@@ -58,5 +59,15 @@ class NotificationRepositoryImp implements NotificationRepository {
   @override
   Future<GetcosttravelEntitie> getcosttravel( GetcosttravelEntitie getcosttravelEntitie) async {
     return await notificationLocalDataSource.getcosttravel(getcosttravelEntitie);
+  }
+
+  @override
+  Future<void> qualification(QualificationEntitie aualificationEntitie) async {
+  return await notificationLocalDataSource.qualification(aualificationEntitie);
+  }
+  
+  @override
+  Future<void> skipqualification(QualificationEntitie qaualificationEntitie) async {
+   return await notificationLocalDataSource.skipqualification(qaualificationEntitie);
   }
 }

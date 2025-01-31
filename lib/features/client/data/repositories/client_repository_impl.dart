@@ -1,6 +1,7 @@
 import 'package:rayo_taxi/features/client/data/datasources/client_local_data_source.dart';
 import 'package:rayo_taxi/features/client/data/models/client_model.dart';
 import 'package:rayo_taxi/features/client/data/models/genders/genders_model.dart';
+import 'package:rayo_taxi/features/client/data/models/google/google_mensaje_model.dart';
 import 'package:rayo_taxi/features/client/domain/entities/client.dart';
 import 'package:rayo_taxi/features/client/domain/entities/recoveryPassword/recovery_password_entitie.dart';
 import 'package:rayo_taxi/features/client/domain/repositories/client_repository.dart';
@@ -41,7 +42,7 @@ class ClientRepositoryImpl implements ClientRepository {
   }
   
   @override
-  Future<void> loginGoogle(Client client) async {
+  Future<GoogleMensajeModel> loginGoogle(Client client) async {
     return await clientLocalDataSource.loginGoogle(client);
   }
 

@@ -14,12 +14,16 @@ class TravelAlert {
   final String status;
   String? client;
   String? name;
-
+  String?model;
   final double cost;
   final String? tarifa;
   final int waiting_for;
   final String driver;
   final String id_travel_driver;
+  final String path_photo;
+  final String plates;
+  final int pending_qualification;
+  final int qualification;
   TravelAlert(
       {required this.id,
       required this.date,
@@ -37,5 +41,11 @@ class TravelAlert {
       required this.waiting_for,
       required this.id_travel_driver,
       this.tarifa,
-      required this.driver});
+      this.model,
+      required this.driver,
+      required this.path_photo,
+      required this.plates,
+      this.name,
+      required this.pending_qualification,
+      required this.qualification});
 }

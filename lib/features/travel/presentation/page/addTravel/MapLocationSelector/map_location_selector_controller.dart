@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geocoding/geocoding.dart';
 
 class MapLocationSelectorController extends GetxController {
   late GoogleMapController mapController;
@@ -27,38 +31,57 @@ class MapLocationSelectorController extends GetxController {
 
   Future<void> onCameraIdle(BuildContext context) async {
     isLoading.value = true;
-
     try {
-      LatLng center = await mapController.getLatLng(
-        ScreenCoordinate(
-          x: MediaQuery.of(context).size.width ~/ 2,
-          y: MediaQuery.of(context).size.height ~/ 2,
-        ),
+      // Obtener la posición de la cámara actual
+      final cameraPosition = await mapController.getVisibleRegion();
+      final center = LatLng(
+        (cameraPosition.northeast.latitude + cameraPosition.southwest.latitude) / 2,
+        (cameraPosition.northeast.longitude + cameraPosition.southwest.longitude) / 2,
       );
+      
       selectedLocation.value = center;
-
+      
+      // Obtener la dirección usando las coordenadas del centro
       List<Placemark> placemarks = await placemarkFromCoordinates(
         center.latitude,
         center.longitude,
       );
-
+      
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks.first;
-        currentAddress.value =
-            '${place.street}, ${place.locality}, ${place.country}';
+        // Construir la dirección con más detalles
+        var addressParts = <String>[];
+        
+        if (place.street?.isNotEmpty ?? false) {
+          addressParts.add(place.street!);
+        }
+        if (place.subLocality?.isNotEmpty ?? false) {
+          addressParts.add(place.subLocality!);
+        }
+        if (place.locality?.isNotEmpty ?? false) {
+          addressParts.add(place.locality!);
+        }
+        if (place.administrativeArea?.isNotEmpty ?? false) {
+          addressParts.add(place.administrativeArea!);
+        }
+        if (place.country?.isNotEmpty ?? false) {
+          addressParts.add(place.country!);
+        }
+        
+        currentAddress.value = addressParts.join(', ');
+      } else {
+        currentAddress.value = 'Ubicación no encontrada';
       }
     } catch (e) {
       print('Error getting address: $e');
       currentAddress.value = 'Error al obtener dirección';
     }
-
     isLoading.value = false;
   }
 
   void confirmLocation(Function(String, LatLng) onLocationSelected) {
     if (selectedLocation.value != null) {
       onLocationSelected(currentAddress.value, selectedLocation.value!);
-      Get.back();
       Get.back();
     }
   }

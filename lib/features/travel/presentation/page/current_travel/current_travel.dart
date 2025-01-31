@@ -8,10 +8,20 @@ import 'package:rayo_taxi/features/travel/data/models/travel/travel_alert_model.
 import 'package:rayo_taxi/common/theme/app_color.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/notification/notificationcontroller.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/current_travel/current_travel_controller.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/widgets/Taxi_Info_card.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/cancel_travel_button.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/info_button_widget.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/waiting_status_widget.dart';
 import 'package:speech_bubble/speech_bubble.dart';
+import 'dart:async';
+import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:rayo_taxi/features/travel/data/models/travel/travel_alert_model.dart';
+import 'package:rayo_taxi/features/travel/data/datasources/mapa_local_data_source.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class CurrentTravel extends StatefulWidget {
   final List<TravelAlertModel> travelList;
@@ -56,8 +66,9 @@ class _TravelRouteState extends State<CurrentTravel> {
                   ),
                   markers: controller.markers.value,
                   polylines: controller.polylines.value,
-                  myLocationEnabled: true,
+                  myLocationEnabled: false,
                   myLocationButtonEnabled: true,
+                  
                 )),
             Positioned(
               top: 16,
@@ -80,19 +91,36 @@ class _TravelRouteState extends State<CurrentTravel> {
                 ),
               ),
             ),
+            Obx(() =>
+                controller.idStatus.value == 3 || controller.idStatus.value == 4
+                    ? TaxiInfoCard(
+                        isDriverApproaching: true,
+                        driverLocation: controller.driverLocation.value,
+                        startLocation: controller.startLocation.value,
+                        endLocation: controller.endLocation.value,
+                        currentStatus: controller.idStatus.value,
+                        travelDuration: controller.travelDuration,
+                        travelPrice: controller.travelPrice,
+                      )
+                    : const SizedBox.shrink()),
+            SizedBox(height: 16),
+            CancelTravelButton(
+              travelId: widget.travelList[0].id.toString(),
+              idStatus: widget.travelList[0].id_status,
+              navigatorKey: Get.key,
+            ),
             Obx(() => WaitingStatusWidget(
                   isIdStatusSix: controller.isIdStatusSix.value,
                   waitingFor: controller.waitingFor.value,
                   notificationService: notificationService,
                 )),
-            InfoButtonWidget(
-              travelList: widget.travelList,
+            Positioned(
+              top: 150,
+              left: 16,
+              child: InfoButtonWidget(
+                travelList: widget.travelList,
+              ),
             ),
-           CancelTravelButton(
-  travelId: widget.travelList[0].id.toString(),
-  idStatus: widget.travelList[0].id_status,
-  navigatorKey: Get.key,
-),
           ],
         ),
       ),

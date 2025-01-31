@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -23,15 +24,16 @@ import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.d
 import 'package:rayo_taxi/common/theme/app_color.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/addTravel/MapLocationSelector/MapLocationSelectorModal.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/addTravel/map_data_controller.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/widgets/Taxi_Info_card.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/widgets/calculate_price.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/customSnacknar.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../AuthS/connectivity_service.dart';
 import '../../Travelgetx/TravelAlert/travel_alert_getx.dart';
 
-
 class MapController extends GetxController {
-   final String endControllerText;
+  final String endControllerText;
   final String startAddress;
   final LatLng? startLatLng;
   final LatLng? endLatLng;
@@ -52,7 +54,7 @@ class MapController extends GetxController {
   final TravelsAlertGetx travelAlertGetx = Get.find<TravelsAlertGetx>();
   final CurrentTravelGetx currentTravelGetx = Get.find<CurrentTravelGetx>();
   ValueNotifier<double> travelDuration = ValueNotifier(0.0);
-
+RxBool canShowDirectionModal = true.obs;
   RxBool isTravelRequested = false.obs;
   RxSet<gmaps.Marker> markers = <gmaps.Marker>{}.obs;
   RxSet<Polyline> polylines = <Polyline>{}.obs;
@@ -64,7 +66,7 @@ class MapController extends GetxController {
   RxList<dynamic> endPredictions = <dynamic>[].obs;
   TextEditingController startController = TextEditingController();
   TextEditingController endController = TextEditingController();
-    final MapDataController _mapDataController = Get.find<MapDataController>();
+  final MapDataController _mapDataController = Get.find<MapDataController>();
 
   NotificationLocalDataSource travelLocal = NotificationLocalDataSourceImp();
   RxString travelPrice = ''.obs;
@@ -85,7 +87,7 @@ class MapController extends GetxController {
   RxList<Map<String, String>> searchHistory = <Map<String, String>>[].obs;
 
   RxString lottieUrl =
-      'https://lottie.host/e44ab786-30a1-48ee-96eb-bb2e002f3ae8/NtzqQeAN8j.json'
+      'https://lottie.host/a811be92-b006-48ce-ad3e-c20bfffc3d7e/NzmrksnYZW.json'
           .obs;
   RxString modalText = 'Buscando chofer...'.obs;
 
@@ -103,10 +105,10 @@ class MapController extends GetxController {
     endController.addListener(() {
       endAddressText.value = endController.text;
     });
- if (startLatLng != null) {
+    if (startLatLng != null) {
       startLocation.value = startLatLng;
     }
-    
+
     if (endLatLng != null) {
       endLocation.value = endLatLng;
     }
@@ -157,7 +159,7 @@ class MapController extends GetxController {
 
     loadSearchHistory();
   }
- 
+
   static MapController init(
     String endText,
     String startAddr,
@@ -170,7 +172,7 @@ class MapController extends GetxController {
       controller.cleanupController();
       Get.delete<MapController>();
     }
-    
+
     return Get.put(MapController(
       endControllerText: endText,
       startAddress: startAddr,
@@ -180,12 +182,12 @@ class MapController extends GetxController {
     ));
   }
 
-void reinitialize() {
+  void reinitialize() {
     startController = TextEditingController(text: startAddress);
     endController = TextEditingController(text: endControllerText);
     startFocusNode = FocusNode();
     endFocusNode = FocusNode();
-    
+
     startController.addListener(() {
       startAddressText.value = startController.text;
       if (currentInputField.value == 'start') {
@@ -205,7 +207,7 @@ void reinitialize() {
     endPredictions.clear();
     markers.clear();
     polylines.clear();
-    
+
     loadSearchHistory();
   }
 
@@ -236,29 +238,60 @@ void reinitialize() {
     }
   }
 
+// Helper method to extract coordinates from address string
+  LatLng? extractCoordinatesFromAddress(String address) {
+    try {
+      // Look for coordinates in parentheses at the end of the string
+      final RegExp coordRegex = RegExp(r'\(([-\d.]+),\s*([-\d.]+)\)$');
+      final match = coordRegex.firstMatch(address);
+
+      if (match != null) {
+        final lat = double.parse(match.group(1)!);
+        final lng = double.parse(match.group(2)!);
+        return LatLng(lat, lng);
+      }
+    } catch (e) {
+      print('Error extracting coordinates: $e');
+    }
+    return null;
+  }
+
+// Helper method to format address with coordinates
+  String formatAddressWithCoordinates(String address, LatLng location) {
+    String coordString =
+        '${location.latitude.toStringAsFixed(6)}, ${location.longitude.toStringAsFixed(6)}';
+    return address.isNotEmpty ? '$address\n($coordString)' : coordString;
+  }
+
   void showLocationPicker(BuildContext context, bool isStartPlace) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    builder: (context) => MapLocationSelectorModal(
-      isStartLocation: isStartPlace,
-      initialLocation: isStartPlace ? startLocation.value : endLocation.value,
-      onLocationSelected: (address, location) {
-        if (isStartPlace) {
-          startController.text = address;
-          startLocation.value = location;
-        } else {
-          endController.text = address;
-          endLocation.value = location;
-        }
-        addMarker(location, isStartPlace);
-        if (startLocation.value != null && endLocation.value != null) {
-          traceRoute();
-        }
-      },
-    ),
-  );
-}
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => MapLocationSelectorModal(
+        isStartLocation: isStartPlace,
+        initialLocation: isStartPlace ? startLocation.value : endLocation.value,
+        onLocationSelected: (address, location) async {
+          if (isStartPlace) {
+            startController.text = address;
+            startLocation.value = location;
+          } else {
+            endController.text = address;
+            endLocation.value = location;
+          }
+          addMarker(location, isStartPlace);
+
+          await mapController.animateCamera(
+            CameraUpdate.newLatLngZoom(location, 15.0),
+          );
+
+          if (startLocation.value != null && endLocation.value != null) {
+            traceRoute();
+          }
+        },
+      ),
+    );
+  }
+
   Future<void> loadSearchHistory() async {
     searchHistory.value = await _mapDataController.getSearchHistory();
   }
@@ -298,49 +331,50 @@ void reinitialize() {
       );
     }
   }
- void cleanupController() {
+
+  void cleanupController() {
     startFocusNode.dispose();
     endFocusNode.dispose();
     startController.dispose();
     endController.dispose();
     mapController.dispose();
   }
+
   @override
   void onClose() {
     cleanupController();
     super.onClose();
   }
 
-void onMapCreated(GoogleMapController controller) async {
-  mapController = controller;
-  controllerCompleter.complete(controller);
+  void onMapCreated(GoogleMapController controller) async {
+    mapController = controller;
+    controllerCompleter.complete(controller);
 
-  if (startLatLng != null) {
-    mapController.animateCamera(
-      CameraUpdate.newLatLngZoom(startLatLng!, 15.0),
-    );
-    
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        startLatLng!.latitude, 
-        startLatLng!.longitude
+    if (startLatLng != null) {
+      mapController.animateCamera(
+        CameraUpdate.newLatLngZoom(startLatLng!, 15.0),
       );
-      
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks.first;
-        String address = '${place.street}, ${place.locality}, ${place.country}';
-        startController.text = address;
-        startLocation.value = startLatLng;
-      }
-    } catch (e) {
-      print('Error obteniendo dirección: $e');
-    }
-    
-    addMarker(startLatLng!, true);
-  }
-}
 
-  void addMarker(LatLng latLng, bool isStartPlace) {
+      try {
+        List<Placemark> placemarks = await placemarkFromCoordinates(
+            startLatLng!.latitude, startLatLng!.longitude);
+
+        if (placemarks.isNotEmpty) {
+          Placemark place = placemarks.first;
+          String address =
+              '${place.street}, ${place.locality}, ${place.country}';
+          startController.text = address;
+          startLocation.value = startLatLng;
+        }
+      } catch (e) {
+        print('Error obteniendo dirección: $e');
+      }
+
+      addMarker(startLatLng!, true);
+    }
+  }
+
+  void addMarker(LatLng latLng, bool isStartPlace) async {
     if (isStartPlace) {
       markers.removeWhere((m) => m.markerId.value == 'start');
       markers.add(
@@ -349,6 +383,10 @@ void onMapCreated(GoogleMapController controller) async {
           position: latLng,
           infoWindow: gmaps.InfoWindow(title: 'Inicio'),
           draggable: true,
+          icon: await gmaps.BitmapDescriptor.fromAssetImage(
+            ImageConfiguration(size: Size(10, 10)),
+            'assets/images/mapa/origen.png',
+          ),
           onDragEnd: (newPosition) => onMarkerDragEnd(newPosition, true),
         ),
       );
@@ -361,6 +399,10 @@ void onMapCreated(GoogleMapController controller) async {
           position: latLng,
           infoWindow: gmaps.InfoWindow(title: 'Destino'),
           draggable: true,
+          icon: await gmaps.BitmapDescriptor.fromAssetImage(
+            ImageConfiguration(size: Size(10, 10)),
+            'assets/images/mapa/destino.png',
+          ),
           onDragEnd: (newPosition) => onMarkerDragEnd(newPosition, false),
         ),
       );
@@ -441,7 +483,7 @@ void onMapCreated(GoogleMapController controller) async {
         polylines.add(Polyline(
           polylineId: PolylineId('route'),
           points: polylineCoordinates,
-          color: Colors.blue,
+          color: Colors.black,
           width: 5,
         ));
 
@@ -478,6 +520,8 @@ void onMapCreated(GoogleMapController controller) async {
             !notificationController.tripAccepted.value) {
           isTravelRequested.value = true;
           isModalOpen.value = true;
+                  canShowDirectionModal.value = false; 
+
           double distance = _mapDataController.calculateDistance(
               startLocation.value!, endLocation.value!);
           double duration = _mapDataController.getDuration();
@@ -509,125 +553,126 @@ void onMapCreated(GoogleMapController controller) async {
         }
         await currentTravelGetx.fetchCoDetails(FetchgetDetailsssEvent());
 
-        // Close loading overlay before showing bottom sheet
         Get.back();
 
         Get.bottomSheet(
-          FractionallySizedBox(
-            heightFactor: 0.75,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-              child: SizedBox.expand(
-                child: Container(
-                  color: Theme.of(context).colorScheme.card,
-
-                  padding: EdgeInsets.all(20),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Obx(() => SizedBox(
-                              height: 300,
-                              child: Lottie.network(
-                                modalController.lottieUrl.value,
-                                fit: BoxFit.contain,
-                                repeat: true,
-                              ),
-                            )),
-                        SizedBox(height: 20),
-                        Obx(() => Align(
-                              alignment: Alignment.center,
-                              child: Text(
-                                modalController.modalText.value,
+          WillPopScope(
+            onWillPop: () async {
+              return false;
+            },
+            child: FractionallySizedBox(
+              heightFactor: 0.75,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+                child: SizedBox.expand(
+                  child: Container(
+                    color: Theme.of(context).colorScheme.card,
+                    padding: EdgeInsets.all(20),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Obx(() => SizedBox(
+                                height: 300,
+                                child: Lottie.network(
+                                  modalController.lottieUrl.value,
+                                  fit: BoxFit.contain,
+                                  repeat: true,
+                                ),
+                              )),
+                          SizedBox(height: 20),
+                          Obx(() => Align(
+                                alignment: Alignment.center,
+                                child: Text(
+                                  modalController.modalText.value,
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              )),
+                          SizedBox(height: 20),
+                          Obx(() {
+                            final state = currentTravelGetx.state.value;
+                            if (state is TravelAlertLoaded) {
+                              final travel = state.travel.first;
+                              return CalculatePrice(
+                                travelDuration: travelDuration,
+                                travelPrice: travelPrice,
+                                fixedPrice: '\$${travel.cost} MXN',
+                                useFixedPrice: true,
+                              );
+                            } else if (state is TravelAlertLoading) {
+                              return CircularProgressIndicator();
+                            } else if (state is TravelAlertFailure) {
+                              return Text(
+                                'Calculando...',
                                 style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                            )),
-                        SizedBox(height: 20),
-                        Obx(() {
-                          final state = currentTravelGetx.state.value;
-                          if (state is TravelAlertLoaded) {
-                            final travel = state.travel.first;
-                            return Text(
-                              'Precio para tu viaje es de \$${travel.cost} MXN',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.black,
-                              ),
-                            );
-                          } else if (state is TravelAlertLoading) {
-                            return CircularProgressIndicator();
-                          } else if (state is TravelAlertFailure) {
-                            return Text(
-                              'Error: ${state.error}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            );
-                          } else {
-                            return SizedBox.shrink();
-                          }
-                        }),
-                        SizedBox(height: 20),
-                        Obx(() {
-                          return notificationController.tripAccepted.value
-                              ? SizedBox.shrink()
-                              : ElevatedButton(
-                                  onPressed: isCancelling.value
-                                      ? null
-                                      : () async {
-                                          if (isCancelling.value) return;
-                                          isCancelling.value = true;
-                                          try {
-                                            int? savedTravelId =
-                                                await getSavedTravelId();
-                                            if (savedTravelId != null) {
-                                              await deleteTravelGetx
-                                                  .deleteTravel(
-                                                      DeleteTravelEvent(
-                                                          savedTravelId
-                                                              .toString()));
-                                              isTravelRequested.value = false;
-                                              Get.back();
-                                            } else {
-                                              
-        CustomSnackBar.showError(
-          'Error',
-          'No se encontró un ID de viaje válido',
-        );
+                                  fontSize: 16,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              );
+                            } else {
+                              return SizedBox.shrink();
+                            }
+                          }),
+                          SizedBox(height: 20),
+                          Obx(() {
+                            return notificationController.tripAccepted.value
+                                ? SizedBox.shrink()
+                                : ElevatedButton(
+                                    onPressed: isCancelling.value
+                                        ? null
+                                        : () async {
+                                            if (isCancelling.value) return;
+                                            isCancelling.value = true;
+                                                  canShowDirectionModal.value = true; 
+                                            try {
+                                              int? savedTravelId =
+                                                  await getSavedTravelId();
+                                              if (savedTravelId != null) {
+                                                await deleteTravelGetx
+                                                    .deleteTravel(
+                                                        DeleteTravelEvent(
+                                                            savedTravelId
+                                                                .toString()));
+                                                isTravelRequested.value = false;
+                                                Get.back();
+                                              } else {
+                                                CustomSnackBar.showError(
+                                                  'Error',
+                                                  'No se encontró un ID de viaje válido',
+                                                );
+                                              }
+                                            } catch (e) {
+                                              CustomSnackBar.showError(
+                                                'Error',
+                                                'Error al cancelar el viaje',
+                                              );
+                                            } finally {
+                                              isCancelling.value = false;
                                             }
-                                          } catch (e) {
-
-        CustomSnackBar.showError(
-          'Error',
-          'Error al cancelar el viaje',
-        );
-                                           
-                                          } finally {
-                                            isCancelling.value = false;
-                                          }
-                                        },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Theme.of(context)
-                                        .colorScheme
-                                        .buttonColor,
-                                    foregroundColor: Theme.of(context)
-                                        .colorScheme
-                                        .buttontext,
-                                    disabledBackgroundColor: Theme.of(context)
-                                        .colorScheme
-                                        .buttonColor
-                                        .withOpacity(0.5),
-                                  ),
-                                  child: Text(isCancelling.value
-                                      ? 'Cancelando...'
-                                      : 'Cancelar viaje'),
-                                );
-                        })
-                      ],
+                                          },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .buttonColor,
+                                      foregroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .buttontext,
+                                      disabledBackgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .buttonColor
+                                          .withOpacity(0.5),
+                                    ),
+                                    child: Text(isCancelling.value
+                                        ? 'Cancelando...'
+                                        : 'Cancelar viaje'),
+                                  );
+                          })
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -659,8 +704,10 @@ void onMapCreated(GoogleMapController controller) async {
 
   Future<void> searchPlace(String input, {required bool isStartPlace}) async {
     if (input.isEmpty) {
-      if (isStartPlace) startPredictions.clear();
-      else endPredictions.clear();
+      if (isStartPlace)
+        startPredictions.clear();
+      else
+        endPredictions.clear();
       return;
     }
 
@@ -670,8 +717,27 @@ void onMapCreated(GoogleMapController controller) async {
       location: locationBias,
     );
 
-    if (isStartPlace) startPredictions.assignAll(predictions);
-    else endPredictions.assignAll(predictions);
+    if (isStartPlace)
+      startPredictions.assignAll(predictions);
+    else
+      endPredictions.assignAll(predictions);
+  }
+
+  void swapLocations() {
+    String tempText = startController.text;
+    startController.text = endController.text;
+    endController.text = tempText;
+
+    LatLng? tempLocation = startLocation.value;
+    startLocation.value = endLocation.value;
+    endLocation.value = tempLocation;
+
+    if (startLocation.value != null && endLocation.value != null) {
+      markers.clear();
+      addMarker(startLocation.value!, true);
+      addMarker(endLocation.value!, false);
+      traceRoute();
+    }
   }
 
   void selectPlace(String placeId, bool isStartPlace) async {
@@ -738,10 +804,13 @@ void onMapCreated(GoogleMapController controller) async {
       addMarker(userLocation, true);
     } catch (e) {
       print('Error al obtener la ubicación del usuario: $e');
-      Get.snackbar('Error', 'Error al obtener la ubicación');
+      //Get.snackbar('Error', 'Error al obtener la ubicación');
     }
   }
-   void showDirectionModal(BuildContext context, MapController controller) {
+
+  void showDirectionModal(BuildContext context, MapController controller) {
+      if (!canShowDirectionModal.value) return; // No mostrar si está deshabilitado
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -896,8 +965,13 @@ void onMapCreated(GoogleMapController controller) async {
                             itemBuilder: (context, index) {
                               var prediction = currentPredictions[index];
                               return ListTile(
-                                leading: Icon(Icons.location_on,
-                                    color: Colors.black87),
+                                leading: Image.asset(
+                                  controller.currentInputField.value == 'start'
+                                      ? 'assets/images/mapa/marker-inicio.png'
+                                      : 'assets/images/mapa/marker-destino.png',
+                                  width: 24,
+                                  height: 24,
+                                ),
                                 title: Text(prediction['description']),
                                 onTap: () {
                                   bool isStartPlace =
@@ -953,25 +1027,32 @@ void onMapCreated(GoogleMapController controller) async {
                         ),
                       SizedBox(height: 16),
                       GestureDetector(
-  onTap: () => controller.showLocationPicker(context, controller.currentInputField.value == 'start'),
-  child: Row(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      Icon(Icons.location_on, 
-        color: Theme.of(context).colorScheme.buttonColormap,
-        size: 24),
-      SizedBox(width: 8),
-      Text(
-        "Establece tu ubicación en el mapa",
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.buttonColormap,
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-      ),
-    ],
-  ),
-),
+                        onTap: () => controller.showLocationPicker(context,
+                            controller.currentInputField.value == 'start'),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              controller.currentInputField.value == 'start'
+                                  ? 'assets/images/mapa/marker-inicio.png'
+                                  : 'assets/images/mapa/marker-destino.png',
+                              width: 24,
+                              height: 24,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              "Establece tu ubicación en el mapa",
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .buttonColormap,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       SizedBox(height: 16),
                     ],
                   ),

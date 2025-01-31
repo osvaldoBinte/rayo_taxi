@@ -16,7 +16,8 @@ import 'package:rayo_taxi/features/travel/presentation/page/addTravel/map_data_c
 
 class TravelController extends GetxController {
   final TravelAlertModel travel;
-    final MapDataController _mapDataController = Get.find<MapDataController>();
+  final MapDataController _mapDataController = Get.find<MapDataController>();
+  final bool isPreview;
 
   final Rx<Set<Marker>> markers = Rx<Set<Marker>>({});
   final Rx<Set<Polyline>> polylines = Rx<Set<Polyline>>({});
@@ -27,9 +28,11 @@ class TravelController extends GetxController {
   final LatLng center = const LatLng(20.676666666667, -103.39182);
   GoogleMapController? mapController;
 
-  TravelController({required this.travel});
-
-  @override
+  TravelController({
+    required this.travel,
+    this.isPreview = false,
+  });
+ @override
   void onInit() {
     super.onInit();
     initializeMap();
@@ -67,11 +70,15 @@ class TravelController extends GetxController {
     isLoading.value = false;
   }
 
-  void onMapCreated(GoogleMapController controller) {
+   void onMapCreated(GoogleMapController controller) {
     mapController = controller;
-    if (startLocation.value != null && endLocation.value != null) {
-      showBothLocations();
-    }
+    
+    // Add a small delay to ensure markers are placed before zooming
+    Future.delayed(Duration(milliseconds: isPreview ? 500 : 100), () {
+      if (startLocation.value != null && endLocation.value != null) {
+        showBothLocations();
+      }
+    });
   }
 
   void showBothLocations() {
@@ -90,43 +97,53 @@ class TravelController extends GetxController {
       ),
     );
 
+    // Add padding based on whether it's preview or full view
+    double padding = isPreview ? 50.0 : 100.0;
+    
     mapController!.animateCamera(
-      CameraUpdate.newLatLngBounds(
-        bounds,
-        100.0, 
-      ),
-    );
+      CameraUpdate.newLatLngBounds(bounds, padding),
+    ).catchError((error) {
+      print('Error al ajustar la cámara: $error');
+    });
   }
 
-  Future<void> addMarker(LatLng latLng, bool isStartPlace) async {
-    MarkerId markerId = isStartPlace ? MarkerId('start') : MarkerId('destination');
-    String title = isStartPlace ? 'Inicio' : 'Destino';
+Future<void> addMarker(LatLng latLng, bool isStartPlace) async {
+  MarkerId markerId = isStartPlace ? MarkerId('start') : MarkerId('destination');
+  String title = isStartPlace ? 'Inicio' : 'Destino';
 
-    Marker? existingMarker = markers.value.firstWhere(
-      (m) => m.markerId == markerId,
-      orElse: () => Marker(markerId: MarkerId('')),
-    );
+  BitmapDescriptor markerIcon = await BitmapDescriptor.fromAssetImage(
+    ImageConfiguration(),
+    isStartPlace 
+      ? 'assets/images/mapa/origen.png'
+      : 'assets/images/mapa/destino.png',
+  );
 
-    if (existingMarker.markerId != MarkerId('')) {
-      if (existingMarker.position == latLng) return;
-      markers.value.remove(existingMarker);
-    }
+  Marker? existingMarker = markers.value.firstWhere(
+    (m) => m.markerId == markerId,
+    orElse: () => Marker(markerId: MarkerId('')),
+  );
 
-    markers.value.add(
-      Marker(
-        markerId: markerId,
-        position: latLng,
-        infoWindow: InfoWindow(title: title),
-      ),
-    );
-
-    if (isStartPlace) {
-      startLocation.value = latLng;
-    } else {
-      endLocation.value = latLng;
-    }
-    markers.refresh();
+  if (existingMarker.markerId != MarkerId('')) {
+    if (existingMarker.position == latLng) return;
+    markers.value.remove(existingMarker);
   }
+
+  markers.value.add(
+    Marker(
+      markerId: markerId,
+      position: latLng,
+      icon: markerIcon, // Aquí usamos el icono personalizado
+      infoWindow: InfoWindow(title: title),
+    ),
+  );
+
+  if (isStartPlace) {
+    startLocation.value = latLng;
+  } else {
+    endLocation.value = latLng;
+  }
+  markers.refresh();
+}
 
   List<LatLng> simplifyPolyline(List<LatLng> polyline, double tolerance) {
     if (polyline.length < 3) return polyline;
@@ -155,7 +172,7 @@ class TravelController extends GetxController {
         polylines.value.add(Polyline(
           polylineId: PolylineId('route'),
           points: simplifiedCoordinates,
-          color: Colors.blue,
+          color: Colors.black,
           width: 5,
         ));
         polylines.refresh();

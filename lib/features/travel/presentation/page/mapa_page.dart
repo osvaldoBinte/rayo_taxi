@@ -3,13 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 
-import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:rayo_taxi/features/travel/data/datasources/mapa_local_data_source.dart';
-import 'package:rayo_taxi/features/travel/domain/entities/travel.dart';
-import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.dart';
-import 'package:rflutter_alert/rflutter_alert.dart';
-import '../../../AuthS/connectivity_service.dart';
 class MapWidget extends StatefulWidget {
   final Set<gmaps.Marker> markers;
   final Set<Polyline> polylines;

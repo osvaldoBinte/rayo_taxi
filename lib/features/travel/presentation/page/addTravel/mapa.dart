@@ -18,17 +18,20 @@ import 'package:rayo_taxi/features/travel/presentation/getx/notification/notific
 import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/addTravel/addTravelController.dart';
 import 'package:rayo_taxi/common/theme/app_color.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/direcionDestino/search_modal.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/widgets/Taxi_Info_card.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/widgets/calculate_price.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../AuthS/connectivity_service.dart';
 import '../../Travelgetx/TravelAlert/travel_alert_getx.dart';
 
 class MapScreen extends StatelessWidget {
- final TextEditingController endController;
+  final TextEditingController endController;
   final String startAddress;
   final LatLng? startLatLng;
-  final LatLng? endLatLng; // Nueva propiedad
-  final String endAddress; // Nueva propiedad
+  final LatLng? endLatLng;
+  final String endAddress;
 
   MapScreen({
     required this.endController,
@@ -44,231 +47,181 @@ class MapScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-   final MapController controller = Get.put(MapController(
+    final MapController controller = Get.put(MapController(
       endControllerText: endController.text,
       startAddress: startAddress,
       startLatLng: startLatLng,
     ));
-    return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Obx(() => GoogleMap(
-                  onMapCreated: controller.onMapCreated,
-                  markers: controller.markers.value,
-                  polylines: controller.polylines.value,
-                  initialCameraPosition: CameraPosition(
-                    target: controller.center.value,
-                    zoom: 15,
-                  ),
-                )),
-            Positioned(
-              top: 20.0,
-              left: 10.0,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 30.0,
-                  ),
-                  onPressed: () {
-                    Future.delayed(Duration.zero, () {
-                      Navigator.pushNamed(
-                        context,
-                        RoutesNames.homePage,
-                        arguments: {'selectedIndex': 1},
-                      );
-                    });
-                  },
-                ),
-              ),
-            ),
-            Positioned(
-              top: 70.0,
-              left: 10.0,
-              right: 10.0,
-              child: GestureDetector(
-                onTap: () {
-                  controller.showDirectionModal(context, controller);
-                },
-                child: Container(
-                  padding: EdgeInsets.all(10.0),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15.0),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10.0,
-                        offset: Offset(0, 4),
+    return WillPopScope(
+        onWillPop: () async {
+          return false;
+        },
+        child: Scaffold(
+          body: SafeArea(
+            child: Stack(
+              children: [
+                Obx(() => GoogleMap(
+                      onMapCreated: controller.onMapCreated,
+                      markers: controller.markers.value,
+                      polylines: controller.polylines.value,
+                      initialCameraPosition: CameraPosition(
+                        target: controller.center.value,
+                        zoom: 15,
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Column(
-                        children: [
-                          Icon(
-                            Icons.circle,
-                            color: Colors.black,
-                            size: 12.0,
-                          ),
-                          Container(
-                            height: 40.0,
-                            width: 2.0,
-                            color: Colors.grey,
-                          ),
-                          Icon(
-                            Icons.square,
-                            color: Colors.black,
-                            size: 12.0,
-                          ),
-                        ],
-                      ),
-                      SizedBox(width: 10.0),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Obx(() => Text(
-                                  controller.startAddressText.value.isNotEmpty
-                                      ? controller.startAddressText.value
-                                      : "Dirección de inicio",
-                                  style: TextStyle(
-                                      fontSize: 16.0,
-                                      fontWeight: FontWeight.w500),
-                                )),
-                            Divider(color: Colors.grey, thickness: 1.0),
-                            Obx(() => Text(
-                                  controller.endAddressText.value.isNotEmpty
-                                      ? controller.endAddressText.value
-                                      : "¿A dónde vas?",
-                                  style: TextStyle(
-                                      fontSize: 16.0,
-                                      fontWeight: FontWeight.w500),
-                                )),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 100.0, // Ajusta la posición según necesites
-              left: 20.0,
-              right: 20.0,
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 10.0,
-                      offset: Offset(0, 4),
+                    )),
+                Positioned(
+                  top: 20.0,
+                  left: 10.0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      shape: BoxShape.circle,
                     ),
-                  ],
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/images/Logo_client.png',
-                      height: 40.0,
-                      width: 40.0,
-                      fit: BoxFit.contain,
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                        size: 30.0,
+                      ),
+                      onPressed: () {
+                        Get.find<DestinoController>().isInitializing = true;
+
+                        Future.delayed(Duration.zero, () {
+                          Navigator.pushNamed(
+                            context,
+                            RoutesNames.homePage,
+                            arguments: {'selectedIndex': 1},
+                          );
+                        });
+                      },
                     ),
-                    SizedBox(width: 10.0),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                ),
+                Positioned(
+                  top: 70.0,
+                  left: 10.0,
+                  right: 10.0,
+                  child: GestureDetector(
+                    onTap: () {
+ if (controller.canShowDirectionModal.value) {
+        controller.showDirectionModal(context, controller);
+      }                    },
+                    child: Container(
+      padding: EdgeInsets.all(10.0),
+      decoration: BoxDecoration(
+        color: controller.canShowDirectionModal.value 
+          ? Colors.white 
+          : Colors.grey[200],  
+        borderRadius: BorderRadius.circular(15.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 10.0,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+                      child: Row(
                         children: [
-                          Text(
-                            'taxi',
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                          Column(
+                            children: [
+                              Icon(
+                                Icons.circle,
+                                color: Colors.black,
+                                size: 12.0,
+                              ),
+                              Container(
+                                height: 40.0,
+                                width: 2.0,
+                                color: Colors.grey,
+                              ),
+                              Icon(
+                                Icons.square,
+                                color: Colors.black,
+                                size: 12.0,
+                              ),
+                            ],
+                          ),
+                          SizedBox(width: 10.0),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Obx(() => Text(
+                                      controller
+                                              .startAddressText.value.isNotEmpty
+                                          ? controller.startAddressText.value
+                                          : "Dirección de inicio",
+                                      style: TextStyle(
+                                          fontSize: 16.0,
+                                          fontWeight: FontWeight.w500),
+                                    )),
+                                Divider(color: Colors.grey, thickness: 1.0),
+                                Obx(() => Text(
+                                      controller.endAddressText.value.isNotEmpty
+                                          ? controller.endAddressText.value
+                                          : "¿A dónde vas?",
+                                      style: TextStyle(
+                                          fontSize: 16.0,
+                                          fontWeight: FontWeight.w500),
+                                    )),
+                              ],
                             ),
                           ),
-                          SizedBox(height: 5.0),
-                          ValueListenableBuilder<double>(
-                            valueListenable: controller.travelDuration,
-                            builder: (context, duration, child) {
-                              return Text(
-                                'El tiempo estimado de tu viaje es de ${duration.toStringAsFixed(0)} minutos',
-                                style: TextStyle(
-                                  fontSize: 14.0,
-                                  color: Colors.grey[700],
-                                ),
-                              );
-                            },
+                          IconButton(
+                            icon: Icon(Icons.swap_vert, color: Colors.black),
+                            onPressed: controller.swapLocations,
                           ),
-                          Obx(() => Text(
-                                controller.travelPrice.value.isEmpty
-                                    ? 'Calculando precio...'
-                                    : controller.travelPrice.value,
-                                style: TextStyle(
-                                  fontSize: 18.0,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                              )),
                         ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            Positioned(
-              bottom: 20.0,
-              left: 20.0,
-              right: 20.0,
-              child: Obx(() => ElevatedButton(
-                    onPressed: () => controller.showRouteDetails(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Theme.of(context).colorScheme.buttonColormap,
-                      padding: EdgeInsets.symmetric(vertical: 18.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25.0),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.directions, color: Colors.white),
-                        SizedBox(width: 10.0),
-                        Text(
-                          controller.buttonText.value,
-                          style: TextStyle(
-                            fontSize: 18.0,
-                            color: Colors.white,
+               CalculatePrice(
+  travelDuration: controller.travelDuration,
+  travelPrice: controller.travelPrice,
+),
+                Positioned(
+                  bottom: 20.0,
+                  left: 20.0,
+                  right: 20.0,
+                  child: Obx(() => ElevatedButton(
+                        onPressed: () => controller.showRouteDetails(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.buttonColormap,
+                          padding: EdgeInsets.symmetric(vertical: 18.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25.0),
                           ),
                         ),
-                      ],
-                    ),
-                  )),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.directions, color: Colors.white),
+                            SizedBox(width: 10.0),
+                            Text(
+                              controller.buttonText.value,
+                              style: TextStyle(
+                                fontSize: 18.0,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                ),
+                Positioned(
+                  bottom: MediaQuery.of(context).size.height * 0.25,
+                  right: 25.0,
+                  child: FloatingActionButton(
+                    onPressed: controller.getUserLocation,
+                    child: Icon(Icons.my_location),
+                  ),
+                ),
+              ],
             ),
-            Positioned(
-              bottom: MediaQuery.of(context).size.height * 0.25,
-              right: 25.0,
-              child: FloatingActionButton(
-                onPressed: controller.getUserLocation,
-                child: Icon(Icons.my_location),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+          ),
+        ));
   }
 }
