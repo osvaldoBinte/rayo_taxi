@@ -8,6 +8,7 @@ import 'package:rayo_taxi/features/travel/data/datasources/mapa_local_data_sourc
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CurrentTravelController extends GetxController {
   StreamSubscription? _socketLocationSubscription;
@@ -31,6 +32,7 @@ class CurrentTravelController extends GetxController {
   RxBool isIdStatusSix = false.obs;
   RxBool isIdStatusOne = false.obs;
   // RxString waitingFor = ''.obs;
+  Rx<Map<String, dynamic>?> lastDriverLocation = Rx<Map<String, dynamic>?>(null);
 
   GoogleMapController? mapController;
   final LatLng center = const LatLng(20.676666666667, -103.39182);
@@ -51,34 +53,96 @@ class CurrentTravelController extends GetxController {
     _initializeSocket();
   }
 
-  void _initializeSocket() {
-    print('TaxiInfo Iniciando socket...');
-    socketDriver.connect();
+ void _initializeSocket() async {
+  print('TaxiInfo Iniciando socket...');
+  socketDriver.connect();
 
-    if (travelList.isNotEmpty) {
-      String travelId = travelList[0].id.toString();
-      String idStatusString = travelList[0].id_status.toString();
+  if (travelList.isNotEmpty) {
+    String travelId = travelList[0].id.toString();
+    String idStatusString = travelList[0].id_status.toString();
 
-      if (idStatusString == "3") {
-        isTrackingDriver.value = true;
-        Future.delayed(const Duration(seconds: 1), () {
-          print('TaxiInfo Uniéndose al viaje: $travelId');
-          socketDriver.joinTravel(travelId);
-        });
+    // Intentamos cargar la última ubicación conocida
+    final prefs = await SharedPreferences.getInstance();
+    final lastLat = prefs.getString('lastDriverLat');
+    final lastLng = prefs.getString('lastDriverLng');
+    final lastUpdateTime = prefs.getString('lastUpdateTime');
 
-        _locationSubscription = socketDriver.locationUpdates.listen((location) {
-          if (isTrackingDriver.value) {
-            _handleDriverLocationUpdate(location);
-          }
-        }, onError: (error) {
-          print('TaxiInfo Error en suscripción: $error');
-        });
-      } else if (idStatusString == "4") {
-        isTrackingDriver.value = false;
-        _startRealtimeLocation();
-      }
+    if (lastLat != null && lastLng != null && idStatusString == "3") {
+      final lastKnownLocation = {
+        'latitude': double.parse(lastLat),
+        'longitude': double.parse(lastLng)
+      };
+      _handleDriverLocationUpdate(lastKnownLocation);
+    }
+
+    if (idStatusString == "3") {
+      isTrackingDriver.value = true;
+      markers.removeWhere((m) => m.markerId == MarkerId('destination'));
+      polylines.removeWhere((p) => p.polylineId == PolylineId('route'));
+      
+      Future.delayed(const Duration(seconds: 1), () {
+        print('TaxiInfo Uniéndose al viaje: $travelId');
+        socketDriver.joinTravel(travelId);
+      });
+
+      _locationSubscription = socketDriver.locationUpdates.listen((location) {
+        if (isTrackingDriver.value) {
+          _handleDriverLocationUpdate(location);
+        }
+      }, onError: (error) {
+        print('TaxiInfo Error en suscripción: $error');
+      });
+    } else if (idStatusString == "4") {
+      isTrackingDriver.value = false;
+      _startRealtimeLocation();
     }
   }
+}
+   void _updateMarkersAndRoute(bool showDestination) {
+    // Limpiamos marcadores y rutas existentes
+    markers.clear();
+    polylines.clear();
+
+    // Siempre añadimos el marcador de inicio
+    if (startLocation.value != null) {
+      _addMarker(startLocation.value!, true);
+    }
+
+    // Solo añadimos el marcador de destino y la ruta si showDestination es true
+    if (showDestination && endLocation.value != null) {
+      _addMarker(endLocation.value!, false);
+      _traceRoute();
+    }
+
+    // Si hay una ubicación del conductor, añadimos la polyline hacia el punto de inicio
+    if (driverLocation.value != null && startLocation.value != null) {
+      _addDriverToStartPolyline();
+    }
+  }
+Future<void> _addDriverToStartPolyline() async {
+  if (driverLocation.value != null && startLocation.value != null) {
+    try {
+      // Usamos el mismo servicio que usamos para la ruta principal
+      await travelLocalDataSource.getRoute(
+        driverLocation.value!,
+        startLocation.value!
+      );
+      String encodedPoints = await travelLocalDataSource.getEncodedPoints();
+      List<LatLng> polylineCoordinates = travelLocalDataSource.decodePolyline(encodedPoints);
+
+      polylines.add(
+        Polyline(
+          polylineId: const PolylineId('driverToStart'),
+          points: polylineCoordinates,
+          color: Colors.black,
+          width: 5,
+        ),
+      );
+    } catch (e) {
+      print('Error al trazar la ruta del conductor: $e');
+    }
+  }
+}
 
   void _startRealtimeLocation() async {
   bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -151,7 +215,7 @@ class CurrentTravelController extends GetxController {
     }
   }
 
- void _handleDriverLocationUpdate(Map<String, dynamic> locationData) {
+ void _handleDriverLocationUpdate(Map<String, dynamic> locationData) async {
   try {
     print('TaxiInfo Recibiendo actualización de ubicación: $locationData');
     
@@ -162,9 +226,20 @@ class CurrentTravelController extends GetxController {
     
     print('TaxiInfo Nueva ubicación del conductor: ${newDriverLocation.latitude}, ${newDriverLocation.longitude}');
     
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('lastDriverLat', newDriverLocation.latitude.toString());
+    await prefs.setString('lastDriverLng', newDriverLocation.longitude.toString());
+    await prefs.setString('lastUpdateTime', DateTime.now().toIso8601String());
+    
     driverLocation.value = newDriverLocation;
     _updateDriverMarker(newDriverLocation);
     _updateEstimatedArrivalTime(newDriverLocation);
+    
+    if (idStatus.value == 3) {
+      markers.removeWhere((m) => m.markerId == MarkerId('destination'));
+      polylines.removeWhere((p) => p.polylineId == PolylineId('route'));
+      await _addDriverToStartPolyline();
+    }
     
     if (shouldFollowDriver.value && mapController != null) {
       mapController!.animateCamera(
@@ -180,6 +255,8 @@ class CurrentTravelController extends GetxController {
     print('TaxiInfo Error al procesar la ubicación del conductor: $e');
   }
 }
+
+
 
   void _updateDriverMarker(LatLng location) async {
     try {
@@ -278,38 +355,40 @@ class CurrentTravelController extends GetxController {
     }
   }
 
-  Future<void> _initializeMap() async {
-    if (travelList.isNotEmpty) {
-      var travelAlert = travelList[0];
-      isIdStatusSix.value = travelAlert.id_status == 6;
-      isIdStatusOne.value = travelAlert.id_status == 1;
-      waitingFor.value = travelAlert.waiting_for ?? 0;
+Future<void> _initializeMap() async {
+  if (travelList.isNotEmpty) {
+    var travelAlert = travelList[0];
+    isIdStatusSix.value = travelAlert.id_status == 6;
+    isIdStatusOne.value = travelAlert.id_status == 1;
+    waitingFor.value = travelAlert.waiting_for ?? 0;
 
-      double? startLatitude = double.tryParse(travelAlert.start_latitude);
-      double? startLongitude = double.tryParse(travelAlert.start_longitude);
-      double? endLatitude = double.tryParse(travelAlert.end_latitude);
-      double? endLongitude = double.tryParse(travelAlert.end_longitude);
+    double? startLatitude = double.tryParse(travelAlert.start_latitude);
+    double? startLongitude = double.tryParse(travelAlert.start_longitude);
+    double? endLatitude = double.tryParse(travelAlert.end_latitude);
+    double? endLongitude = double.tryParse(travelAlert.end_longitude);
 
-      if (startLatitude != null &&
-          startLongitude != null &&
-          endLatitude != null &&
-          endLongitude != null) {
-        startLocation.value = LatLng(startLatitude, startLongitude);
-        endLocation.value = LatLng(endLatitude, endLongitude);
+    if (startLatitude != null && startLongitude != null && 
+        endLatitude != null && endLongitude != null) {
+      startLocation.value = LatLng(startLatitude, startLongitude);
+      endLocation.value = LatLng(endLatitude, endLongitude);
 
+      // Solo agregamos los marcadores y la ruta si no es un viaje aceptado (status != 3)
+      if (travelAlert.id_status != 3) {
         _addMarker(startLocation.value!, true);
         _addMarker(endLocation.value!, false);
-
         await _traceRoute();
       } else {
-        Get.snackbar('Error', 'Error al convertir coordenadas a números');
+        _addMarker(startLocation.value!, true);
       }
-
-      waitingFor.value = travelAlert.waiting_for;
-      idStatus.value = travelAlert.id_status;
+    } else {
+      Get.snackbar('Error', 'Error al convertir coordenadas a números');
     }
-    isLoading.value = false;
+
+    waitingFor.value = travelAlert.waiting_for;
+    idStatus.value = travelAlert.id_status;
   }
+  isLoading.value = false;
+}
 
   void _addMarker(LatLng latLng, bool isStartPlace) async {
     final String assetPath = isStartPlace
