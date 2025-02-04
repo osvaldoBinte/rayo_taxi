@@ -33,6 +33,8 @@ class CurrentTravelController extends GetxController {
   RxBool isIdStatusOne = false.obs;
   // RxString waitingFor = ''.obs;
   Rx<Map<String, dynamic>?> lastDriverLocation = Rx<Map<String, dynamic>?>(null);
+LatLng? _previousLocation;
+  String _currentTaxiImage = 'assets/images/taxi/taxi_norte.png';
 
   GoogleMapController? mapController;
   final LatLng center = const LatLng(20.676666666667, -103.39182);
@@ -45,6 +47,9 @@ class CurrentTravelController extends GetxController {
   RxString estimatedArrivalTime = "calculando...".obs;
   ValueNotifier<double> travelDuration = ValueNotifier(0.0);
   RxString travelPrice = ''.obs;
+
+  final String _taxiImage = 'assets/images/taxi/taxi_norte.png';
+  
 
   @override
   void onInit() {
@@ -98,6 +103,63 @@ class CurrentTravelController extends GetxController {
     }
   }
 }
+ LatLng? _getPointInPolyline(List<LatLng> points, double fraction) {
+    if (points.isEmpty) return null;
+    if (points.length == 1) return points[0];
+    
+    double totalDistance = 0;
+    List<double> distances = [];
+    
+    // Calculate total distance of the polyline
+    for (int i = 0; i < points.length - 1; i++) {
+      double segmentDistance = _calculateDistance(
+        points[i].latitude,
+        points[i].longitude,
+        points[i + 1].latitude,
+        points[i + 1].longitude
+      );
+      totalDistance += segmentDistance;
+      distances.add(segmentDistance);
+    }
+    
+    double targetDistance = totalDistance * fraction;
+    double currentDistance = 0;
+    
+    // Find the segment where our target point lies
+    for (int i = 0; i < distances.length; i++) {
+      if (currentDistance + distances[i] > targetDistance) {
+        // Calculate how far along this segment our point should be
+        double segmentFraction = (targetDistance - currentDistance) / distances[i];
+        return LatLng(
+          points[i].latitude + (points[i + 1].latitude - points[i].latitude) * segmentFraction,
+          points[i].longitude + (points[i + 1].longitude - points[i].longitude) * segmentFraction
+        );
+      }
+      currentDistance += distances[i];
+    }
+    
+    return points.last;
+  }
+
+
+  double _calculateBearing(LatLng start, LatLng end) {
+    double lat1 = start.latitude * pi / 180;
+    double lat2 = end.latitude * pi / 180;
+    double long1 = start.longitude * pi / 180;
+    double long2 = end.longitude * pi / 180;
+
+    double dLon = (long2 - long1);
+
+    double y = sin(dLon) * cos(lat2);
+    double x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon);
+
+    double bearing = atan2(y, x);
+    bearing = bearing * 180 / pi;
+    bearing = (bearing + 360) % 360;
+
+    return bearing;
+  }
+
    void _updateMarkersAndRoute(bool showDestination) {
     // Limpiamos marcadores y rutas existentes
     markers.clear();
@@ -161,35 +223,36 @@ Future<void> _addDriverToStartPolyline() async {
   if (permission == LocationPermission.deniedForever) {
     return;
   }
+ markers.removeWhere((m) => m.markerId == MarkerId('start'));
 
-  markers.removeWhere((m) => m.markerId == MarkerId('start'));
-
-  positionStreamSubscription = Geolocator.getPositionStream(
-    locationSettings: const LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10,
-    ),
-  ).listen((Position position) async {
-    final newLocation = LatLng(position.latitude, position.longitude);
-    driverLocation.value = newLocation;
-    _updateDriverMarker(newLocation);
-    
-    // Agregar la animación de la cámara
-    if (shouldFollowDriver.value && mapController != null) {
-      mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          newLocation,
-          16.0, // Puedes ajustar el nivel de zoom según necesites
-        ),
-      );
-    }
-    
-    if (endLocation.value != null) {
-      await _updateRouteFromCurrentLocation(newLocation);
-      _updateEstimatedArrivalTime(newLocation);
-    }
-  });
-}
+    positionStreamSubscription = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    ).listen((Position position) async {
+      final newLocation = LatLng(position.latitude, position.longitude);
+      driverLocation.value = newLocation;
+      
+      if (idStatus.value == 4) {
+        _updateDriverMarker(newLocation);
+      }
+      
+      if (shouldFollowDriver.value && mapController != null) {
+        mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            newLocation,
+            16.0,
+          ),
+        );
+      }
+      
+      if (endLocation.value != null) {
+        await _updateRouteFromCurrentLocation(newLocation);
+        _updateEstimatedArrivalTime(newLocation);
+      }
+    });
+  }
 
   Future<void> _updateRouteFromCurrentLocation(LatLng currentLocation) async {
     if (endLocation.value != null) {
@@ -215,72 +278,85 @@ Future<void> _addDriverToStartPolyline() async {
     }
   }
 
- void _handleDriverLocationUpdate(Map<String, dynamic> locationData) async {
-  try {
-    print('TaxiInfo Recibiendo actualización de ubicación: $locationData');
-    
-    final newDriverLocation = LatLng(
-      double.parse(locationData['latitude'].toString()),
-      double.parse(locationData['longitude'].toString())
-    );
-    
-    print('TaxiInfo Nueva ubicación del conductor: ${newDriverLocation.latitude}, ${newDriverLocation.longitude}');
-    
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('lastDriverLat', newDriverLocation.latitude.toString());
-    await prefs.setString('lastDriverLng', newDriverLocation.longitude.toString());
-    await prefs.setString('lastUpdateTime', DateTime.now().toIso8601String());
-    
-    driverLocation.value = newDriverLocation;
-    _updateDriverMarker(newDriverLocation);
-    _updateEstimatedArrivalTime(newDriverLocation);
-    
-    if (idStatus.value == 3) {
-      markers.removeWhere((m) => m.markerId == MarkerId('destination'));
-      polylines.removeWhere((p) => p.polylineId == PolylineId('route'));
-      await _addDriverToStartPolyline();
-    }
-    
-    if (shouldFollowDriver.value && mapController != null) {
-      mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          newDriverLocation,
-          16.0,
-        ),
+  void _handleDriverLocationUpdate(Map<String, dynamic> locationData) async {
+    try {
+      print('TaxiInfo Recibiendo actualización de ubicación: $locationData');
+      
+      final newDriverLocation = LatLng(
+        double.parse(locationData['latitude'].toString()),
+        double.parse(locationData['longitude'].toString())
       );
-    }
-    
-    update();
-  } catch (e) {
-    print('TaxiInfo Error al procesar la ubicación del conductor: $e');
-  }
-}
+      
+      print('TaxiInfo Nueva ubicación del conductor: ${newDriverLocation.latitude}, ${newDriverLocation.longitude}');
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('lastDriverLat', newDriverLocation.latitude.toString());
+      await prefs.setString('lastDriverLng', newDriverLocation.longitude.toString());
+      await prefs.setString('lastUpdateTime', DateTime.now().toIso8601String());
+      
+      driverLocation.value = newDriverLocation;
 
+      if (idStatus.value == 3) {
+        _updateDriverMarker(newDriverLocation);
+        _updateEstimatedArrivalTime(newDriverLocation);
+        markers.removeWhere((m) => m.markerId == MarkerId('destination'));
+        polylines.removeWhere((p) => p.polylineId == PolylineId('route'));
+        await _addDriverToStartPolyline();
+      }
+      
+      if (shouldFollowDriver.value && mapController != null) {
+        mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            newDriverLocation,
+            16.0,
+          ),
+        );
+      }
+      
+      update();
+    } catch (e) {
+      print('TaxiInfo Error al procesar la ubicación del conductor: $e');
+    }
+  }
 
 
   void _updateDriverMarker(LatLng location) async {
     try {
       final markerId = MarkerId('driver');
       final updatedMarkers = Set<Marker>.from(markers);
-
       updatedMarkers.removeWhere((m) => m.markerId == markerId);
+
+      // Calculate bearing based on movement direction
+      double bearing = 0.0;
+      if (_previousLocation != null) {
+        bearing = _calculateBearing(_previousLocation!, location);
+      } else if (idStatus.value == 3 && startLocation.value != null) {
+        // Si es primera ubicación y va hacia el punto de inicio
+        bearing = _calculateBearing(location, startLocation.value!);
+      } else if (idStatus.value == 4 && endLocation.value != null) {
+        // Si es primera ubicación y va hacia el destino
+        bearing = _calculateBearing(location, endLocation.value!);
+      }
+      
+      _previousLocation = location;
 
       final marker = Marker(
         markerId: markerId,
         position: location,
-        // infoWindow: InfoWindow(title: 'Conductor'),
         icon: await gmaps.BitmapDescriptor.fromAssetImage(
           ImageConfiguration(size: Size(80, 80)),
-          'assets/images/viajes/taxi2.png',
+          _taxiImage,
         ),
         flat: true,
+        rotation: bearing,
+        anchor: Offset(0.5, 0.5), // Centra el punto de anclaje del marcador
         consumeTapEvents: true,
       );
 
       updatedMarkers.add(marker);
       markers.value = updatedMarkers;
 
-      print('TaxiInfo Marcador del conductor actualizado');
+      print('TaxiInfo Marcador del conductor actualizado con rotación: $bearing');
     } catch (e) {
       print('TaxiInfo Error actualizando marcador: $e');
     }

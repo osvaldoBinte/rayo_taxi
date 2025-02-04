@@ -135,6 +135,14 @@ flutter:
      - assets/images/mapa/marker-inicio.png
      - assets/images/mapa/origen.png
      - assets/images/whatsApp.png
+     - assets/images/taxi/taxi_oeste.png
+     - assets/images/taxi/taxi_norte.png
+     - assets/images/taxi/taxi_sureste.png
+     - assets/images/taxi/taxi_noroeste.png
+     - assets/images/taxi/taxi_noreste.png
+     - assets/images/taxi/taxi_suroeste.png
+     - assets/images/taxi/taxi_este.png
+     - assets/images/taxi/taxi_sur.png
      - test.env
      - dev.env
      - .env
