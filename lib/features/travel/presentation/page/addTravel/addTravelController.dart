@@ -54,7 +54,7 @@ class MapController extends GetxController {
   final TravelsAlertGetx travelAlertGetx = Get.find<TravelsAlertGetx>();
   final CurrentTravelGetx currentTravelGetx = Get.find<CurrentTravelGetx>();
   ValueNotifier<double> travelDuration = ValueNotifier(0.0);
-RxBool canShowDirectionModal = true.obs;
+  RxBool canShowDirectionModal = true.obs;
   RxBool isTravelRequested = false.obs;
   RxSet<gmaps.Marker> markers = <gmaps.Marker>{}.obs;
   RxSet<Polyline> polylines = <Polyline>{}.obs;
@@ -440,7 +440,7 @@ RxBool canShowDirectionModal = true.obs;
       }
     } catch (e) {
       print('Error al realizar geocodificación inversa: $e');
-      Get.snackbar('Error', 'No se pudo obtener la dirección');
+      //  Get.snackbar('Error', 'No se pudo obtener la dirección');
     }
   }
 
@@ -520,7 +520,7 @@ RxBool canShowDirectionModal = true.obs;
             !notificationController.tripAccepted.value) {
           isTravelRequested.value = true;
           isModalOpen.value = true;
-                  canShowDirectionModal.value = false; 
+          canShowDirectionModal.value = false;
 
           double distance = _mapDataController.calculateDistance(
               startLocation.value!, endLocation.value!);
@@ -576,10 +576,9 @@ RxBool canShowDirectionModal = true.obs;
                         children: <Widget>[
                           Obx(() => SizedBox(
                                 height: 300,
-                                child: Lottie.network(
-                                  modalController.lottieUrl.value,
+                                child: Image.asset(
+                                  modalController.imageUrl.value,
                                   fit: BoxFit.contain,
-                                  repeat: true,
                                 ),
                               )),
                           SizedBox(height: 20),
@@ -627,7 +626,7 @@ RxBool canShowDirectionModal = true.obs;
                                         : () async {
                                             if (isCancelling.value) return;
                                             isCancelling.value = true;
-                                                  canShowDirectionModal.value = true; 
+                                            canShowDirectionModal.value = true;
                                             try {
                                               int? savedTravelId =
                                                   await getSavedTravelId();
@@ -809,8 +808,7 @@ RxBool canShowDirectionModal = true.obs;
   }
 
   void showDirectionModal(BuildContext context, MapController controller) {
-      if (!canShowDirectionModal.value) return; // No mostrar si está deshabilitado
-
+    if (!canShowDirectionModal.value) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

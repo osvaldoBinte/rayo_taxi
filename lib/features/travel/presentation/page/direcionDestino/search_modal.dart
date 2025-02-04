@@ -322,17 +322,14 @@ class DestinoController extends GetxController {
       mapController.cleanupController();
       Get.delete<MapController>();
     }*/
+if (!Get.isRegistered<ModalController>()) {
+  Get.put(ModalController());
+}
 
-      if (!Get.isRegistered<ModalController>()) {
-        Get.put(ModalController());
-      }
-
-      Get.find<NotificationController>().tripAccepted.value = false;
-      Get.find<ModalController>().lottieUrl.value =
-          'https://lottie.host/a811be92-b006-48ce-ad3e-c20bfffc3d7e/NzmrksnYZW.json';
-      Get.find<ModalController>().modalText.value = 'Buscando chofer...';
-      Get.find<NotificationController>().clearNotification();
-
+Get.find<NotificationController>().tripAccepted.value = false;
+Get.find<ModalController>().imageUrl.value = 'assets/images/viajes/add_travel.gif';
+Get.find<ModalController>().modalText.value = 'Buscando chofer...';
+Get.find<NotificationController>().clearNotification();
       if (selectedLatLng.value != null && selectedDescription.value != null) {
         Get.to(
           () => MapScreen(
