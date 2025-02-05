@@ -1,12 +1,15 @@
 import UIKit
 import Flutter
+import GoogleMaps
 
-@UIApplicationMain
+@main
 @objc class AppDelegate: FlutterAppDelegate {
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
+        GMSServices.provideAPIKey("AIzaSyBAVJDSpCXiLRhVTq-MA3RgZqbmxm1wD1I") // Agrega tu API key aquí
+
         let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
         
         // WhatsApp Channel
