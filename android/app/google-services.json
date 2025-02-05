@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "142272499428-j7hk5q7nsojglek7lq2jd0llj2rkptoa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rayo.taxi",
+            "certificate_hash": "007601fa0c9141ff9e5c7b569e9eadb4a97cf8d7"
+          }
+        },
+        {
           "client_id": "142272499428-ssavonqe5fj75c50fga5fj7at6efh2vn.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

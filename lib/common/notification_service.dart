@@ -74,16 +74,22 @@ class NotificationService {
       android: initializationSettingsAndroid,
     );
 
-    await flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse:
-          (NotificationResponse notificationResponse) async {
-        final String? payload = notificationResponse.payload;
-        if (payload != null && payload.isNotEmpty) {
-          _handleNotificationClick(json.decode(payload));
-        }
-      },
-    );
+   await flutterLocalNotificationsPlugin.initialize(
+  InitializationSettings(
+    android: initializationSettingsAndroid,
+    iOS: DarwinInitializationSettings( // Añade configuración iOS
+      requestSoundPermission: true,
+      requestBadgePermission: true,
+      requestAlertPermission: true,
+    ),
+  ),
+  onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
+    final String? payload = notificationResponse.payload;
+    if (payload != null && payload.isNotEmpty) {
+      _handleNotificationClick(json.decode(payload));
+    }
+  },
+);
 
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
@@ -573,6 +579,8 @@ void _showLocalNotification(RemoteMessage message) {
           icon: '@drawable/rayo_taxi',
           color: Color(0xFFEFC300),
         ),
+            iOS: DarwinNotificationDetails(), // Añade detalles iOS
+
       ),
       payload: jsonEncode(message.data),
     );

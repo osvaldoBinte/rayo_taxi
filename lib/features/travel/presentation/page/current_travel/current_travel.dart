@@ -12,7 +12,6 @@ import 'package:rayo_taxi/features/travel/presentation/page/widgets/Taxi_Info_ca
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/cancel_travel_button.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/info_button_widget.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/waiting_status_widget.dart';
-import 'package:speech_bubble/speech_bubble.dart';
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';

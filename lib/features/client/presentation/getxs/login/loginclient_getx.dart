@@ -12,6 +12,7 @@ import 'package:rayo_taxi/features/travel/presentation/page/widgets/custom_alert
 import 'package:rayo_taxi/features/client/presentation/pages/login_clients_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/home_page/home_page.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 part 'loginclient_event.dart';
 part 'loginclient_state.dart';
@@ -250,4 +251,51 @@ class LoginclientGetx extends GetxController {
       ),
     );
   }
+
+  
+  Future<void> loginWithApple(
+  OAuthCredential credential,
+  AuthorizationCredentialAppleID appleCredential,
+) async {
+  isLoading.value = true;
+  state.value = LoginclientLoading();
+
+  try {
+    final UserCredential userCredential = 
+        await _auth.signInWithCredential(credential);
+    final User? user = userCredential.user;
+
+    if (user != null) {
+      // Set default birthdate
+      final String defaultBirthdate = '00/00/0000';
+
+      // Construye el nombre completo si está disponible
+      String? fullName;
+      if (appleCredential.givenName != null || appleCredential.familyName != null) {
+        fullName = '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'.trim();
+      }
+
+      final client = Client(
+        email: user.email ?? '',
+        name: fullName ?? user.displayName ?? '',
+        birthdate: defaultBirthdate,
+      );
+
+      await loginGoogleUsecase.execute(client); // Puedes reutilizar el mismo usecase o crear uno nuevo
+      state.value = LoginclientSuccessfully();
+      Get.offAll(() => HomePage(selectedIndex: 1));
+    }
+  } catch (e) {
+    state.value = LoginclientFailure(e.toString());
+    QuickAlert.show(
+      context: Get.context!,
+      type: QuickAlertType.error,
+      title: 'Error',
+      text: 'No se pudo iniciar sesión con Apple. Inténtalo de nuevo.',
+      confirmBtnText: 'OK',
+    );
+  } finally {
+    isLoading.value = false;
+  }
+}
 }

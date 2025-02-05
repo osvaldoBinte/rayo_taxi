@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:rayo_taxi/common/theme/app_color.dart';
 import 'package:rayo_taxi/features/travel/data/models/travel/travel_alert_model.dart';
 import 'package:rayo_taxi/features/travel/presentation/Travelgetx/TravelById/travel_by_id_alert_getx.dart';
-import 'package:speech_bubble/speech_bubble.dart';
 
 import 'package:flutter/material.dart';
-import 'package:speech_bubble/speech_bubble.dart';
 
 class InfoButtonWidget extends StatelessWidget {
   final TravelByIdAlertGetx? travelByIdController;

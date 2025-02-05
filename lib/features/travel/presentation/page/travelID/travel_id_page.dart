@@ -11,7 +11,7 @@ import 'package:rayo_taxi/features/travel/data/datasources/mapa_local_data_sourc
 import 'package:geolocator/geolocator.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/travelID/travel_id_controller.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/info_button_widget.dart';
-import 'package:speech_bubble/speech_bubble.dart';import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
 import 'package:flutter/material.dart';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
-
+import 'package:flutter/services.dart';
 class HomeController extends GetxController {
   final RxInt selectedIndex = 0.obs;
   DateTime? lastBackPressTime;
@@ -11,7 +11,7 @@ class HomeController extends GetxController {
     selectedIndex.value = index;
   }
 
-  Future<bool> handleBackButton(int initialIndex) async {
+Future<bool> handleBackButton(int initialIndex) async {
     if (selectedIndex.value != initialIndex) {
       selectedIndex.value = initialIndex;
       return false;
@@ -28,62 +28,37 @@ class HomeController extends GetxController {
       );
       return false;
     }
-    return true;
+    
+    // Minimize app
+    await SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+    return false;
   }
-Future<void> requestNotificationPermission() async {
-    var status = await Permission.notification.status;
-    if (!status.isGranted) {
-      var result = await Permission.notification.request();
-      if (result.isPermanentlyDenied) {
-        await openAppSettings();
-      }
-    }
+  
+  Future<void> requestNotificationPermission() async {
+  var status = await Permission.notification.status;
+  if (!status.isGranted) {
+    await Permission.notification.request();
+    // Only open settings if user explicitly indicates they want to
   }
-  Future<void> requestLocationPermission() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      await Get.dialog(
-        AlertDialog(
-          title: Text('Servicios de Ubicación Desactivados'),
-          content: Text('Activa los servicios de ubicación para continuar.'),
-          actions: [
-            TextButton(
-              child: Text('Activar'),
-              onPressed: () async {
-                await Geolocator.openLocationSettings();
-                Get.back();
-              },
-            ),
-            TextButton(
-              child: Text('Cancelar'),
-              onPressed: () => Get.back(),
-            ),
-          ],
-        ),
-        barrierDismissible: false,
-      );
-      serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) return;
-    }
+}
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      await openAppSettings();
-      return;
-    }
-
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high
-      );
-      print('Ubicación actual: ${position.latitude}, ${position.longitude}');
-    } catch (e) {
-      print('Error al obtener la ubicación: $e');
-    }
+Future<void> requestLocationPermission() async {
+  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
+    // Show dialog but don't force settings
+    return;
   }
+
+  LocationPermission permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) return;
+  }
+
+  // Don't automatically open settings
+  if (permission == LocationPermission.deniedForever) {
+    // Show dialog asking user if they want to open settings
+    return;
+  }
+}
 }
