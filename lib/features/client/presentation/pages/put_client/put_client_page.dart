@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
@@ -20,7 +21,7 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-final UpdateGetx _updateGetx = Get.find<UpdateGetx>();
+  final UpdateGetx _updateGetx = Get.find<UpdateGetx>();
   final GetClientGetx getClientGetx = Get.find<GetClientGetx>();
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
@@ -30,18 +31,14 @@ final UpdateGetx _updateGetx = Get.find<UpdateGetx>();
   final FocusNode _focusNodeOldPassword = FocusNode();
   final FocusNode _focusNodeNewPassword = FocusNode();
 
-  bool _isOldPasswordVisible = false;
-  bool _isNewPasswordVisible = false;
-  bool _showPasswordFields = false;
-
   @override
- void initState() {
+  void initState() {
     super.initState();
     _updateGetx.initializeControllers(widget.client);
   }
- Widget _buildLoadingOverlay() {
+
+  Widget _buildLoadingOverlay() {
     return Container(
-     // color: Colors.black.withOpacity(0.5),
       child: Center(
         child: SpinKitFadingCube(
           color: Theme.of(context).colorScheme.loader,
@@ -50,7 +47,6 @@ final UpdateGetx _updateGetx = Get.find<UpdateGetx>();
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -66,47 +62,47 @@ final UpdateGetx _updateGetx = Get.find<UpdateGetx>();
               children: [
                 Stack(
                   children: [
-                   CircleAvatar(
-                          radius: 40,
-                          backgroundColor: Colors.grey.shade200,
-                          child: Obx(() => _updateGetx.imagePath.value == null
-                              ? ClipOval(
-                                  child: Image.network(
-                                    widget.client.path_photo ?? '',
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Icon(
-                                        Icons.person,
-                                        size: 40,
-                                        color: Colors.grey,
-                                      );
-                                    },
-                                  ),
-                                )
-                              : ClipOval(
-                                  child: Image.file(
-                                    File(_updateGetx.imagePath.value!),
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                  ),
-                                )),
-                        ),
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Colors.grey.shade200,
+                      child: Obx(() => _updateGetx.imagePath.value == null
+                          ? ClipOval(
+                              child: Image.network(
+                                widget.client.path_photo ?? '',
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.person,
+                                    size: 40,
+                                    color: Colors.grey,
+                                  );
+                                },
+                              ),
+                            )
+                          : ClipOval(
+                              child: Image.file(
+                                File(_updateGetx.imagePath.value!),
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                              ),
+                            )),
+                    ),
                     _buildIcon(
-                          Icons.edit,
-                          Colors.white,
-                          () async {
-                            final pickedFile = await _picker.pickImage(
-                                source: ImageSource.gallery);
-                            if (pickedFile != null) {
-                              _updateGetx.setImagePath(pickedFile.path);
-                            }
-                          },
-                          bottom: 0,
-                          right: 0,
-                        ),
+                      Icons.edit,
+                      Colors.white,
+                      () async {
+                        final pickedFile =
+                            await _picker.pickImage(source: ImageSource.gallery);
+                        if (pickedFile != null) {
+                          _updateGetx.setImagePath(pickedFile.path);
+                        }
+                      },
+                      bottom: 0,
+                      right: 0,
+                    ),
                   ],
                 ),
                 Text(
@@ -136,8 +132,7 @@ final UpdateGetx _updateGetx = Get.find<UpdateGetx>();
                   ),
                   textInputAction: TextInputAction.next,
                   onFieldSubmitted: (_) {
-                    FocusScope.of(context).requestFocus(
-                        _focusNodeBirthdate); 
+                    FocusScope.of(context).requestFocus(_focusNodeBirthdate);
                   },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -165,8 +160,7 @@ final UpdateGetx _updateGetx = Get.find<UpdateGetx>();
                   ),
                   textInputAction: TextInputAction.next,
                   onFieldSubmitted: (_) {
-                    FocusScope.of(context).requestFocus(
-                        _focusNodeOldPassword); 
+                    FocusScope.of(context).requestFocus(_focusNodeOldPassword);
                   },
                   readOnly: true,
                   onTap: () async {
@@ -186,15 +180,11 @@ final UpdateGetx _updateGetx = Get.find<UpdateGetx>();
                         return Theme(
                           data: ThemeData.light().copyWith(
                             colorScheme: ColorScheme.light(
-                              primary:
-                                  Color(0xFFEFC300), 
-                              onPrimary: Colors
-                                  .white, 
-                              onSurface: Colors
-                                  .black, // Color del texto del calendario
+                              primary: Color(0xFFEFC300),
+                              onPrimary: Colors.white,
+                              onSurface: Colors.black,
                             ),
-                            dialogBackgroundColor:
-                                Colors.white, // Color de fondo del diálogo
+                            dialogBackgroundColor: Colors.white,
                           ),
                           child: child!,
                         );
@@ -204,9 +194,7 @@ final UpdateGetx _updateGetx = Get.find<UpdateGetx>();
                     if (pickedDate != null) {
                       String formattedDate =
                           DateFormat('dd/MM/yyyy').format(pickedDate);
-                      setState(() {
-                        _updateGetx.birthdateController.text = formattedDate;
-                      });
+                      _updateGetx.birthdateController.text = formattedDate;
                     }
                   },
                   validator: (value) {
@@ -217,129 +205,125 @@ final UpdateGetx _updateGetx = Get.find<UpdateGetx>();
                   },
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _showPasswordFields = !_showPasswordFields;
-                    });
-                  },
-                  child: Text(
-                    _showPasswordFields
-                        ? 'Ocultar Cambio de Contraseña'
-                        : 'Cambiar Contraseña',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.buttonColormap,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
+                
+                // Sección de cambio de contraseña con Obx
+               Obx(() {
+  return _updateGetx.isPasswordAuthProvider.value
+      ? Column(
+          children: [
+            ElevatedButton(
+              onPressed: _updateGetx.togglePasswordFields,
+              child: Text(
+                _updateGetx.showPasswordFields.value
+                    ? 'Ocultar Cambio de Contraseña'
+                    : 'Cambiar Contraseña',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
                 ),
-                const SizedBox(height: 16),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  height: _showPasswordFields ? 160 : 0,
-                  child: _showPasswordFields
-                      ? Column(
-                          children: [
-                            TextFormField(
-                              focusNode: _focusNodeOldPassword,
-                              controller: _updateGetx.oldPasswordController,
-                              obscureText: !_isOldPasswordVisible,
-                              decoration: InputDecoration(
-                                labelText: 'Contraseña Anterior',
-                                filled: true,
-                                fillColor: Colors.grey[200],
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide.none,
-                                ),
-                                prefixIcon:
-                                    Icon(Icons.lock, color: Colors.grey[600]),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _isOldPasswordVisible
-                                        ? Icons.visibility
-                                        : Icons.visibility_off,
-                                    color: Colors.grey[600],
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _isOldPasswordVisible =
-                                          !_isOldPasswordVisible;
-                                    });
-                                  },
-                                ),
-                              ),
-                              textInputAction: TextInputAction.next,
-                              onFieldSubmitted: (_) {
-                                FocusScope.of(context).requestFocus(
-                                    _focusNodeNewPassword); // Move focus to next field
-                              },
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'La contraseña anterior es requerida';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              focusNode: _focusNodeNewPassword,
-                              controller: _updateGetx.newPasswordController,
-                              obscureText: !_isNewPasswordVisible,
-                              decoration: InputDecoration(
-                                labelText: 'Contraseña Nueva',
-                                filled: true,
-                                fillColor: Colors.grey[200],
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide.none,
-                                ),
-                                prefixIcon:
-                                    Icon(Icons.lock, color: Colors.grey[600]),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _isNewPasswordVisible
-                                        ? Icons.visibility
-                                        : Icons.visibility_off,
-                                    color: Colors.grey[600],
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _isNewPasswordVisible =
-                                          !_isNewPasswordVisible;
-                                    });
-                                  },
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'La nueva contraseña es requerida';
-                                }
-                                if (value.length < 5) {
-                                  return 'La contraseña debe tener al menos 5 caracteres';
-                                }
-                                return null;
-                              },
-                            ),
-                          ],
-                        )
-                      : null,
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.buttonColormap,
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: _updateGetx.showPasswordFields.value ? 180 : 0,
+              child: SingleChildScrollView(
+                physics: NeverScrollableScrollPhysics(),
+                child: _updateGetx.showPasswordFields.value
+                    ? Column(
+                        children: [
+                          TextFormField(
+                            focusNode: _focusNodeOldPassword,
+                            controller: _updateGetx.oldPasswordController,
+                            obscureText: !_updateGetx.isOldPasswordVisible.value,
+                            decoration: InputDecoration(
+                              labelText: 'Contraseña Anterior',
+                              labelStyle: TextStyle(
+                                color: Colors.black.withOpacity(0.7),
+                              ),
+                              prefixIcon: Icon(Icons.lock, color: Colors.grey[600]),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _updateGetx.isOldPasswordVisible.value
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: _updateGetx.toggleOldPasswordVisibility,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'La contraseña anterior es requerida';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            focusNode: _focusNodeNewPassword,
+                            controller: _updateGetx.newPasswordController,
+                            obscureText: !_updateGetx.isNewPasswordVisible.value,
+                            decoration: InputDecoration(
+                              labelText: 'Contraseña Nueva',
+                              labelStyle: TextStyle(
+                                color: Colors.black.withOpacity(0.7),
+                              ),
+                              prefixIcon: Icon(Icons.lock, color: Colors.grey[600]),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _updateGetx.isNewPasswordVisible.value
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.grey[600],
+                                ),
+                                onPressed: _updateGetx.toggleNewPasswordVisibility,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'La nueva contraseña es requerida';
+                              }
+                              if (value.length < 5) {
+                                return 'La contraseña debe tener al menos 5 caracteres';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      )
+                    : null,
+              ),
+            ),
+          ],
+        )
+      : const SizedBox();
+}),
+
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       _updateGetx.updateClient();
-                     // Navigator.of(context).pop();
                     }
                   },
                   icon: const Icon(Icons.save, color: Colors.white),
@@ -348,27 +332,25 @@ final UpdateGetx _updateGetx = Get.find<UpdateGetx>();
                     style: TextStyle(color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.buttonColormap,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 15),
+                    backgroundColor: Theme.of(context).colorScheme.buttonColormap,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
-                  // Loading overlay
-          Obx(() {
-            if (_updateGetx.state.value is UpdateLoading) {
-              return _buildLoadingOverlay();
-            }
-            return const SizedBox.shrink();
-          }),
+                
+                // Loading overlay
+                Obx(() {
+                  if (_updateGetx.state.value is UpdateLoading) {
+                    return _buildLoadingOverlay();
+                  }
+                  return const SizedBox.shrink();
+                }),
               ],
-              
             ),
-            
           ),
         ),
       ),
@@ -387,5 +369,14 @@ final UpdateGetx _updateGetx = Get.find<UpdateGetx>();
         onPressed: () async => await onPressed(),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _focusNodeName.dispose();
+    _focusNodeBirthdate.dispose();
+    _focusNodeOldPassword.dispose();
+    _focusNodeNewPassword.dispose();
+    super.dispose();
   }
 }

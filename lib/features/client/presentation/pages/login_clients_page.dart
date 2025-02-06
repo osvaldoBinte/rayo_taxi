@@ -114,21 +114,22 @@ Future<void> _loginWithApple() async {
             children: [
               Column(
                 children: <Widget>[
-                  // Contenedor de fondo con el logo
-                  Container(
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 20.0),
-                        child: Image.asset(
-                          'assets/images/logo-new.png',
-                          width: MediaQuery.of(context).size.width * 0.6,
-                          height: screenHeight * 0.25,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
-                  ),
+              SafeArea(
+      child: Container(
+        padding: EdgeInsets.only(top: screenHeight * 0.05),
+        margin: EdgeInsets.only(bottom: screenHeight * 0.05), // Añadimos margen inferior
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Image.asset(
+            'assets/images/logo-new.png',
+            width: MediaQuery.of(context).size.width * 0.6,
+            height: screenHeight * 0.20,
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
+    ), 
+
                   Expanded(
                     child: Container(
                       margin: EdgeInsets.only(bottom: 25.0), //

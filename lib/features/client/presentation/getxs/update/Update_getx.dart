@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:meta/meta.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/features/client/domain/entities/client.dart';
@@ -22,17 +23,21 @@ class UpdateGetx extends GetxController {
   var isNewPasswordVisible = false.obs;
   var showPasswordFields = false.obs;
   var imagePath = RxnString();
+  var isPasswordAuthProvider = false.obs; // Cambiado a false por defecto
 
   UpdateGetx({required this.updateClientUsecase});
 
   @override
   void onInit() {
     super.onInit();
+    // Verificar el proveedor al iniciar
+    checkAuthProvider();
   }
 
   void initializeControllers(Client client) {
     nameController.text = client.name ?? '';
     birthdateController.text = client.birthdate ?? '';
+    checkAuthProvider();
   }
 
   void toggleOldPasswordVisibility() {
@@ -72,7 +77,27 @@ class UpdateGetx extends GetxController {
       state.value = UpdateCreationFailure(e.toString());
     }
   }
-
+void checkAuthProvider() {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    // Si hay un usuario de Firebase, verificamos si es Google
+    final providers = user.providerData;
+    bool hasGoogleProvider = providers.any((provider) => provider.providerId == 'google.com');
+    
+    // Si es Google, establecemos isPasswordAuthProvider como false
+    if (hasGoogleProvider) {
+      isPasswordAuthProvider.value = false;
+      print("Usuario autenticado con Google");
+    }
+    // Si no es Google, mantenemos el valor actual de isPasswordAuthProvider
+    
+    update();
+  } else {
+    // Si no hay usuario en Firebase, podría ser auth normal o sin auth
+    print("No hay usuario de Firebase");
+    // No modificamos isPasswordAuthProvider aquí, lo manejamos en login/logout
+  }
+}
   @override
   void onClose() {
     nameController.dispose();

@@ -8,6 +8,7 @@ import 'package:rayo_taxi/common/theme/app_color.dart';
 import 'package:rayo_taxi/features/client/domain/entities/client.dart';
 import 'package:rayo_taxi/features/client/domain/usecases/login_client_usecase.dart';
 import 'package:rayo_taxi/features/client/domain/usecases/login_google_usecase.dart';
+import 'package:rayo_taxi/features/client/presentation/getxs/update/Update_getx.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/custom_alert_dialog.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/login_clients_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,59 +39,67 @@ class LoginclientGetx extends GetxController {
   LoginclientGetx(
       {required this.loginClientUsecase, required this.loginGoogleUsecase});
 
-  Future<void> login(String email, String password) async {
-    isLoading.value = true;
-    state.value = LoginclientLoading();
-    try {
-      final client = Client(email: email, password: password);
-      await loginClientUsecase.execute(client);
-      state.value = LoginclientSuccessfully();
-
-      Get.offAll(() => HomePage(selectedIndex: 1));
-    } catch (e) {
-      state.value = LoginclientFailure(e.toString());
-
-      QuickAlert.show(
-        context: Get.context!,
-        type: QuickAlertType.error,
-        title: 'ACCESO INCORRECTO',
-        text: 'No se pudo iniciar sesión. Inténtalo de nuevo.',
-        confirmBtnText: 'OK',
-      );
-    } finally {
-      isLoading.value = false;
-    }
+ Future<void> login(String email, String password) async {
+  isLoading.value = true;
+  state.value = LoginclientLoading();
+  try {
+    final client = Client(email: email, password: password);
+    await loginClientUsecase.execute(client);
+    
+    // No intentamos hacer sign in con Firebase si es autenticación normal
+    final updateGetx = Get.find<UpdateGetx>();
+    updateGetx.isPasswordAuthProvider.value = true; // Establecemos directamente que es auth por password
+    
+    state.value = LoginclientSuccessfully();
+    Get.offAll(() => HomePage(selectedIndex: 1));
+  } catch (e) {
+    state.value = LoginclientFailure(e.toString());
+    QuickAlert.show(
+      context: Get.context!,
+      type: QuickAlertType.error,
+      title: 'ACCESO INCORRECTO',
+      text: 'No se pudo iniciar sesión. Inténtalo de nuevo.',
+      confirmBtnText: 'OK',
+    );
+  } finally {
+    isLoading.value = false;
   }
-
-  void logout() async {
-    state.value = LoginclientInitial();
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.remove('auth_token');
-    });
+}
+Future<void> logout() async {
+  state.value = LoginclientInitial();
+  
+  try {
+    // Cierra sesión en Google si está activo
     final GoogleSignIn googleSignIn = GoogleSignIn();
-
     try {
-      await googleSignIn.signOut();
-      print("se cerro la sesion");
+      if (await googleSignIn.isSignedIn()) {
+        await googleSignIn.signOut();
+        await googleSignIn.disconnect();
+      }
     } catch (e) {
-      print("Error al cerrar sesión de Google: $e");
+      print("Error durante el cierre de sesión de Google: $e");
     }
-
-    try {
-      await googleSignIn.disconnect();
-    } catch (e) {
-      print("No se pudo revocar el acceso de Google: $e");
-    }
-
+    
+    // Limpia SharedPreferences
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    state.value = LoginclientInitial();
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.remove('auth_token');
-    });
-    await prefs.remove('auth_token');
-
+    await prefs.clear(); // Limpia todas las preferencias
+    
+    // Restablece el estado
+    Get.find<UpdateGetx>().isPasswordAuthProvider.value = false;
+    
+    // Cierra sesión en Firebase si hay una sesión activa
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (e) {
+      print("Error al cerrar sesión de Firebase: $e");
+    }
+    
+    await Get.offAll(() => LoginClientsPage());
+  } catch (e) {
+    print("Error durante el logout: $e");
     await Get.offAll(() => LoginClientsPage());
   }
+}
 
   Future<void> logoutAlert() async {
     showCustomAlert(
@@ -266,10 +275,8 @@ class LoginclientGetx extends GetxController {
     final User? user = userCredential.user;
 
     if (user != null) {
-      // Set default birthdate
       final String defaultBirthdate = '00/00/0000';
 
-      // Construye el nombre completo si está disponible
       String? fullName;
       if (appleCredential.givenName != null || appleCredential.familyName != null) {
         fullName = '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'.trim();
@@ -281,7 +288,7 @@ class LoginclientGetx extends GetxController {
         birthdate: defaultBirthdate,
       );
 
-      await loginGoogleUsecase.execute(client); // Puedes reutilizar el mismo usecase o crear uno nuevo
+      await loginGoogleUsecase.execute(client); 
       state.value = LoginclientSuccessfully();
       Get.offAll(() => HomePage(selectedIndex: 1));
     }
