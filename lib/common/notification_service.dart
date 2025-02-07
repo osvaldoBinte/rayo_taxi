@@ -547,26 +547,40 @@ void _showLocalNotification(RemoteMessage message) {
 
   if (notification != null && android != null) {
     if (notification.title == 'Tu viaje fue aceptado') {
-      Get.find<NotificationController>().tripAccepted.value = true;
-      Get.find<ModalController>().imageUrl.value = 'assets/images/viajes/viaje-aceptado.gif';
-      Get.find<ModalController>().modalText.value = 'Viaje aceptado, espera al conductor en el punto de encuentro';
-    }
-    if (notification.title == 'Tu viaje ha comenzado') {
-      Get.find<NotificationController>().tripAccepted.value = true;
-      Get.find<ModalController>().imageUrl.value = 'assets/images/viajes/viaje-ha-comenzado.gif';
-      Get.find<ModalController>().modalText.value = 'Tu viaje ha comenzado';
-    }
-    if (notification.title == 'El taxi llego') {
-      Get.find<NotificationController>().tripAccepted.value = true;
-      Get.find<ModalController>().imageUrl.value = 'assets/images/viajes/taxi-llego.gif';
-      Get.find<ModalController>().modalText.value = 'El taxi ha llegado al punto de encuentro';
-    }
-    if (notification.title == 'Viaje terminado') {
-      Get.find<NotificationController>().tripAccepted.value = true;
-      Get.find<ModalController>().imageUrl.value = 'assets/images/viajes/viaje-finalizado.gif';
-      Get.find<ModalController>().modalText.value = 'Tu viaje a terminado';
-    }
+  Get.find<NotificationController>().tripAccepted.value = true;
+  var modalController = Get.find<ModalController>();
+  modalController.isLottieError.value = false;
+  modalController.lottieUrl.value = 'https://lottie.host/4b6efc1d-1021-48a4-a3dd-df0eecbd8949/1CzFNvYv69.json';
+  modalController.imageUrl.value = 'assets/images/viajes/viaje-aceptado.gif';
+  modalController.modalText.value = 'Viaje aceptado, espera al conductor en el punto de encuentro';
+}
 
+if (notification.title == 'Tu viaje ha comenzado') {
+  Get.find<NotificationController>().tripAccepted.value = true;
+  var modalController = Get.find<ModalController>();
+  modalController.isLottieError.value = false;
+  modalController.lottieUrl.value = 'https://lottie.host/4a367cbb-4834-44ba-997a-9a8a62408a99/keSVai2cNe.json';
+  modalController.imageUrl.value = 'assets/images/viajes/viaje-ha-comenzado.gif';
+  modalController.modalText.value = 'Tu viaje ha comenzado';
+}
+
+if (notification.title == 'El taxi llego') {
+  Get.find<NotificationController>().tripAccepted.value = true;
+  var modalController = Get.find<ModalController>();
+  modalController.isLottieError.value = false;
+  modalController.lottieUrl.value = 'https://lottie.host/bcf4608b-5b35-4c48-b2c9-c0126124a159/CFerLgDKdO.json';
+  modalController.imageUrl.value = 'assets/images/viajes/taxi-llego.gif';
+  modalController.modalText.value = 'El taxi ha llegado al punto de encuentro';
+}
+
+if (notification.title == 'Viaje terminado') {
+  Get.find<NotificationController>().tripAccepted.value = true;
+  var modalController = Get.find<ModalController>();
+  modalController.isLottieError.value = false;
+  modalController.lottieUrl.value = 'https://lottie.host/4b6efc1d-1021-48a4-a3dd-df0eecbd8949/1CzFNvYv69.json';
+  modalController.imageUrl.value = 'assets/images/viajes/viaje-finalizado.gif';
+  modalController.modalText.value = 'Tu viaje a terminado';
+}
     flutterLocalNotificationsPlugin.show(
       notification.hashCode,
       notification.title,

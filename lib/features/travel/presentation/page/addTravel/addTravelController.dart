@@ -12,6 +12,7 @@ import 'package:get/get.dart';
 import 'package:rayo_taxi/features/client/presentation/getxs/get/get_client_getx.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/home_page/home_page.dart';
 import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
+import 'package:rayo_taxi/features/travel/data/models/travel/travel_alert_model.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/getcosttraveEntitie/getcosttravel_entitie.dart';
 import 'package:rayo_taxi/features/travel/presentation/Travelgetx/TravelAlert/travel_alert_getx.dart';
 import 'package:rayo_taxi/features/travel/presentation/Travelgetx/TravelAlert/travel_alert_getx.dart';
@@ -19,11 +20,13 @@ import 'package:rayo_taxi/features/travel/presentation/Travelgetx/TravelsAlert/t
 import 'package:rayo_taxi/features/travel/data/datasources/mapa_local_data_source.dart';
 import 'package:rayo_taxi/features/travel/domain/entities/travel.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/delete/delete_travel_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/getx/notification/CustomImage.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/notification/notificationcontroller.dart';
 import 'package:rayo_taxi/features/travel/presentation/getx/travel/travel_getx.dart';
 import 'package:rayo_taxi/common/theme/app_color.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/addTravel/MapLocationSelector/MapLocationSelectorModal.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/addTravel/map_data_controller.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/current_travel/current_travel_controller.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/Taxi_Info_card.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/calculate_price.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/customSnacknar.dart';
@@ -45,6 +48,7 @@ class MapController extends GetxController {
     required this.startLatLng,
     this.endLatLng,
     this.endAddress = '',
+    required this.travelList,              // Add this line
   });
 
   late GoogleMapController mapController;
@@ -85,11 +89,13 @@ class MapController extends GetxController {
   Completer<GoogleMapController> controllerCompleter = Completer();
 
   RxList<Map<String, String>> searchHistory = <Map<String, String>>[].obs;
+  late CurrentTravelController controller;   // Add this line
 
   RxString lottieUrl =
       'https://lottie.host/a811be92-b006-48ce-ad3e-c20bfffc3d7e/NzmrksnYZW.json'
           .obs;
   RxString modalText = 'Buscando chofer...'.obs;
+  final List<TravelAlertModel> travelList;  // Add this line
 
   @override
   void onInit() {
@@ -97,6 +103,7 @@ class MapController extends GetxController {
     connectivityService = ConnectivityService();
     endController.text = endAddress.isNotEmpty ? endAddress : endControllerText;
     startController.text = startAddress;
+  controller = Get.put(CurrentTravelController(travelList: travelList));  // Add this line
 
     startController.addListener(() {
       startAddressText.value = startController.text;
@@ -178,7 +185,7 @@ class MapController extends GetxController {
       startAddress: startAddr,
       startLatLng: startPos,
       endLatLng: endLatLng,
-      endAddress: endAddress,
+      endAddress: endAddress, travelList: [],
     ));
   }
 
@@ -573,35 +580,48 @@ class MapController extends GetxController {
                     child: SingleChildScrollView(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Obx(() => SizedBox(
-                                height: 300,
-                                child: Image.asset(
-                                  modalController.imageUrl.value,
-                                  fit: BoxFit.contain,
-                                ),
-                              )),
-                          SizedBox(height: 20),
-                          Obx(() => Align(
-                                alignment: Alignment.center,
-                                child: Text(
-                                  modalController.modalText.value,
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              )),
+                        children: <Widget>[ GetBuilder<ModalController>(
+        init: ModalController(),
+        builder: (modalController) => CustomLottieWidget(
+          controller: modalController,
+          onError: () {
+            // Manejar el error después de que el widget esté construido
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              modalController.isLottieError.value = true;
+            });
+          },
+        ),
+      ),
+  SizedBox(height: 20),
+
                           SizedBox(height: 20),
                           Obx(() {
                             final state = currentTravelGetx.state.value;
                             if (state is TravelAlertLoaded) {
                               final travel = state.travel.first;
-                              return CalculatePrice(
-                                travelDuration: travelDuration,
-                                travelPrice: travelPrice,
-                                fixedPrice: '\$${travel.cost} MXN',
-                                useFixedPrice: true,
-                              );
+                              return Obx(() {
+  final state = currentTravelGetx.state.value;
+  if (state is TravelAlertLoaded) {
+    final travel = state.travel.first;
+    return travel.id_status == 3 || travel.id_status == 4
+      ? TaxiInfoCard(
+          isDriverApproaching: true,
+          driverLocation: controller.driverLocation.value,
+          startLocation: controller.startLocation.value,
+          endLocation: controller.endLocation.value,
+          currentStatus: controller.idStatus.value,
+          travelDuration: controller.travelDuration,
+          travelPrice: controller.travelPrice,
+        )
+      : CalculatePrice(
+          travelDuration: travelDuration,
+          travelPrice: travelPrice,
+          fixedPrice: '\$${travel.cost} MXN',
+          useFixedPrice: true,
+        );
+  }
+  return const SizedBox.shrink();
+});
                             } else if (state is TravelAlertLoading) {
                               return CircularProgressIndicator();
                             } else if (state is TravelAlertFailure) {

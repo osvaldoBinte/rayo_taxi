@@ -50,7 +50,7 @@ class MapScreen extends StatelessWidget {
     final MapController controller = Get.put(MapController(
       endControllerText: endController.text,
       startAddress: startAddress,
-      startLatLng: startLatLng,
+      startLatLng: startLatLng, travelList: [],
     ));
     return WillPopScope(
         onWillPop: () async {

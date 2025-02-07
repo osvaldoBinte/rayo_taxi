@@ -314,37 +314,36 @@ class DestinoController extends GetxController {
       //  Get.snackbar('Error', 'No se pudo obtener la dirección');
     }
   }
+void navigateToMapScreen() {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!Get.isRegistered<ModalController>()) {
+      Get.put(ModalController());
+    }
 
-  void navigateToMapScreen() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      /* if (Get.isRegistered<MapController>()) {
-      final mapController = Get.find<MapController>();
-      mapController.cleanupController();
-      Get.delete<MapController>();
-    }*/
-if (!Get.isRegistered<ModalController>()) {
-  Get.put(ModalController());
+    var modalController = Get.find<ModalController>();
+    var notificationController = Get.find<NotificationController>();
+
+    notificationController.tripAccepted.value = false;
+    modalController.isLottieError.value = false;
+    modalController.lottieUrl.value = 'https://lottie.host/a811be92-b006-48ce-ad3e-c20bfffc3d7e/NzmrksnYZW.json';
+    modalController.imageUrl.value = 'assets/images/viajes/add_travel.gif';
+    modalController.modalText.value = 'Buscando chofer...';
+    notificationController.clearNotification();
+
+    if (selectedLatLng.value != null && selectedDescription.value != null) {
+      Get.to(
+        () => MapScreen(
+          endController: TextEditingController(text: selectedDescription.value),
+          startAddress: currentAddress.value,
+          startLatLng: currentLatLng.value,
+          endLatLng: selectedLatLng.value,
+        ),
+      );
+    } else {
+      Get.snackbar('Error', 'Por favor, selecciona un destino primero');
+    }
+  });
 }
-
-Get.find<NotificationController>().tripAccepted.value = false;
-Get.find<ModalController>().imageUrl.value = 'assets/images/viajes/add_travel.gif';
-Get.find<ModalController>().modalText.value = 'Buscando chofer...';
-Get.find<NotificationController>().clearNotification();
-      if (selectedLatLng.value != null && selectedDescription.value != null) {
-        Get.to(
-          () => MapScreen(
-            endController:
-                TextEditingController(text: selectedDescription.value),
-            startAddress: currentAddress.value,
-            startLatLng: currentLatLng.value,
-            endLatLng: selectedLatLng.value,
-          ),
-        );
-      } else {
-        Get.snackbar('Error', 'Por favor, selecciona un destino primero');
-      }
-    });
-  }
 
   void onMarkerDragEnd(LatLng newPosition) async {
     try {

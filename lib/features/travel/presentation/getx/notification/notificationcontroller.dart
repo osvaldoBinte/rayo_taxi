@@ -121,11 +121,12 @@ class NotificationController extends GetxController
       print('ERROR en background handler: $e');
     }
   }
-
 static Future<void> _handleTripAccepted(
     NotificationController notificationController,
     ModalController modalController) async {
   notificationController.tripAccepted.value = true;
+  modalController.isLottieError.value = false;
+  modalController.lottieUrl.value = 'https://lottie.host/4b6efc1d-1021-48a4-a3dd-df0eecbd8949/1CzFNvYv69.json';
   modalController.imageUrl.value = 'assets/images/viajes/viaje-aceptado.gif';
   modalController.modalText.value = 'Viaje aceptado, espera al conductor en el punto de encuentro';
 }
@@ -134,6 +135,8 @@ static Future<void> _handleNegotiatingrate(
     NotificationController notificationController,
     ModalController modalController) async {
   notificationController.tripAccepted.value = true;
+  modalController.isLottieError.value = false;
+  modalController.lottieUrl.value = 'https://lottie.host/6e431316-eca7-442c-8dc1-260ba57c2329/ds9skaDTtN.json';
   modalController.imageUrl.value = 'assets/images/viajes/viaje-desconocido.gif';
   modalController.modalText.value = 'El conductor ha recibido tu solicitud. Por favor, espera mientras se negocia la tarifa del viaje.';
 }
@@ -142,6 +145,8 @@ static Future<void> _handleTripStarted(
     NotificationController notificationController,
     ModalController modalController) async {
   notificationController.tripAccepted.value = true;
+  modalController.isLottieError.value = false;
+  modalController.lottieUrl.value = 'https://lottie.host/4a367cbb-4834-44ba-997a-9a8a62408a99/keSVai2cNe.json';
   modalController.imageUrl.value = 'assets/images/viajes/viaje-ha-comenzado.gif';
   modalController.modalText.value = 'Tu viaje ha comenzado';
 }
@@ -150,6 +155,8 @@ static Future<void> _handleTaxiArrived(
     NotificationController notificationController,
     ModalController modalController) async {
   notificationController.tripAccepted.value = true;
+  modalController.isLottieError.value = false;
+  modalController.lottieUrl.value = 'https://lottie.host/bcf4608b-5b35-4c48-b2c9-c0126124a159/CFerLgDKdO.json';
   modalController.imageUrl.value = 'assets/images/viajes/taxi-llego.gif';
   modalController.modalText.value = 'El taxi ha llegado al punto de encuentro';
 }
@@ -158,10 +165,11 @@ static Future<void> _handleTripEnded(
     NotificationController notificationController,
     ModalController modalController) async {
   notificationController.tripAccepted.value = true;
+  modalController.isLottieError.value = false;
+  modalController.lottieUrl.value = 'https://lottie.host/4b6efc1d-1021-48a4-a3dd-df0eecbd8949/1CzFNvYv69.json';
   modalController.imageUrl.value = 'assets/images/viajes/viaje-finalizado.gif';
   modalController.modalText.value = 'Tu viaje a terminado';
 }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
@@ -298,6 +306,8 @@ static Future<void> _handleTripEnded(
   }
 }
 class ModalController extends GetxController {
+  var lottieUrl = 'https://lottie.host/0430a89e-3317-4d46-8dc8-a8a090712c51/HnCUuYzAkG.lottie'.obs;
   var imageUrl = 'assets/images/viajes/add_travel.gif'.obs;
   var modalText = 'Buscando chofer...'.obs;
+  var isLottieError = false.obs;
 }
