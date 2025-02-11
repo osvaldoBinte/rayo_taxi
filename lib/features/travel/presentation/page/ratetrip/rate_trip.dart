@@ -210,15 +210,18 @@ class _ContentBoxState extends State<ContentBox> {
 
 Future<int?> showRateTripAlert(BuildContext context, TravelAlertModel travel) {
   if (travel.pending_qualification == 2) {
-     final RateTripController controller = Get.find<RateTripController>();
-
+    final RateTripController controller = Get.find<RateTripController>();
+    controller.resetState();
     
     return showDialog<int>(
       context: Get.context!,
       barrierDismissible: false,
-      builder: (BuildContext context) => RateTrip(
-        travel: travel,
-        controller: controller,
+      builder: (BuildContext context) => WillPopScope(
+        onWillPop: () async => false, 
+        child: RateTrip(
+          travel: travel,
+          controller: controller,
+        ),
       ),
     );
   }

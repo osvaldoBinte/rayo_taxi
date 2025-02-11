@@ -47,11 +47,16 @@ class MapScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+        final travelsAlertGetx = Get.find<TravelsAlertGetx>();
+
     final MapController controller = Get.put(MapController(
       endControllerText: endController.text,
       startAddress: startAddress,
-      startLatLng: startLatLng, travelList: [],
+      startLatLng: startLatLng,  travelList: travelsAlertGetx.state.value is TravelAlertLoaded 
+          ? (travelsAlertGetx.state.value as TravelAlertLoaded).travel
+          : [],
     ));
+    
     return WillPopScope(
         onWillPop: () async {
           return false;

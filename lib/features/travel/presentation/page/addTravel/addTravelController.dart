@@ -48,8 +48,10 @@ class MapController extends GetxController {
     required this.startLatLng,
     this.endLatLng,
     this.endAddress = '',
-    required this.travelList,              // Add this line
-  });
+    required List<TravelAlertModel> travelList,
+  }) {
+    _travelList.assignAll(travelList);
+  }
 
   late GoogleMapController mapController;
   final TravelGetx travelGetx = Get.find<TravelGetx>();
@@ -95,7 +97,9 @@ class MapController extends GetxController {
       'https://lottie.host/a811be92-b006-48ce-ad3e-c20bfffc3d7e/NzmrksnYZW.json'
           .obs;
   RxString modalText = 'Buscando chofer...'.obs;
-  final List<TravelAlertModel> travelList;  // Add this line
+    final RxList<TravelAlertModel> _travelList = <TravelAlertModel>[].obs;
+
+  List<TravelAlertModel> get travelList => _travelList.toList();
 
   @override
   void onInit() {
@@ -173,19 +177,26 @@ class MapController extends GetxController {
     LatLng? startPos, {
     LatLng? endLatLng,
     String endAddress = '',
+        List<TravelAlertModel>? travelList, // Hacer opcional pero con valor por defecto
+
   }) {
     if (Get.isRegistered<MapController>()) {
       final controller = Get.find<MapController>();
       controller.cleanupController();
       Get.delete<MapController>();
     }
-
-    return Get.put(MapController(
+final currentTravelGetx = Get.find<CurrentTravelGetx>();
+    final actualTravelList = travelList ?? 
+        (currentTravelGetx.state.value is TravelAlertLoaded 
+          ? (currentTravelGetx.state.value as TravelAlertLoaded).travel 
+          : []);
+     return Get.put(MapController(
       endControllerText: endText,
       startAddress: startAddr,
       startLatLng: startPos,
       endLatLng: endLatLng,
-      endAddress: endAddress, travelList: [],
+      endAddress: endAddress,
+      travelList: actualTravelList,
     ));
   }
 
@@ -585,7 +596,6 @@ class MapController extends GetxController {
         builder: (modalController) => CustomLottieWidget(
           controller: modalController,
           onError: () {
-            // Manejar el error después de que el widget esté construido
             WidgetsBinding.instance.addPostFrameCallback((_) {
               modalController.isLottieError.value = true;
             });
@@ -604,14 +614,11 @@ class MapController extends GetxController {
   if (state is TravelAlertLoaded) {
     final travel = state.travel.first;
     return travel.id_status == 3 || travel.id_status == 4
-      ? TaxiInfoCard(
-          isDriverApproaching: true,
-          driverLocation: controller.driverLocation.value,
-          startLocation: controller.startLocation.value,
-          endLocation: controller.endLocation.value,
-          currentStatus: controller.idStatus.value,
-          travelDuration: controller.travelDuration,
-          travelPrice: controller.travelPrice,
+      ?  CalculatePrice(
+          travelDuration: travelDuration,
+          travelPrice: travelPrice,
+          fixedPrice: '\$${travel.cost} MXN',
+          useFixedPrice: true,
         )
       : CalculatePrice(
           travelDuration: travelDuration,

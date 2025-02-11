@@ -17,13 +17,24 @@ class RateTripController extends GetxController {
 
   final RxString _error = ''.obs;
   String get error => _error.value;
+  
   final RxInt rating = 0.obs;
+
+  // Método para reiniciar el estado
+  void resetState() {
+    _isLoading.value = false;
+    _error.value = '';
+    rating.value = 0;
+  }
+
   void updateRating(int value) {
     rating.value = value;
   }
 
   Future<void> submitRating(TravelAlertModel travel, int rating) async {
     try {
+      if (_isLoading.value) return; // Prevenir múltiples envíos
+      
       _isLoading.value = true;
       _error.value = '';
 
@@ -33,6 +44,12 @@ class RateTripController extends GetxController {
       );
 
       await qualificationUsecase.execute(qualificationEntity);
+      
+      // Asegurarse de que el contexto aún existe antes de cerrar
+      if (Get.context != null && Navigator.canPop(Get.context!)) {
+        Navigator.of(Get.context!).pop();
+      }
+      
       await Get.find<NavigationService>().navigateToHome(selectedIndex: 0);
 
       CustomSnackBar.showSuccess(
@@ -40,20 +57,24 @@ class RateTripController extends GetxController {
         'Gracias por calificar tu viaje',
       );
     } catch (e) {
-      Navigator.of(Get.context!).pop();
-
       _error.value = e.toString();
+      if (Get.context != null && Navigator.canPop(Get.context!)) {
+        Navigator.of(Get.context!).pop();
+      }
       CustomSnackBar.showError(
         'Error',
         'No se pudo enviar la calificación',
       );
     } finally {
       _isLoading.value = false;
+      resetState(); // Reiniciar el estado después de completar
     }
   }
 
   Future<void> skipRating(TravelAlertModel travel) async {
     try {
+      if (_isLoading.value) return; // Prevenir múltiples envíos
+      
       _isLoading.value = true;
       _error.value = '';
 
@@ -63,6 +84,11 @@ class RateTripController extends GetxController {
       );
       await qualificationUsecase.execute(qualificationEntity);
 
+      // Asegurarse de que el contexto aún existe antes de cerrar
+      if (Get.context != null && Navigator.canPop(Get.context!)) {
+        Navigator.of(Get.context!).pop();
+      }
+      
       await Get.find<NavigationService>().navigateToHome(selectedIndex: 0);
     } catch (e) {
       _error.value = e.toString();
@@ -70,9 +96,18 @@ class RateTripController extends GetxController {
         'Error',
         'No se pudo omitir la calificación',
       );
-      Navigator.of(Get.context!).pop();
+      if (Get.context != null && Navigator.canPop(Get.context!)) {
+        Navigator.of(Get.context!).pop();
+      }
     } finally {
       _isLoading.value = false;
+      resetState(); // Reiniciar el estado después de completar
     }
+  }
+
+  @override
+  void onClose() {
+    resetState();
+    super.onClose();
   }
 }
