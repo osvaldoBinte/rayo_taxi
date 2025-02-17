@@ -41,7 +41,7 @@ class EmergencyButton extends GetView<AyudaController> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                    Icon(
-                    Icons.emergency_share,  
+                    Icons.local_hospital,  
                     color: Theme.of(context).colorScheme.buttontext,
                     size: 24,
                   ),
