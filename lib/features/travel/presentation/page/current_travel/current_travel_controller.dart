@@ -511,13 +511,9 @@ Future<void> _initializeMap() async {
         const ImageConfiguration(size: Size(48, 48)),
         isStartPlace ? 'assets/images/mapa/origen.png' : 'assets/images/mapa/destino.png',
       ),
-      infoWindow: InfoWindow(
-        title: title,
-        snippet: 'Toca para ver más detalles',
-        onTap: () {
+       onTap: () {
           _showLocationPreview(latLng, title);
         }
-      ),
     ),
   );
 }void _showLocationPreview(LatLng location, String title) {

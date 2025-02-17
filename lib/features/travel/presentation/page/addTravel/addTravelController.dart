@@ -432,11 +432,8 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
         ImageConfiguration(size: Size(10, 10)),
         isStartPlace ? 'assets/images/mapa/origen.png' : 'assets/images/mapa/destino.png',
       ),
-      infoWindow: InfoWindow(
-        title: title,
-        snippet: 'Toca para ver más detalles',
-        onTap: () => _showLocationPreview(snappedLocation, title)
-      ),
+              onTap: () => _showLocationPreview(snappedLocation, title)
+
     ),
   );
 

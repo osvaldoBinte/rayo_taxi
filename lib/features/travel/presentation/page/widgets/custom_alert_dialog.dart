@@ -45,6 +45,7 @@ class CustomAlertDialog extends StatelessWidget {
   }) : super(key: key);
 
   @override
+ @override
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(
@@ -52,15 +53,18 @@ class CustomAlertDialog extends StatelessWidget {
       ),
       elevation: 0,
       backgroundColor: Colors.transparent,
-      child: SingleChildScrollView( // Añadimos SingleChildScrollView aquí
-        child: Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.8, // Limitar altura máxima
-          ),
-          child: type == CustomAlertType.info
-              ? _buildInfoDialog(context)
-              : _buildStandardDialog(context),
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxHeight = MediaQuery.of(context).size.height * 0.85;
+          return Container(
+            constraints: BoxConstraints(
+              maxHeight: maxHeight,
+            ),
+            child: type == CustomAlertType.info
+                ? _buildInfoDialog(context)
+                : _buildStandardDialog(context),
+          );
+        },
       ),
     );
   }
@@ -209,7 +213,9 @@ class CustomAlertDialog extends StatelessWidget {
         ],
       ),
     );
-  }Widget _buildStandardDialog(BuildContext context) {
+  }
+  
+   Widget _buildStandardDialog(BuildContext context) {
     Color headerColor;
     Widget headerContent;
     
@@ -225,7 +231,6 @@ class CustomAlertDialog extends StatelessWidget {
     }
 
     return Container(
-      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -233,9 +238,9 @@ class CustomAlertDialog extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header con altura reducida
+          // Header (no scrolleable)
           Container(
-            height: 90, // Reducida aún más
+            height: 90,
             decoration: BoxDecoration(
               color: headerColor,
               borderRadius: const BorderRadius.only(
@@ -243,107 +248,108 @@ class CustomAlertDialog extends StatelessWidget {
                 topRight: Radius.circular(20),
               ),
             ),
-            child: Center(
-              child: headerContent,
-            ),
+            child: Center(child: headerContent),
           ),
-          // Content section con padding optimizado
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8), // Padding reducido
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (title.isNotEmpty) Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18, // Reducido más
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (title.isNotEmpty) const SizedBox(height: 6),
-                if (message.isNotEmpty) Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-                if (message.isNotEmpty) const SizedBox(height: 12),
-                if (customWidget != null) 
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.4, // Reducido de 0.5 a 0.4
+          
+          // Contenido (scrolleable)
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Título y mensaje
+                  if (title.isNotEmpty || message.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          if (title.isNotEmpty) 
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          if (title.isNotEmpty && message.isNotEmpty)
+                            const SizedBox(height: 8),
+                          if (message.isNotEmpty)
+                            Text(
+                              message,
+                              style: const TextStyle(fontSize: 14),
+                              textAlign: TextAlign.center,
+                            ),
+                        ],
+                      ),
                     ),
-                    child: SingleChildScrollView(
+                    
+                  // Widget personalizado
+                  if (customWidget != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: customWidget!,
                     ),
-                  ),
-                if ((confirmText.isNotEmpty || cancelText?.isNotEmpty == true) &&
-                    customWidget == null)
-                  _buildButtons(context),
-              ],
+                ],
+              ),
             ),
           ),
+          
+          // Botones (no scrolleable)
+          if ((confirmText.isNotEmpty || cancelText?.isNotEmpty == true) &&
+              customWidget == null)
+            Container(
+              padding: const EdgeInsets.all(16.0),
+            
+              child: _buildButtons(context),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildButtons(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(top: 4), // Reducido el margen superior
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Container(
-              height: 40, // Altura fija para el botón
-              child: TextButton(
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero, // Sin padding
-                ),
-                onPressed: onConfirm ?? () => Navigator.of(context).pop(),
-                child: Text(
-                  confirmText,
-                  style: const TextStyle(
-                    fontSize: 13, // Reducido el tamaño de fuente
-                    color: Colors.grey,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+   Widget _buildButtons(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        Expanded(
+          child: TextButton(
+            style: TextButton.styleFrom(
+              minimumSize: Size(0, 40),
+            ),
+            onPressed: onConfirm ?? () => Navigator.of(context).pop(),
+            child: Text(
+              confirmText,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
               ),
             ),
           ),
-          SizedBox(width: 8), // Espacio entre botones
-          Expanded(
-            child: Container(
-              height: 40, // Altura fija para el botón
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: EdgeInsets.zero, // Sin padding
-                ),
-                onPressed: onCancel ?? () => Navigator.of(context).pop(),
-                child: Text(
-                  cancelText ?? 'Cancelar',
-                  style: const TextStyle(
-                    fontSize: 13, // Reducido el tamaño de fuente
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+        ),
+        SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              minimumSize: Size(0, 40),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: onCancel ?? () => Navigator.of(context).pop(),
+            child: Text(
+              cancelText ?? 'Cancelar',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.white,
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
-
 }
 
 class AnimatedExclamationMark extends StatefulWidget {
