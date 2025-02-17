@@ -69,7 +69,6 @@ Future<void> logout() async {
   state.value = LoginclientInitial();
   
   try {
-    // Cierra sesión en Google si está activo
     final GoogleSignIn googleSignIn = GoogleSignIn();
     try {
       if (await googleSignIn.isSignedIn()) {
@@ -80,14 +79,11 @@ Future<void> logout() async {
       print("Error durante el cierre de sesión de Google: $e");
     }
     
-    // Limpia SharedPreferences
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Limpia todas las preferencias
+    await prefs.clear();
     
-    // Restablece el estado
     Get.find<UpdateGetx>().isPasswordAuthProvider.value = false;
     
-    // Cierra sesión en Firebase si hay una sesión activa
     try {
       await FirebaseAuth.instance.signOut();
     } catch (e) {

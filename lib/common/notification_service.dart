@@ -312,12 +312,20 @@ class NotificationService {
                 ],
               ),
             ),
-            Obx(() => Text(
-                  inputAmount.value.isNotEmpty
-                      ? 'Monto ofertado: \$${inputAmount.value}'
-                      : '',
-                  style: TextStyle(fontSize: 16),
-                )),
+            Obx(() {
+  if (inputAmount.value.isNotEmpty) {
+    String displayAmount = inputAmount.value.length > 6
+        ? '${inputAmount.value.substring(0, 6)}...' 
+        : inputAmount.value;  
+    return Text(
+      'Monto ofertado: \$${displayAmount}',
+      style: TextStyle(fontSize: 16),
+    );
+  } else {
+    return SizedBox();
+  }
+}),
+
             SizedBox(height: 10),
             TextField(
               controller: priceController,
@@ -325,7 +333,7 @@ class NotificationService {
               onChanged: (value) {
                 inputAmount.value = value;
                 final truncatedValue =
-                    value.length > 8 ? '${value.substring(0, 10)}...' : value;
+                    value.length > 5 ? '${value.substring(0, 5)}...' : value;
                 buttonText.value = value.isNotEmpty
                     ? "Ofertar \$${truncatedValue}"
                     : "Confirmar";

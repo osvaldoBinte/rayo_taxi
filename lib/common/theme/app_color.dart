@@ -17,6 +17,7 @@ extension CustomColorScheme on ColorScheme {
   Color get loader => Colors.black;
   Color get loaderbaseColor => Colors.grey[300]!;
 
+  Color get emergency => Colors.red;
 
   Color get iconred => Colors.red;
   Color get icongreen => Colors.green;
