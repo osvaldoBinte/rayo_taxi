@@ -23,14 +23,13 @@ class UpdateGetx extends GetxController {
   var isNewPasswordVisible = false.obs;
   var showPasswordFields = false.obs;
   var imagePath = RxnString();
-  var isPasswordAuthProvider = false.obs; // Cambiado a false por defecto
+  var isPasswordAuthProvider = false.obs; 
 
   UpdateGetx({required this.updateClientUsecase});
 
   @override
   void onInit() {
     super.onInit();
-    // Verificar el proveedor al iniciar
     checkAuthProvider();
   }
 

@@ -9,6 +9,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';
+import 'package:quickalert/quickalert.dart';
+import 'package:rayo_taxi/common/constants/constants.dart';
+import 'package:rayo_taxi/common/widge/calcular_precio_dialogo.dart';
 import 'package:rayo_taxi/features/client/presentation/getxs/get/get_client_getx.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/home_page/home_page.dart';
 import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
@@ -28,7 +31,7 @@ import 'package:rayo_taxi/features/travel/presentation/page/addTravel/MapLocatio
 import 'package:rayo_taxi/features/travel/presentation/page/addTravel/map_data_controller.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/current_travel/current_travel_controller.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/Taxi_Info_card.dart';
-import 'package:rayo_taxi/features/travel/presentation/page/widgets/calculate_price.dart';
+import 'package:rayo_taxi/common/widge/calculate_price.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/customSnacknar.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -36,6 +39,8 @@ import '../../../../AuthS/connectivity_service.dart';
 import '../../Travelgetx/TravelAlert/travel_alert_getx.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io' show Platform;
+
 class MapController extends GetxController {
   final String endControllerText;
   final String startAddress;
@@ -53,6 +58,7 @@ class MapController extends GetxController {
   }) {
     _travelList.assignAll(travelList);
   }
+     String _apiKey = AppConstants.apikey;
 
   late GoogleMapController mapController;
   final TravelGetx travelGetx = Get.find<TravelGetx>();
@@ -67,7 +73,7 @@ class MapController extends GetxController {
   RxSet<Polyline> polylines = <Polyline>{}.obs;
   Rxn<LatLng> startLocation = Rxn<LatLng>();
   Rxn<LatLng> endLocation = Rxn<LatLng>();
-  Rx<LatLng> center = const LatLng(20.676666666667, -103.39182).obs;
+  Rx<LatLng> center = const LatLng(20.5888, -100.3899).obs;
   RxString buttonText = "Buscar conductor".obs;
   RxList<dynamic> startPredictions = <dynamic>[].obs;
   RxList<dynamic> endPredictions = <dynamic>[].obs;
@@ -259,8 +265,8 @@ final currentTravelGetx = Get.find<CurrentTravelGetx>();
 
 Future<LatLng> snapToRoad(LatLng point) async {
   try {
-    final String apiKey = 'AIzaSyBAVJDSpCXiLRhVTq-MA3RgZqbmxm1wD1I'; 
-    final url = 'https://roads.googleapis.com/v1/nearestRoads?points=${point.latitude},${point.longitude}&key=$apiKey';
+
+    final url = 'https://roads.googleapis.com/v1/nearestRoads?points=${point.latitude},${point.longitude}&key=${_apiKey}';
     
     final response = await http.get(Uri.parse(url));
     
@@ -416,6 +422,7 @@ Future<LatLng> snapToRoad(LatLng point) async {
       addMarker(startLatLng!, true);
     }
   }
+
 void addMarker(LatLng latLng, bool isStartPlace) async {
   // Primero, ajustar el punto a la calle más cercana
   final LatLng snappedLocation = await snapToRoad(latLng);
@@ -423,17 +430,39 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
   final markerId = isStartPlace ? MarkerId('start') : MarkerId('destination');
   final title = isStartPlace ? 'Inicio' : 'Destino';
 
+  // Determinar la ruta de la imagen según la plataforma
+  String imagePath;
+  if (isStartPlace) {
+    imagePath = Platform.isAndroid 
+      ? 'assets/images/mapa/origen-android.png' 
+      : 'assets/images/mapa/origen-ios.png';
+  } else {
+    imagePath = Platform.isAndroid 
+      ? 'assets/images/mapa/destino-android.png' 
+      : 'assets/images/mapa/destino-ios.png';
+  }
+
+  BitmapDescriptor markerIcon;
+  try {
+    markerIcon = await BitmapDescriptor.fromAssetImage(
+      ImageConfiguration(size: Size(10, 10)),
+      imagePath,
+    );
+  } catch (e) {
+    print('Error cargando icono personalizado: $e');
+    // Usar iconos predeterminados como respaldo
+    markerIcon = isStartPlace 
+      ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen) 
+      : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+  }
+
   markers.removeWhere((m) => m.markerId == markerId);
   markers.add(
     gmaps.Marker(
       markerId: markerId,
       position: snappedLocation, // Usar la ubicación ajustada
-      icon: await BitmapDescriptor.fromAssetImage(
-        ImageConfiguration(size: Size(10, 10)),
-        isStartPlace ? 'assets/images/mapa/origen.png' : 'assets/images/mapa/destino.png',
-      ),
-              onTap: () => _showLocationPreview(snappedLocation, title)
-
+      icon: markerIcon,
+      onTap: () => _mapDataController.showLocationPreview(snappedLocation, title)
     ),
   );
 
@@ -447,162 +476,6 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
     traceRoute();
   }
 }
-void _showLocationPreview(LatLng location, String title) {
-  final colorScheme = Theme.of(Get.context!).colorScheme;
-  final String streetViewUrl = 'https://maps.googleapis.com/maps/api/streetview?'
-    'size=600x400'
-    '&location=${location.latitude},${location.longitude}'
-    '&fov=90'
-    '&heading=70'
-    '&pitch=0'
-    '&key=AIzaSyBAVJDSpCXiLRhVTq-MA3RgZqbmxm1wD1I';
-
-  Get.dialog(
-    Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        width: Get.width * 0.85,
-        decoration: BoxDecoration(
-          color: colorScheme.card,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 10,
-              offset: Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Cabecera
-            Container(
-              padding: EdgeInsets.fromLTRB(20, 16, 8, 16),
-              decoration: BoxDecoration(
-                color: colorScheme.backgroundColor,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.textButton,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close, color: colorScheme.CurvedNavigationIcono2),
-                    onPressed: () => Get.back(),
-                  ),
-                ],
-              ),
-            ),
-            // Contenedor de imagen
-            Container(
-              height: Get.height * 0.3,
-              margin: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colorScheme.loaderbaseColor),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 5,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.network(
-                      streetViewUrl,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: colorScheme.loaderbaseColor,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.loader),
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded / 
-                                    loadingProgress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: colorScheme.loaderbaseColor,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.image_not_supported_outlined,
-                                size: 48,
-                                color: colorScheme.icongrey,
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Vista no disponible',
-                                style: TextStyle(
-                                  color: colorScheme.snackBartext2,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    // Overlay con coordenadas
-                  
-                  ],
-                ),
-              ),
-            ),
-            // Botones de acción
-            Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                 
-                  SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () => Get.back(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.buttonColormap,
-                      foregroundColor: colorScheme.textButton,
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text('Cerrar'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-    barrierColor: Colors.black54,
-  );
-}
-
   void onMarkerDragEnd(LatLng newPosition, bool isStartPlace) async {
     try {
       List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -681,224 +554,306 @@ void _showLocationPreview(LatLng location, String title) {
         print('Error al trazar la ruta: $e');
       }
     }
+  }void showRouteDetails(BuildContext context) async {
+  if (isModalOpen.value) {
+    return;
   }
 
-  void showRouteDetails(BuildContext context) async {
-    if (isModalOpen.value) {
+  // Verificar si origen y destino son iguales
+  if (startLocation.value != null && endLocation.value != null) {
+    // Calcular la distancia entre los puntos
+    double distanceBetweenPoints = Geolocator.distanceBetween(
+      startLocation.value!.latitude,
+      startLocation.value!.longitude,
+      endLocation.value!.latitude,
+      endLocation.value!.longitude,
+    );
+    
+    // Si la distancia es menor a 100 metros, considerarlos como el mismo lugar
+    if (distanceBetweenPoints < 100) {
+      QuickAlert.show(
+        context: Get.context!,
+        type: QuickAlertType.info,
+        title: 'Ubicaciones Iguales',
+        text: 'El origen y destino no pueden ser la misma ubicación. Por favor, selecciona ubicaciones diferentes.',
+        confirmBtnText: 'Entendido',
+        confirmBtnColor: Theme.of(context).colorScheme.buttonColor,
+      );
       return;
     }
-
-    Get.dialog(
-      Container(
-        color: Theme.of(context).colorScheme.loader.withOpacity(0.5),
-        child: Center(
-          child: SpinKitFadingCube(
-            color: Theme.of(context).colorScheme.loader,
-            size: 50.0,
-          ),
-        ),
-      ),
-      barrierDismissible: false,
-    );
-
-    RxBool isCancelling = false.obs;
-
-    try {
-      if (startLocation.value != null && endLocation.value != null) {
-        if (!isTravelRequested.value &&
-            !notificationController.tripAccepted.value) {
-          isTravelRequested.value = true;
-          isModalOpen.value = true;
-          canShowDirectionModal.value = false;
-
-          double distance = _mapDataController.calculateDistance(
-              startLocation.value!, endLocation.value!);
-          double duration = _mapDataController.getDuration();
-          List<Placemark> placemarks = await placemarkFromCoordinates(
-            startLocation.value!.latitude,
-            startLocation.value!.longitude,
-          );
-          String state = '';
-          String municipality = '';
-          if (placemarks.isNotEmpty) {
-            Placemark placemark = placemarks.first;
-            state = placemark.administrativeArea ?? '';
-            municipality = placemark.locality ?? '';
-          }
-
-          final post = Travel(
-            start_longitude: startLocation.value!.longitude,
-            start_latitude: startLocation.value!.latitude,
-            end_longitude: endLocation.value!.longitude,
-            end_latitude: endLocation.value!.latitude,
-            kilometers: distance.toStringAsFixed(2),
-            duration: duration.toStringAsFixed(2),
-            state: state,
-            municipality: municipality,
-          );
-
-          await travelGetx.poshTravel(CreateTravelEvent(post));
-          await currentTravelGetx.fetchCoDetails(FetchgetDetailsssEvent());
-        }
-        await currentTravelGetx.fetchCoDetails(FetchgetDetailsssEvent());
-
-        Get.back();
-
-        Get.bottomSheet(
-          WillPopScope(
-            onWillPop: () async {
-              return false;
-            },
-            child: FractionallySizedBox(
-              heightFactor: 0.75,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20),
-                ),
-                child: SizedBox.expand(
-                  child: Container(
-                    color: Theme.of(context).colorScheme.card,
-                    padding: EdgeInsets.all(20),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[ GetBuilder<ModalController>(
-        init: ModalController(),
-        builder: (modalController) => CustomLottieWidget(
-          controller: modalController,
-          onError: () {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              modalController.isLottieError.value = true;
-            });
-          },
-        ),
-      ),
-  SizedBox(height: 20),
-
-                          SizedBox(height: 20),
-                          Obx(() {
-                            final state = currentTravelGetx.state.value;
-                            if (state is TravelAlertLoaded) {
-                              final travel = state.travel.first;
-                              return Obx(() {
-  final state = currentTravelGetx.state.value;
-  if (state is TravelAlertLoaded) {
-    final travel = state.travel.first;
-    return travel.id_status == 3 || travel.id_status == 4
-      ?  CalculatePrice(
-          travelDuration: travelDuration,
-          travelPrice: travelPrice,
-          fixedPrice: '\$${travel.cost} MXN',
-          useFixedPrice: true,
-        )
-      : CalculatePrice(
-          travelDuration: travelDuration,
-          travelPrice: travelPrice,
-          fixedPrice: '\$${travel.cost} MXN',
-          useFixedPrice: true,
-        );
   }
-  return const SizedBox.shrink();
-});
-                            } else if (state is TravelAlertLoading) {
-                              return CircularProgressIndicator();
-                            } else if (state is TravelAlertFailure) {
-                              return Text(
-                                'Calculando...',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              );
-                            } else {
-                              return SizedBox.shrink();
-                            }
-                          }),
-                          SizedBox(height: 20),
-                          Obx(() {
-                            return notificationController.tripAccepted.value
-                                ? SizedBox.shrink()
-                                : ElevatedButton(
-                                    onPressed: isCancelling.value
-                                        ? null
-                                        : () async {
-                                            if (isCancelling.value) return;
-                                            isCancelling.value = true;
-                                            canShowDirectionModal.value = true;
-                                            try {
-                                              int? savedTravelId =
-                                                  await getSavedTravelId();
-                                              if (savedTravelId != null) {
-                                                await deleteTravelGetx
-                                                    .deleteTravel(
-                                                        DeleteTravelEvent(
-                                                            savedTravelId
-                                                                .toString()));
-                                                isTravelRequested.value = false;
-                                                Get.back();
-                                              } else {
-                                                CustomSnackBar.showError(
-                                                  'Error',
-                                                  'No se encontró un ID de viaje válido',
-                                                );
-                                              }
-                                            } catch (e) {
-                                              CustomSnackBar.showError(
-                                                'Error',
-                                                'Error al cancelar el viaje',
-                                              );
-                                            } finally {
-                                              isCancelling.value = false;
-                                            }
-                                          },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Theme.of(context)
-                                          .colorScheme
-                                          .buttonColor,
-                                      foregroundColor: Theme.of(context)
-                                          .colorScheme
-                                          .buttontext,
-                                      disabledBackgroundColor: Theme.of(context)
-                                          .colorScheme
-                                          .buttonColor
-                                          .withOpacity(0.5),
-                                    ),
-                                    child: Text(isCancelling.value
-                                        ? 'Cancelando...'
-                                        : 'Cancelar viaje'),
-                                  );
-                          })
-                        ],
+
+  Get.dialog(
+    Container(
+      color: Theme.of(context).colorScheme.loader.withOpacity(0.5),
+      child: Center(
+        child: SpinKitFadingCube(
+          color: Theme.of(context).colorScheme.loader,
+          size: 50.0,
+        ),
+      ),
+    ),
+    barrierDismissible: false,
+  );
+
+  RxBool isCancelling = false.obs;
+
+  try {
+    if (startLocation.value != null && endLocation.value != null) {
+      if (!isTravelRequested.value &&
+          !notificationController.tripAccepted.value) {
+        isTravelRequested.value = true;
+        isModalOpen.value = true;
+        canShowDirectionModal.value = false;
+
+        double distance = _mapDataController.calculateDistance(
+            startLocation.value!, endLocation.value!);
+        double duration = _mapDataController.getDuration();
+        List<Placemark> placemarks = await placemarkFromCoordinates(
+          startLocation.value!.latitude,
+          startLocation.value!.longitude,
+        );
+        String state = '';
+        String municipality = '';
+        if (placemarks.isNotEmpty) {
+          Placemark placemark = placemarks.first;
+          state = placemark.administrativeArea ?? '';
+          municipality = placemark.locality ?? '';
+        }
+
+        final post = Travel(
+          start_longitude: startLocation.value!.longitude,
+          start_latitude: startLocation.value!.latitude,
+          end_longitude: endLocation.value!.longitude,
+          end_latitude: endLocation.value!.latitude,
+          kilometers: distance.toStringAsFixed(2),
+          duration: duration.toStringAsFixed(2),
+          state: state,
+          municipality: municipality,
+        );
+
+        await travelGetx.poshTravel(CreateTravelEvent(post));
+        await currentTravelGetx.fetchCoDetails(FetchgetDetailsssEvent());
+      }
+      await currentTravelGetx.fetchCoDetails(FetchgetDetailsssEvent());
+
+      Get.back();
+
+      Get.bottomSheet(
+        WillPopScope(
+          onWillPop: () async {
+            return false;
+          },
+          child: FractionallySizedBox(
+            heightFactor: 0.75,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+              child: SizedBox.expand(
+                child: Container(
+                  color: Theme.of(context).colorScheme.card,
+                  padding: EdgeInsets.all(20),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Center(
+                        child: Container(
+                          height: 5,
+                          width: 50,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).primaryColor,
+                            borderRadius: BorderRadius.circular(2.5),
+                          ),
+                        ),
                       ),
+                        GetBuilder<ModalController>(
+                          init: ModalController(),
+                          builder: (modalController) => CustomLottieWidget(
+                            controller: modalController,
+                            onError: () {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                modalController.isLottieError.value = true;
+                              });
+                            },
+                          ),
+                        ),
+                        SizedBox(height: 20),
+
+                        // Implementación directa del cálculo de precio
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(15.0),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 10.0,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Image.asset(
+                                'assets/images/Logo_client.png',
+                                height: 40.0,
+                                width: 40.0,
+                                fit: BoxFit.contain,
+                              ),
+                              const SizedBox(width: 10.0),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Taxi',
+                                      style: TextStyle(
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5.0),
+                                    ValueListenableBuilder<double>(
+                                      valueListenable: travelDuration,
+                                      builder: (context, duration, child) {
+                                        return Text(
+                                          'El tiempo estimado de tu viaje es de ${duration.toStringAsFixed(0)} minutos',
+                                          style: TextStyle(
+                                            fontSize: 14.0,
+                                            color: Colors.grey[700],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    Builder(
+                                      builder: (context) {
+                                        String priceText = 'Calculando precio...';
+                                        
+                                        if (travelPrice.value.isNotEmpty) {
+                                          priceText = travelPrice.value;
+                                        }
+                                        
+                                        // Intentar obtener el precio desde el estado si está disponible
+                                        try {
+                                          final state = currentTravelGetx.state.value;
+                                          if (state is TravelAlertLoaded && 
+                                              state.travel.isNotEmpty && 
+                                              state.travel.first.cost != null) {
+                                            priceText = '\$${state.travel.first.cost} MXN';
+                                          }
+                                        } catch (e) {
+                                          print('Error al obtener precio: $e');
+                                        }
+                                        
+                                        return Text(
+                                          priceText,
+                                          style: const TextStyle(
+                                            fontSize: 18.0,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        SizedBox(height: 20),
+                        
+                        Obx(() {
+                          return notificationController.tripAccepted.value
+                              ? SizedBox.shrink()
+                              : ElevatedButton(
+                                  onPressed: isCancelling.value
+                                      ? null
+                                      : () async {
+                                          if (isCancelling.value) return;
+                                          isCancelling.value = true;
+                                          canShowDirectionModal.value = true;
+                                          try {
+                                            int? savedTravelId =
+                                                await getSavedTravelId();
+                                            if (savedTravelId != null) {
+                                              await deleteTravelGetx
+                                                  .deleteTravel(
+                                                      DeleteTravelEvent(
+                                                          savedTravelId
+                                                              .toString()));
+                                              isTravelRequested.value = false;
+                                              Get.back();
+                                            } else {
+                                              CustomSnackBar.showError(
+                                                '¡Ups!',
+                                                'No se encontró un ID de viaje válido',
+                                              );
+                                            }
+                                          } catch (e) {
+                                            CustomSnackBar.showError(
+                                              '¡Ups!',
+                                              'Error al cancelar el viaje',
+                                            );
+                                          } finally {
+                                            isCancelling.value = false;
+                                          }
+                                        },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .buttonColor,
+                                    foregroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .buttontext,
+                                    disabledBackgroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .buttonColor
+                                        .withOpacity(0.5),
+                                  ),
+                                  child: Text(isCancelling.value
+                                      ? 'Cancelando...'
+                                      : 'Cancelar viaje'),
+                                );
+                        }),
+                        
+                        SizedBox(height: 20),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
           ),
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-        ).whenComplete(() {
-          isModalOpen.value = false;
-        });
-      } else {
-        Get.back();
-
-        CustomSnackBar.showError(
-          'Error',
-          'Por favor, ingresa la dirección de inicio y destino.',
-        );
-      }
-    } catch (e) {
+        ),
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+      ).whenComplete(() {
+        isModalOpen.value = false;
+      });
+    } else {
       Get.back();
 
       CustomSnackBar.showError(
-        'Error',
-        'Ocurrió un error al procesar tu solicitud.',
+        '¡Ups!',
+        'Por favor, ingresa la dirección de inicio y destino.',
       );
     }
-  }
+  } catch (e) {
+    Get.back();
 
+    CustomSnackBar.showError(
+      '¡Ups!',
+      'Ocurrió un error al procesar tu solicitud.',
+    );
+  }
+}
   Future<void> searchPlace(String input, {required bool isStartPlace}) async {
     if (input.isEmpty) {
       if (isStartPlace)

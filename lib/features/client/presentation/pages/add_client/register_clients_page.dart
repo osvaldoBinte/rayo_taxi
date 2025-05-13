@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:rayo_taxi/features/client/domain/entities/client.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/add_client/addclient/client_getx.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/add_client/get_genders_controller/get_genders_getx.dart';
-import 'package:rayo_taxi/features/client/presentation/pages/login_clients_page.dart'; // Importa la página de login
+import 'package:rayo_taxi/features/client/presentation/pages/login/login_clients_page.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:rayo_taxi/common/theme/app_color.dart';
 
@@ -27,8 +27,51 @@ class _RegisterClientsPageState extends State<RegisterClientsPage> {
   void initState() {
     super.initState();
     _gendersGetx.fetchCoDetailsGetGenders(FetchgetDetailsEvent());
+    
+    // Suscribirse a cambios en el estado para mostrar alertas
+    ever(_clientGetx.state, (state) {
+      if (state is ClientCreatedSuccessfully) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'Registro exitoso',
+          text: 'Ahora puede iniciar sesión',
+          onConfirmBtnTap: () {
+            Get.offAll(() => LoginClientsPage());
+          },
+        );
+        _clientGetx.state.value = ClientInitial();
+      } else if (state is ClientCreationFailure) {
+        final errorMsg = state.error;
+        if (errorMsg.contains("El email ya existe")) {
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            title: 'Error en el registro',
+            text: 'El correo electrónico ya está registrado. Por favor utilice otro o inicie sesión.',
+          );
+        } else {
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            title: 'Error en el registro',
+            text: errorMsg,
+          );
+        }
+        _clientGetx.state.value = ClientInitial();
+      }
+    });
   }
-Widget _buildLoadingOverlay() {
+
+  @override
+  void dispose() {
+    // Limpiar suscriptores para evitar memory leaks
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    super.dispose();
+  }
+
+  Widget _buildLoadingOverlay() {
     return Container(
       color: Theme.of(context).colorScheme.loader.withOpacity(0.5),
       child: Center(
@@ -39,6 +82,7 @@ Widget _buildLoadingOverlay() {
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -60,8 +104,7 @@ Widget _buildLoadingOverlay() {
             color: Theme.of(context).colorScheme.backgroundColorLogin,
             child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
-                double availableHeight =
-                    constraints.maxHeight * 0.15; // 15% del espacio disponible
+                double availableHeight = constraints.maxHeight * 0.15;
                 return Align(
                   alignment: Alignment.topCenter,
                   child: Padding(
@@ -69,9 +112,8 @@ Widget _buildLoadingOverlay() {
                     child: Image.asset(
                       'assets/images/logo-new.png',
                       width: screenWidth * 0.8,
-                      height: availableHeight, // Ajustar la altura disponible
-                      fit: BoxFit
-                          .contain, // Mantener la imagen completa sin recortes
+                      height: availableHeight,
+                      fit: BoxFit.contain,
                     ),
                   ),
                 );
@@ -87,8 +129,7 @@ Widget _buildLoadingOverlay() {
               ),
               child: Container(
                 color: Colors.white,
-                height:
-                    screenHeight * 0.65, 
+                height: screenHeight * 0.65,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 16.0, vertical: 20.0),
                 child: SingleChildScrollView(
@@ -178,57 +219,54 @@ Widget _buildLoadingOverlay() {
                           },
                         ),
                         SizedBox(height: 20),
-                 Obx(() {
-  if (_gendersGetx.state.value is GetGendersLoading) {
-    return CircularProgressIndicator();
-  } else if (_gendersGetx.state.value is GetGendersLoaded) {
-    var genders = (_gendersGetx.state.value as GetGendersLoaded).genders;
+                        Obx(() {
+                          if (_gendersGetx.state.value is GetGendersLoading) {
+                            return CircularProgressIndicator();
+                          } else if (_gendersGetx.state.value is GetGendersLoaded) {
+                            var genders = (_gendersGetx.state.value as GetGendersLoaded).genders;
 
-    return DropdownButtonFormField<int>(
-      value: _clientGetx.selectedGenderId.value, // Valor actual de selectedGenderId
-      decoration: InputDecoration(
-        labelText: 'Género',
-        labelStyle: TextStyle(color: Colors.black.withOpacity(0.7)),
-        prefixIcon: Icon(Icons.person_outline, color: Colors.grey[600]),
-        filled: true,
-        fillColor: Colors.grey[200],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      items: genders.map((gender) {
-        return DropdownMenuItem<int>(
-          value: gender.id,
-          child: Text(gender.label),
-        );
-      }).toList(),
-      onChanged: (value) {
-        _clientGetx.selectedGenderId.value = value; // Actualiza el estado reactivo
-        print("Género seleccionado: $value"); // Log para verificar el valor
-      },
-      validator: (value) {
-        if (value == null) {
-          return 'Por favor seleccione su género';
-        }
-        return null;
-      },
-    );
-  } else if (_gendersGetx.state.value is GetGendersFailure) {
-    return Text('Error al cargar géneros');
-  } else {
-    return SizedBox.shrink();
-  }
-}),
-
+                            return DropdownButtonFormField<int>(
+                              value: _clientGetx.selectedGenderId.value,
+                              decoration: InputDecoration(
+                                labelText: 'Género',
+                                labelStyle: TextStyle(color: Colors.black.withOpacity(0.7)),
+                                prefixIcon: Icon(Icons.person_outline, color: Colors.grey[600]),
+                                filled: true,
+                                fillColor: Colors.grey[200],
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              items: genders.map((gender) {
+                                return DropdownMenuItem<int>(
+                                  value: gender.id,
+                                  child: Text(gender.label),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                _clientGetx.selectedGenderId.value = value;
+                              },
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'Por favor seleccione su género';
+                                }
+                                return null;
+                              },
+                            );
+                          } else if (_gendersGetx.state.value is GetGendersFailure) {
+                            return Text('Error al cargar géneros');
+                          } else {
+                            return SizedBox.shrink();
+                          }
+                        }),
                         SizedBox(height: 20),
                         Obx(() {
                           return _buildPasswordFormField(
                             controller: _clientGetx.passwordController,
                             label: 'Contraseña',
                             icon: Icons.lock,
-                            obscureText: !_clientGetx.isPasswordVisible
-                                .value, 
+                            obscureText: !_clientGetx.isPasswordVisible.value,
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _clientGetx.isPasswordVisible.value
@@ -236,8 +274,7 @@ Widget _buildLoadingOverlay() {
                                     : Icons.visibility_off,
                                 color: Colors.grey[600],
                               ),
-                              onPressed: _clientGetx
-                                  .togglePasswordVisibility, 
+                              onPressed: _clientGetx.togglePasswordVisibility,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -249,7 +286,11 @@ Widget _buildLoadingOverlay() {
                         }),
                         SizedBox(height: 20),
                         ElevatedButton(
-                          onPressed: () => _clientGetx.registerClient(),
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              _clientGetx.registerClient();
+                            }
+                          },
                           child: Text(
                             'Registrarse',
                             style: TextStyle(
@@ -263,48 +304,6 @@ Widget _buildLoadingOverlay() {
                           ),
                         ),
                         SizedBox(height: 20),
-                        Obx(() {
-                          if (_clientGetx.state.value is ClientLoading) {
-                            return Stack(
-                              children: [
-                                _buildLoadingOverlay(),
-                                
-                              ],
-                            );
-                          } else if (_clientGetx.state.value
-                              is ClientCreatedSuccessfully) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              QuickAlert.show(
-                                context: context,
-                                type: QuickAlertType.success,
-                                title: 'Registro exitoso',
-                                text: 'Ahora puede iniciar sesión',
-                                onConfirmBtnTap: () {
-                                  Get.offAll(() => LoginClientsPage());
-                                },
-                              );
-                            });
-                            _clientGetx.state.value = ClientInitial();
-                            return SizedBox.shrink();
-                          } else if (_clientGetx.state.value
-                              is ClientCreationFailure) {
-                            final errorState = _clientGetx.state.value
-                                as ClientCreationFailure;
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              QuickAlert.show(
-                                context: context,
-                                type: QuickAlertType.error,
-                                title: 'Error en el registro',
-                                text: errorState.error,
-                              );
-                            });
-                            _clientGetx.state.value = ClientInitial();
-                            return SizedBox.shrink();
-                          } else {
-                            return SizedBox.shrink();
-                          }
-                        }),
-                         
                       ],
                     ),
                   ),
@@ -312,7 +311,8 @@ Widget _buildLoadingOverlay() {
               ),
             ),
           ),
-           Obx(() {
+          // Overlay para estado de carga
+          Obx(() {
             if (_clientGetx.state.value is ClientLoading) {
               return _buildLoadingOverlay();
             }
@@ -344,6 +344,7 @@ Widget _buildLoadingOverlay() {
         labelText: label,
         labelStyle: TextStyle(color: Colors.black.withOpacity(0.7)),
         prefixIcon: Icon(icon, color: Colors.grey[600]),
+        suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.grey[200],
         border: OutlineInputBorder(
@@ -369,7 +370,7 @@ Widget _buildLoadingOverlay() {
     VoidCallback? onTap,
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
-    Widget? suffixIcon, // Añadido para el ícono dinámico
+    Widget? suffixIcon,
     required String? Function(String?) validator,
   }) {
     return TextFormField(
@@ -378,7 +379,7 @@ Widget _buildLoadingOverlay() {
         labelText: label,
         labelStyle: TextStyle(color: Colors.black.withOpacity(0.7)),
         prefixIcon: Icon(icon, color: Colors.grey[600]),
-        suffixIcon: suffixIcon, // Asignamos el ícono al campo
+        suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.grey[200],
         border: OutlineInputBorder(

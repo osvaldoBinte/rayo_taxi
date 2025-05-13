@@ -41,7 +41,7 @@ class DestinoPage extends StatelessWidget {
                 onCameraMove: controller.onCameraMove,
                 initialCameraPosition: CameraPosition(
                   target: controller.currentLatLng.value ??
-                      const LatLng(20.6596988, -103.3496092),
+                      const LatLng(20.5888, -100.389),
                   zoom: 15,
                 ),
                 markers: controller.markers,

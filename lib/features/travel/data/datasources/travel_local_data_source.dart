@@ -19,7 +19,7 @@ import '../models/device/device_model.dart';
 import 'dart:convert';
 
 abstract class NotificationLocalDataSource {
-  Future<void> updateIdDevice();
+  Future<void> updateIdDevice(String? tokenDevice);
   Future<List<TravelAlertModel>> getNotification(bool connection);
   Future<List<TravelAlertModel>> current_travel();
   Future<String?> fetchDeviceId();
@@ -45,13 +45,10 @@ class NotificationLocalDataSourceImp implements NotificationLocalDataSource {
   late Device device;
 
   @override
-  Future<void> updateIdDevice() async {
+  Future<void> updateIdDevice(String? tokenDevice) async {
     String? savedToken = await AuthService().getToken();
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
-    String? token = await messaging.getToken();
-    print('Device Token: $token');
-
-    device = Device(id_device: token);
+   
+    device = Device(id_device: tokenDevice);
 
     var response = await http.put(
       Uri.parse('$_baseUrl/api/app_clients/users/clients/device'),

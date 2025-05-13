@@ -8,7 +8,7 @@ import 'package:rayo_taxi/features/travel/domain/entities/travelwithtariffEntiti
 import '../../data/models/travel/travel_alert_model.dart';
 
 abstract class NotificationRepository {
-  Future<void> updateIdDevice();
+  Future<void> updateIdDevice(String? tokenDevice);
   Future<List<TravelAlertModel>> getNotification(bool connection);
   Future<List<TravelAlertModel>> current_travel();
   Future<String?> fetchDeviceId();

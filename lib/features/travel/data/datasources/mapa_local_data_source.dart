@@ -22,6 +22,7 @@ abstract class TravelLocalDataSource {
   Future<String> getEncodedPoints();
   Future<Map<String, dynamic>> getPlaceDetails(String placeId);
    double getDuration();
+  double getRouteDuration() ;
 
 
 
@@ -39,51 +40,68 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
   double _routeDuration =
       0.0; 
   static const String _searchHistoryKey = 'search_history';
+  final Map<String, dynamic> _routeCache = {};
 
-  @override
+ @override
   Future<void> getRoute(LatLng startLocation, LatLng endLocation) async {
-  final String url =
-      'https://maps.googleapis.com/maps/api/directions/json?origin=${startLocation.latitude},${startLocation.longitude}&destination=${endLocation.latitude},${endLocation.longitude}&key=$_apiKey';
-
-  print('--- Solicitando ruta ---');
-  print('URL de la solicitud: $url');
-
-  try {
-    final response = await http.get(Uri.parse(url));
-
-    print('Código de estado de la respuesta: ${response.statusCode}');
-
-    print('Cuerpo de la respuesta: ${response.body}');
-
-    if (response.statusCode == 200) {
-      final result = json.decode(response.body);
-
-      if (result['routes'] != null && result['routes'].isNotEmpty) {
-        _encodedPoints = result['routes'][0]['overview_polyline']['points'];
-        print('Encoded Points obtenidos: $_encodedPoints');
-
-        final legs = result['routes'][0]['legs'];
-        if (legs.isNotEmpty) {
-          final durationInSeconds = legs[0]['duration']['value']; 
-          _routeDuration = durationInSeconds / 60.0; 
-          print('Duración de la ruta: $_routeDuration minutos');
+    final String cacheKey = '${startLocation.latitude},${startLocation.longitude}_${endLocation.latitude},${endLocation.longitude}';
+    
+    if (_routeCache.containsKey(cacheKey)) {
+      final cachedData = _routeCache[cacheKey];
+      final cacheTime = cachedData['timestamp'] as DateTime;
+      
+      if (DateTime.now().difference(cacheTime).inMinutes < 30) {
+        print('--- Usando ruta en caché ---');
+        _encodedPoints = cachedData['encodedPoints'];
+        _routeDuration = cachedData['duration'];
+        return;
+      }
+    }
+    
+    final String url =
+        'https://maps.googleapis.com/maps/api/directions/json?origin=${startLocation.latitude},${startLocation.longitude}&destination=${endLocation.latitude},${endLocation.longitude}&key=$_apiKey';
+    
+    print('--- Solicitando ruta ---');
+    print('URL de la solicitud: $url');
+    
+    try {
+      final response = await http.get(Uri.parse(url));
+      
+      print('Código de estado de la respuesta: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        
+        if (result['routes'] != null && result['routes'].isNotEmpty) {
+          _encodedPoints = result['routes'][0]['overview_polyline']['points'];
+          print('Encoded Points obtenidos: $_encodedPoints');
+          
+          final legs = result['routes'][0]['legs'];
+          if (legs.isNotEmpty) {
+            final durationInSeconds = legs[0]['duration']['value'];
+            _routeDuration = durationInSeconds / 60.0;
+            print('Duración de la ruta: $_routeDuration minutos');
+            
+            _routeCache[cacheKey] = {
+              'encodedPoints': _encodedPoints,
+              'duration': _routeDuration,
+              'timestamp': DateTime.now()
+            };
+          }
         } else {
-          print('No se encontraron legs en la ruta.');
+          print('No se encontraron rutas en la respuesta.');
         }
       } else {
-        print('No se encontraron rutas en la respuesta.');
+        final errorResult = json.decode(response.body);
+        final errorMessage = errorResult['error_message'] ?? 'Error desconocido';
+        print('Error al obtener la ruta: $errorMessage');
+        throw Exception('Error al obtener la ruta: $errorMessage');
       }
-    } else {
-      final errorResult = json.decode(response.body);
-      final errorMessage = errorResult['error_message'] ?? 'Error desconocido';
-      print('Error al obtener la ruta: $errorMessage');
-      throw Exception('Error al obtener la ruta: $errorMessage');
+    } catch (e) {
+      print('Excepción durante la solicitud de la ruta: $e');
+      throw Exception('Excepción durante la solicitud de la ruta: $e');
     }
-  } catch (e) {
-    print('Excepción durante la solicitud de la ruta: $e');
-    throw Exception('Excepción durante la solicitud de la ruta: $e');
   }
-}
 
   @override
   Future<void> saveSearchHistory(Map<String, String> searchItem) async {
@@ -151,7 +169,13 @@ class TravelLocalDataSourceImp implements TravelLocalDataSource {
 
     return polyline;
   }
-
+@override
+  double getRouteDuration() {
+    return _routeDuration;
+  }
+   void clearCache() {
+    _routeCache.clear();
+  }
   @override
   double calculateDistance(LatLng start, LatLng end) {
     const double earthRadius = 6371;
@@ -224,13 +248,10 @@ Future<List<dynamic>> getPlacePredictions(String input, {LatLng? location}) asyn
   }
 
   @override
-  Future<String> getEncodedPoints() async {
-    if (_encodedPoints != null) {
-      return _encodedPoints!;
-    } else {
-      throw Exception('Encoded points no disponibles');
-    }
+ Future<String> getEncodedPoints() async {
+    return _encodedPoints ?? '';
   }
+  
 
   @override
   Future<Map<String, dynamic>> getPlaceDetails(String placeId) async {

@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:rayo_taxi/features/client/domain/entities/client.dart';
 import 'package:rayo_taxi/features/client/domain/usecases/create_client_usecase.dart';
 import 'package:flutter/material.dart';
-import 'package:rayo_taxi/features/client/presentation/pages/login_clients_page.dart';
+import 'package:rayo_taxi/features/client/presentation/pages/login/login_clients_page.dart';
 
 part 'client_event.dart';
 part 'client_state.dart';

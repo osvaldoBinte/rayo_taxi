@@ -3,21 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:rayo_taxi/features/travel/data/models/travel/travel_alert_model.dart';
-import 'package:rayo_taxi/features/travel/data/datasources/mapa_local_data_source.dart';
-import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
-import 'package:flutter/material.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/addTravel/map_data_controller.dart';
+ import 'dart:io' show Platform;
 
 class TravelController extends GetxController {
   final TravelAlertModel travel;
-  final MapDataController _mapDataController = Get.find<MapDataController>();
   final bool isPreview;
+  
+  // Solo usamos MapDataController cuando no estamos en modo preview
+  late final MapDataController? _mapDataController;
 
   final Rx<Set<Marker>> markers = Rx<Set<Marker>>({});
   final Rx<Set<Polyline>> polylines = Rx<Set<Polyline>>({});
@@ -31,8 +25,21 @@ class TravelController extends GetxController {
   TravelController({
     required this.travel,
     this.isPreview = false,
-  });
- @override
+  }) {
+    // Solo inicializamos MapDataController si no estamos en modo preview
+    if (!isPreview) {
+      try {
+        _mapDataController = Get.find<MapDataController>();
+      } catch (e) {
+        print('No se pudo encontrar MapDataController: $e');
+        _mapDataController = null;
+      }
+    } else {
+      _mapDataController = null;
+    }
+  }
+
+  @override
   void onInit() {
     super.onInit();
     initializeMap();
@@ -59,7 +66,12 @@ class TravelController extends GetxController {
 
       await addMarker(startLocation.value!, true);
       await addMarker(endLocation.value!, false);
-      await traceRoute();
+      
+      if (isPreview) {
+        await createDirectRoute();
+      } else {
+        await traceRouteWithController();
+      }
     } else {
       Get.snackbar(
         'Error',
@@ -70,7 +82,7 @@ class TravelController extends GetxController {
     isLoading.value = false;
   }
 
-   void onMapCreated(GoogleMapController controller) {
+  void onMapCreated(GoogleMapController controller) {
     mapController = controller;
     
     // Add a small delay to ensure markers are placed before zooming
@@ -107,16 +119,36 @@ class TravelController extends GetxController {
     });
   }
 
+
 Future<void> addMarker(LatLng latLng, bool isStartPlace) async {
   MarkerId markerId = isStartPlace ? MarkerId('start') : MarkerId('destination');
   String title = isStartPlace ? 'Inicio' : 'Destino';
 
-  BitmapDescriptor markerIcon = await BitmapDescriptor.fromAssetImage(
-    ImageConfiguration(),
-    isStartPlace 
-      ? 'assets/images/mapa/origen.png'
-      : 'assets/images/mapa/destino.png',
-  );
+  // Determinar la ruta de la imagen según la plataforma
+  String imagePath;
+  if (isStartPlace) {
+    imagePath = Platform.isAndroid 
+      ? 'assets/images/mapa/origen-android.png' 
+      : 'assets/images/mapa/origen-ios.png';
+  } else {
+    imagePath = Platform.isAndroid 
+      ? 'assets/images/mapa/destino-android.png' 
+      : 'assets/images/mapa/destino-ios.png';
+  }
+
+  BitmapDescriptor markerIcon;
+  try {
+    markerIcon = await BitmapDescriptor.fromAssetImage(
+      ImageConfiguration(),
+      imagePath,
+    );
+  } catch (e) {
+    print('Error cargando icono personalizado: $e');
+    // Usar iconos predeterminados como respaldo
+    markerIcon = isStartPlace 
+      ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen) 
+      : BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+  }
 
   Marker? existingMarker = markers.value.firstWhere(
     (m) => m.markerId == markerId,
@@ -132,7 +164,7 @@ Future<void> addMarker(LatLng latLng, bool isStartPlace) async {
     Marker(
       markerId: markerId,
       position: latLng,
-      icon: markerIcon, // Aquí usamos el icono personalizado
+      icon: markerIcon,
       infoWindow: InfoWindow(title: title),
     ),
   );
@@ -145,6 +177,40 @@ Future<void> addMarker(LatLng latLng, bool isStartPlace) async {
   markers.refresh();
 }
 
+  // Método que crea una ruta directa entre los puntos de inicio y fin (para preview)
+  Future<void> createDirectRoute() async {
+    if (startLocation.value != null && endLocation.value != null) {
+      try {
+        // Crear una ruta directa solo con los puntos de inicio y fin
+        List<LatLng> routePoints = [
+          startLocation.value!,
+          endLocation.value!,
+        ];
+
+        polylines.value.clear();
+        polylines.value.add(Polyline(
+          polylineId: PolylineId('route'),
+          points: routePoints,
+          color: Colors.black,
+          width: 5,
+        ));
+        polylines.refresh();
+
+        if (mapController != null) {
+          showBothLocations();
+        }
+      } catch (e) {
+        print('Error al crear la ruta directa: $e');
+        Get.snackbar(
+          'Error',
+          'Error al crear la ruta directa',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    }
+  }
+  
+  // Método para simplificar polyline (usado con MapDataController)
   List<LatLng> simplifyPolyline(List<LatLng> polyline, double tolerance) {
     if (polyline.length < 3) return polyline;
     List<LatLng> simplified = [];
@@ -155,15 +221,16 @@ Future<void> addMarker(LatLng latLng, bool isStartPlace) async {
     simplified.add(polyline.last);
     return simplified;
   }
-
-  Future<void> traceRoute() async {
-    if (startLocation.value != null && endLocation.value != null) {
+  
+  // Método que usa MapDataController para trazar una ruta más precisa
+  Future<void> traceRouteWithController() async {
+    if (startLocation.value != null && endLocation.value != null && _mapDataController != null) {
       try {
-        await _mapDataController.getRoute(
+        await _mapDataController!.getRoute(
             startLocation.value!, endLocation.value!);
-        String encodedPoints = await _mapDataController.getEncodedPoints();
+        String encodedPoints = await _mapDataController!.getEncodedPoints();
         List<LatLng> polylineCoordinates =
-            _mapDataController.decodePolyline(encodedPoints);
+            _mapDataController!.decodePolyline(encodedPoints);
 
         List<LatLng> simplifiedCoordinates =
             simplifyPolyline(polylineCoordinates, 0.01);
@@ -181,13 +248,12 @@ Future<void> addMarker(LatLng latLng, bool isStartPlace) async {
           showBothLocations();
         }
       } catch (e) {
-        print('Error al trazar la ruta: $e');
-        Get.snackbar(
-          'Error',
-          'Error al trazar la ruta',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        print('Error al trazar la ruta con controlador: $e');
+       
+        await createDirectRoute();
       }
+    } else {
+      await createDirectRoute();
     }
   }
 

@@ -1,8 +1,10 @@
+// home_controller.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
+
 class HomeController extends GetxController {
   final RxInt selectedIndex = 0.obs;
   DateTime? lastBackPressTime;
@@ -11,7 +13,7 @@ class HomeController extends GetxController {
     selectedIndex.value = index;
   }
 
-Future<bool> handleBackButton(int initialIndex) async {
+  Future<bool> handleBackButton(int initialIndex) async {
     if (selectedIndex.value != initialIndex) {
       selectedIndex.value = initialIndex;
       return false;
@@ -29,36 +31,38 @@ Future<bool> handleBackButton(int initialIndex) async {
       return false;
     }
     
-    // Minimize app
     await SystemChannels.platform.invokeMethod('SystemNavigator.pop');
     return false;
   }
   
   Future<void> requestNotificationPermission() async {
-  var status = await Permission.notification.status;
-  if (!status.isGranted) {
-    await Permission.notification.request();
-    // Only open settings if user explicitly indicates they want to
-  }
-}
-
-Future<void> requestLocationPermission() async {
-  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  if (!serviceEnabled) {
-    // Show dialog but don't force settings
-    return;
+    var status = await Permission.notification.status;
+    if (!status.isGranted) {
+      await Permission.notification.request();
+    }
   }
 
-  LocationPermission permission = await Geolocator.checkPermission();
-  if (permission == LocationPermission.denied) {
-    permission = await Geolocator.requestPermission();
-    if (permission == LocationPermission.denied) return;
+  Future<void> requestPhonePermission() async {
+    var status = await Permission.phone.status;
+    if (!status.isGranted) {
+      await Permission.phone.request();
+    }
   }
 
-  // Don't automatically open settings
-  if (permission == LocationPermission.deniedForever) {
-    // Show dialog asking user if they want to open settings
-    return;
+  Future<void> requestLocationPermission() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return;
+    }
   }
-}
 }

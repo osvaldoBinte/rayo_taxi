@@ -314,30 +314,40 @@ class _TravelsPagePage extends State<TravelsPage> {
               if (travel.id_status != 2 && travel.plates.isNotEmpty)
                 Text(
                   'Placas: ${travel.plates}',
-                  style: TextStyle(color: Colors.black87),
+                  style: TextStyle(color: Colors.black87),                        overflow: TextOverflow.ellipsis,
+
                 ),
               SizedBox(height: 8),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (travel.id_status != 2) ...[
-                    Text(
-                      'Importe: ${travel.id_status == 1 ? travel.cost : travel.tarifa}',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                  Text(
-                    ' ${travel.date.split(',')[0]}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    if (travel.id_status != 2) ...[
+      Expanded(
+        flex: 3,  // Asigna más espacio al importe
+        child: Text(
+          'Importe: \$ ${travel.id_status == 1 ? travel.cost : travel.tarifa} MXN',
+          style: TextStyle(
+            color: Colors.grey[600],
+            fontSize: 12,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    ],
+    Expanded(
+      flex: 2,  // Asigna menos espacio a la fecha
+      child: Text(
+        ' ${travel.date.split(',')[0]}',
+        style: TextStyle(
+          color: Colors.grey[600],
+          fontSize: 12,
+        ),
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.end,  // Alinea el texto a la derecha
+      ),
+    ),
+  ],
+),
             ],
           ),
           trailing: _buildTrailingIcon(travel),

@@ -558,7 +558,7 @@ void showCustomAlert({
       transitionDuration: const Duration(milliseconds: 400),
       pageBuilder: (context, animation, secondaryAnimation) {
         return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Padding reducido
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
           child: Center(
             child: Material(
               type: MaterialType.transparency,

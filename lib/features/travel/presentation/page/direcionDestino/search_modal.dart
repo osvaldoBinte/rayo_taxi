@@ -31,7 +31,6 @@ class DestinoController extends GetxController {
   RxList<dynamic> modalPredictions = RxList<dynamic>();
   RxList<Map<String, String>> modalSearchHistory =
       RxList<Map<String, String>>();
-  RxString debugCoordinates = ''.obs;
 
   final RxSet<Marker> markers = <Marker>{}.obs;
   final RxBool isDebugMode = true.obs; // Para mostrar el punto exacto
@@ -258,7 +257,8 @@ class DestinoController extends GetxController {
       }
     } catch (e) {
       isInitializing = false;
-      Get.snackbar('Error', 'Error al obtener la ubicación: $e');
+      print('Error al obtener la ubicación $e');
+      // Get.snackbar('Error', 'Error al obtener la ubicación: $e');
     }
   }
 
@@ -330,10 +330,17 @@ void navigateToMapScreen() {
     modalController.modalText.value = 'Buscando chofer...';
     notificationController.clearNotification();
 
+    // Add a debug log to verify values
+    print('debug2 Navigating to MapScreen with:');
+    print('debug2 Selected description: ${selectedDescription.value}');
+    print('debug2 Selected coordinates: ${selectedLatLng.value}');
+    print('debug2 Current address: ${currentAddress.value}');
+    print('debug2 Current coordinates: ${currentLatLng.value}');
+
     if (selectedLatLng.value != null && selectedDescription.value != null) {
       Get.to(
         () => MapScreen(
-          endController: TextEditingController(text: selectedDescription.value),
+          endController: TextEditingController(text: selectedDescription.value ?? ''),
           startAddress: currentAddress.value,
           startLatLng: currentLatLng.value,
           endLatLng: selectedLatLng.value,
@@ -344,7 +351,6 @@ void navigateToMapScreen() {
     }
   });
 }
-
   void onMarkerDragEnd(LatLng newPosition) async {
     try {
       List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -374,8 +380,8 @@ void navigateToMapScreen() {
         });
         loadSearchHistory();
       } else {
-        Get.snackbar('Error',
-            'No se pudo obtener la dirección para la ubicación seleccionada');
+         print('Error actualizando dirección: ');
+      //Get.snackbar('Error', 'No se pudo obtener la dirección para la ubicación seleccionada');
       }
     } catch (e) {
       Get.snackbar('Error', 'Error al procesar la ubicación seleccionada');

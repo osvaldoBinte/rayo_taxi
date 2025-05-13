@@ -3,15 +3,15 @@ import 'package:get/get.dart';
 import 'package:flutter/services.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:rayo_taxi/common/theme/app_color.dart';
+import 'package:rayo_taxi/features/client/presentation/pages/login/loginclient_getx.dart';
+import 'package:rayo_taxi/features/client/presentation/pages/login/login_clients_page.dart';
 import 'create_recovery_code_controller.dart';
 
 class CreateRecoveryCode extends StatelessWidget {
-  // Instancia del controlador
   final CreateRecoveryCodeController controller = Get.find<CreateRecoveryCodeController>();
 
   @override
   Widget build(BuildContext context) {
-    // Configuración de la barra de estado
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       statusBarColor: Color(0xFF303030),
       statusBarIconBrightness: Brightness.light,
@@ -22,11 +22,20 @@ class CreateRecoveryCode extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.backgroundColorLogin,
       resizeToAvoidBottomInset: true,
+        appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.backgroundColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Get.offAll(LoginClientsPage());
+          }
+        ),
+      ),
       body: Stack(
         children: [
           Column(
             children: <Widget>[
-              // Contenedor de fondo con el logo
               Container(
                 child: Align(
                   alignment: Alignment.topCenter,

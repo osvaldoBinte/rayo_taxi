@@ -14,30 +14,6 @@
       },
       "oauth_client": [
         {
-          "client_id": "142272499428-63ue1fkho391enh8236092iur6c5t1ck.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.rayo.taxi",
-            "certificate_hash": "d90911d76304e331b957e38d9667f9a294e143b5"
-          }
-        },
-        {
-          "client_id": "142272499428-j7hk5q7nsojglek7lq2jd0llj2rkptoa.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.rayo.taxi",
-            "certificate_hash": "007601fa0c9141ff9e5c7b569e9eadb4a97cf8d7"
-          }
-        },
-        {
-          "client_id": "142272499428-ssavonqe5fj75c50fga5fj7at6efh2vn.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.rayo.taxi",
-            "certificate_hash": "b9441fa0cae6915d37cb54c0b457f5ed509f4bd2"
-          }
-        },
-        {
           "client_id": "142272499428-ft4asl531fjlf0n5n7qb947m9o11hrg5.apps.googleusercontent.com",
           "client_type": 3
         }

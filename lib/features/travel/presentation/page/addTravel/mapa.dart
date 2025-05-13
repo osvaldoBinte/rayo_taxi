@@ -20,7 +20,7 @@ import 'package:rayo_taxi/features/travel/presentation/page/addTravel/addTravelC
 import 'package:rayo_taxi/common/theme/app_color.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/direcionDestino/search_modal.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/widgets/Taxi_Info_card.dart';
-import 'package:rayo_taxi/features/travel/presentation/page/widgets/calculate_price.dart';
+import 'package:rayo_taxi/common/widge/calculate_price.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../AuthS/connectivity_service.dart';
@@ -62,6 +62,12 @@ class MapScreen extends StatelessWidget {
           return false;
         },
         child: Scaffold(
+       appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(0),
+        child: AppBar(
+          backgroundColor: Theme.of(context).primaryColor,
+        ),
+      ),
           body: SafeArea(
             child: Stack(
               children: [

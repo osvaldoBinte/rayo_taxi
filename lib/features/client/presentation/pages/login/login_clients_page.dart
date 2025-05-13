@@ -13,10 +13,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/recoveryPassword/create_recovery_code.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import '../../domain/entities/client.dart';
-import '../getxs/login/loginclient_getx.dart';
-import 'add_client/register_clients_page.dart';
+import '../../../domain/entities/client.dart';
+import 'loginclient_getx.dart';
+import '../add_client/register_clients_page.dart';
 import 'package:quickalert/quickalert.dart';
+import 'dart:io' show Platform;
 
 class LoginClientsPage extends StatefulWidget {
   @override
@@ -62,34 +63,9 @@ class _LoginClientsPage extends State<LoginClientsPage> {
     final password = _passwordController.text.trim();
     await _clientGetx.login(email, password);
   }
-String _sha256ofString(String input) {
-  final bytes = utf8.encode(input);
-  final digest = sha256.convert(bytes);
-  return digest.toString();
-}
 
-Future<void> _loginWithApple() async {
-  try {
-    final rawNonce = generateNonce();
-    final nonce = _sha256ofString(rawNonce);
-
-    final appleCredential = await SignInWithApple.getAppleIDCredential(
-      scopes: [
-        AppleIDAuthorizationScopes.email,
-        AppleIDAuthorizationScopes.fullName,
-      ],
-      nonce: nonce,
-    );
-
-    final oauthCredential = OAuthProvider("apple.com").credential(
-      idToken: appleCredential.identityToken,
-      rawNonce: rawNonce,
-    );
-
-    await _clientGetx.loginWithApple(oauthCredential, appleCredential);
-  } catch (e) {
-    print('Error en el inicio de sesión con Apple: $e');
-  }
+void _loginWithApple() {
+  _clientGetx.loginWithApple();
 }
 
   void _loginWithGoogle() {
@@ -104,6 +80,7 @@ Future<void> _loginWithApple() async {
     ));
 
     final screenHeight = MediaQuery.of(context).size.height;
+  List<Widget> buttons = [];
 
     return WillPopScope(
         onWillPop: () => _clientGetx.handleBackButton(),
@@ -363,18 +340,28 @@ Future<void> _loginWithApple() async {
                                     ),
                                   ),
                                   SizedBox(height: 20),
-                                  _buildSocialLoginButton(
-                                    imagePath: 'assets/images/google.png',
-                                    text: 'Iniciar sesión con Google',
-                                    onPressed: _loginWithGoogle,
-                                  ),
+                                 Obx(() {
+    // Only add Google button if available
+    if (_clientGetx.isGoogleSignInAvailable.value) {
+      buttons.add(
+        _buildSocialLoginButton(
+          imagePath: 'assets/images/google.png',
+          text: 'Iniciar sesión con Google',
+          onPressed: _loginWithGoogle,
+        )
+      );
+      buttons.add(SizedBox(height: 20));
+    }
+    return Column(children: buttons);
+  }),
                                   SizedBox(height: 20),
-                                 _buildSocialLoginButton(
-  icon: Icons.apple,
-  text: 'Iniciar sesión con Apple',
-  color: Colors.black,
-  onPressed: _loginWithApple, // Añade esta línea
-),
+                                if (Platform.isIOS)
+      _buildSocialLoginButton(
+        icon: Icons.apple,
+        text: 'Iniciar sesión con Apple',
+        color: Colors.black,
+        onPressed: _loginWithApple,
+      ),
 
                                 ],
                               ),

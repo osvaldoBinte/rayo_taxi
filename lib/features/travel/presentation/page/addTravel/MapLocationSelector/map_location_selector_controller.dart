@@ -12,7 +12,7 @@ class MapLocationSelectorController extends GetxController {
   var currentAddress = ''.obs;
   var selectedLocation = Rxn<LatLng>();
   var isLoading = false.obs;
-  var centerLocation = const LatLng(20.676666666667, -103.39182).obs;
+  var centerLocation = const LatLng(20.5888, -100.3899).obs;
 
   void initializeLocation(LatLng? initialLocation) {
     if (initialLocation != null) {

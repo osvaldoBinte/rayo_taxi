@@ -47,71 +47,161 @@ class NotificationService {
   NotificationService(this.navigatorKey);
 
   Future<void> initialize() async {
-    // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    // Inicializar Firebase para mensajes en segundo plano
     FirebaseMessaging.onBackgroundMessage(
         NotificationController.firebaseMessagingBackgroundHandler);
 
+    // Configurar canal de notificaciones para Android
     channel = const AndroidNotificationChannel(
       'high_importance_channel',
       'Notificaciones Importantes',
       description: 'Este canal se usa para notificaciones importantes.',
       importance: Importance.high,
     );
-    await _messaging.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
-// Modifica la inicialización de AndroidInitializationSettings
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@drawable/ic_launcher_background');
-    final InitializationSettings initializationSettings =
-        InitializationSettings(
-      android: initializationSettingsAndroid,
-    );
 
-   await flutterLocalNotificationsPlugin.initialize(
-  InitializationSettings(
-    android: initializationSettingsAndroid,
-    iOS: DarwinInitializationSettings( // Añade configuración iOS
-      requestSoundPermission: true,
-      requestBadgePermission: true,
-      requestAlertPermission: true,
-    ),
-  ),
-  onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
-    final String? payload = notificationResponse.payload;
-    if (payload != null && payload.isNotEmpty) {
-      _handleNotificationClick(json.decode(payload));
-    }
-  },
-);
+    // CONFIGURACIÓN PARA iOS: Solicitar todos los permisos necesarios
+    await _configureIOSPermissions();
+    
+    // Configurar la inicialización de notificaciones para Android e iOS
+    await _initializeLocalNotifications();
 
+    // Crear canal para Android
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(
-          AndroidNotificationChannel(
-            'default_channel',
-            'Default Channel',
-            importance: Importance.high,
-          ),
-        );
+        ?.createNotificationChannel(channel!);
 
-    FirebaseMessaging.onMessage.listen(_onMessageHandler);
-    FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedAppHandler);
-    initialMessage = await _messaging.getInitialMessage();
-    if (initialMessage != null) {
-      print('La aplicación se inició desde una notificación');
-      _handleNotificationClick(initialMessage!.data);
+    // Configurar opciones de presentación para iOS (notificaciones en primer plano)
+    await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    // Configurar listeners para diferentes estados de la app
+    _setupMessageListeners();
+    
+    // Obtener y registrar el token FCM
+    await _registerFCMToken();
+    
+    // Configurar observers para el estado del viaje
+    _setupTravelStateObservers();
+  }
+
+  Future<void> _configureIOSPermissions() async {
+    // Solicitar permisos para notificaciones (crucial para iOS)
+    NotificationSettings settings = await _messaging.requestPermission(
+      alert: true, // Mostrar alertas
+      announcement: false, 
+      badge: true, // Mostrar badge en el ícono
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true, // Reproducir sonidos
+    );
+    
+    print('User granted permission: ${settings.authorizationStatus}');
+    
+    // Para iOS, registrar para notificaciones APNs
+    await FirebaseMessaging.instance.getAPNSToken();
+  }
+
+  Future<void> _initializeLocalNotifications() async {
+    // Configuración para Android
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@drawable/ic_launcher_background');
+        
+    // IMPORTANTE: Configuración para iOS
+    final DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings(
+      requestSoundPermission: true,
+      requestBadgePermission: true,
+      requestAlertPermission: true,
+      // Importante: Configurar como manejar las notificaciones cuando la app está abierta
+      onDidReceiveLocalNotification: _onDidReceiveLocalNotification,
+      // Configurar categorías para acciones en notificaciones de iOS
+      notificationCategories: [
+        DarwinNotificationCategory(
+          'travelCategory',
+          actions: [
+            DarwinNotificationAction.plain(
+              'VIEW',
+              'Ver',
+              options: {DarwinNotificationActionOption.foreground},
+            ),
+          ],
+        ),
+      ],
+    );
+    
+    // Combinar configuraciones
+    final InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
+    
+    // Inicializar el plugin con manejadores de eventos
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      // Importante: Manejar cuando el usuario toca la notificación
+      onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
+    );
+  }
+
+  // Manejador para notificaciones locales en iOS (versiones anteriores)
+  void _onDidReceiveLocalNotification(
+      int id, String? title, String? body, String? payload) {
+    print('Recibida notificación local iOS: $title');
+    if (payload != null) {
+      _handleNotificationPayload(payload);
     }
+  }
 
-    String? fcmToken = await _messaging.getToken();
-    print('Token FCM: $fcmToken');
+  // Manejador para cuando el usuario toca una notificación
+  void _onDidReceiveNotificationResponse(NotificationResponse response) {
+    print('Usuario tocó notificación con payload: ${response.payload}');
+    if (response.payload != null) {
+      _handleNotificationPayload(response.payload!);
+    }
+  }
+  
+  void _handleNotificationPayload(String payload) {
+    try {
+      final data = json.decode(payload);
+      _handleNotificationClick(data);
+    } catch (e) {
+      print('Error al procesar payload: $e');
+    }
+  }
+
+  Future<void> _registerFCMToken() async {
+    try {
+      // Obtener token FCM
+      String? fcmToken = await _messaging.getToken();
+      print('Token FCM: $fcmToken');
+      
+      // En iOS, obtener token APNs específico
+      String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+      print('Token APNs (iOS): $apnsToken');
+      
+      // Aquí podrías guardar el token en tu backend
+    } catch (e) {
+      print('Error al obtener el token FCM/APNs: $e');
+    }
+  }
+
+  void _setupMessageListeners() {
+    // Cuando la app está en primer plano
+    FirebaseMessaging.onMessage.listen(_onMessageHandler);
+    
+    // Cuando la app está en segundo plano y se abre por tocar la notificación
+    FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedAppHandler);
+    
+    // Verificar si la app se abrió desde una notificación mientras estaba cerrada
+    _checkInitialMessage();
+  }
+  
+  void _setupTravelStateObservers() {
     ever(currentTravelGetx.state, (state) {
       if (state is TravelAlertLoaded) {
         final travel = state.travel.firstOrNull;
@@ -120,6 +210,7 @@ class NotificationService {
         }
       }
     });
+    
     ever(travelAlertGetx.state, (state) {
       if (state is TravelsAlertLoaded) {
         final travel = state.travels.firstOrNull;
@@ -130,10 +221,18 @@ class NotificationService {
     });
   }
 
+  Future<void> _checkInitialMessage() async {
+    // Importante para iOS: verificar si la app se abrió por una notificación
+    RemoteMessage? initialMessage = await _messaging.getInitialMessage();
+    
+    if (initialMessage != null) {
+      print('App opened from terminated state by notification: ${initialMessage.data}');
+      _handleNotificationClick(initialMessage.data);
+    }
+  }
+
   Future<void> _handleTravelStateChange(TravelAlertModel travel) async {
     if (travel.waiting_for == 1 && travel.id_status == 6) {
-      //  await Get.find<NavigationService>().navigateToHome(selectedIndex: 1);
-      // Get.back();
       if (Get.context != null) {
         showNewPriceDialog(Get.context!);
       }
@@ -226,7 +325,6 @@ class NotificationService {
     });
 
     travelAlertGetx.fetchCoDetails(FetchtravelsDetailsEvent());
-
     currentTravelGetx.fetchCoDetails(FetchgetDetailsssEvent());
 
     await Future.wait(
@@ -265,247 +363,234 @@ class NotificationService {
     }
   }
 
-  void showNewPriceDialog(BuildContext context) async {
-    final state = currentTravelGetx.state.value;
-
-    if (state is! TravelAlertLoaded) {
-      print("Error: No travel data available.");
-      return;
-    }
-
-    final travel = state.travel.first;
-    final travelId = travel.id;
-    final driverId = int.parse(travel.id_travel_driver);
-    print('-------- $driverId travel $travelId tarifa ');
-
-    Future.delayed(Duration(milliseconds: 500), () {
-      final TextEditingController priceController = TextEditingController();
-      final RxString inputAmount = "".obs;
-      final RxString buttonText = "Confirmar".obs;
-
-      showCustomAlert(
-        context: context,
-        type: CustomAlertType.warning,
-        title: 'Nueva oferta',
-        message: '',
-        confirmText: '',
-        cancelText: null,
-        customWidget: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            RichText(
-              text: TextSpan(
-                text: 'El Chofer envió una oferta de ',
-                style: TextStyle(color: Colors.black, fontSize: 16),
-                children: [
-                  TextSpan(
-                    text: '\$${travel.tarifa} MXN',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  TextSpan(
-                    text: ' para tu viaje.',
-                    style: TextStyle(color: Colors.black, fontSize: 16),
-                  ),
-                ],
-              ),
-            ),
-            Obx(() {
-  if (inputAmount.value.isNotEmpty) {
-    String displayAmount = inputAmount.value.length > 6
-        ? '${inputAmount.value.substring(0, 6)}...' 
-        : inputAmount.value;  
-    return Text(
-      'Monto ofertado: \$${displayAmount}',
-      style: TextStyle(fontSize: 16),
-    );
-  } else {
-    return SizedBox();
+ void showNewPriceDialog(BuildContext context) async {
+  final state = currentTravelGetx.state.value;
+  
+  if (state is! TravelAlertLoaded) {
+    print("Error: No travel data available.");
+    return;
   }
-}),
-
-            SizedBox(height: 10),
-            TextField(
-              controller: priceController,
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                inputAmount.value = value;
-                final truncatedValue =
-                    value.length > 5 ? '${value.substring(0, 5)}...' : value;
-                buttonText.value = value.isNotEmpty
-                    ? "Ofertar \$${truncatedValue}"
-                    : "Confirmar";
-              },
-              decoration: InputDecoration(
-                labelText: 'Importe \$ MXN',
-                hintText: '',
-                labelStyle: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 16,
-                ),
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.buttonColormap,
-                    width: 2.0,
+  
+  final travel = state.travel.first;
+  final travelId = travel.id;
+  final driverId = int.parse(travel.id_travel_driver);
+  print('-------- $driverId travel $travelId tarifa ');
+  
+  Future.delayed(Duration(milliseconds: 500), () {
+    final TextEditingController priceController = TextEditingController();
+    final RxString inputAmount = "".obs;
+    final RxString buttonText = "Confirmar".obs;
+    
+    showCustomAlert(
+      context: context,
+      type: CustomAlertType.warning,
+      title: 'Nueva oferta',
+      message: '',
+      confirmText: '',
+      cancelText: null,
+      customWidget: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          RichText(
+            text: TextSpan(
+              text: 'El Chofer envió una oferta de ',
+              style: TextStyle(color: Colors.black, fontSize: 16),
+              children: [
+                TextSpan(
+                  text: '\$${travel.tarifa} MXN',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                  borderSide: BorderSide(
-                    color: Colors.grey[300]!,
-                    width: 1.5,
-                  ),
+                TextSpan(
+                  text: ' para tu viaje.',
+                  style: TextStyle(color: Colors.black, fontSize: 16),
                 ),
-                prefixIcon: Icon(
-                  Icons.attach_money,
-                  color: Colors.green,
+              ],
+            ),
+          ),
+          Obx(() {
+            if (inputAmount.value.isNotEmpty) {
+              String displayAmount = inputAmount.value.length > 6
+                  ? '${inputAmount.value.substring(0, 6)}...'
+                  : inputAmount.value;
+              return Text(
+                'Monto ofertado: \$${displayAmount}',
+                style: TextStyle(fontSize: 16),
+              );
+            } else {
+              return SizedBox();
+            }
+          }),
+          
+          SizedBox(height: 10),
+          TextField(
+            controller: priceController,
+            keyboardType: TextInputType.number,
+            onChanged: (value) {
+              inputAmount.value = value;
+              final truncatedValue =
+                  value.length > 5 ? '${value.substring(0, 5)}...' : value;
+              buttonText.value = value.isNotEmpty
+                  ? "Ofertar \$${truncatedValue}"
+                  : "Confirmar";
+            },
+            decoration: InputDecoration(
+              labelText: 'Importe \$ MXN',
+              hintText: '',
+              labelStyle: TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+              ),
+              filled: true,
+              fillColor: Colors.grey[200],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.buttonColormap,
+                  width: 2.0,
                 ),
               ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: BorderSide(
+                  color: Colors.grey[300]!,
+                  width: 1.5,
+                ),
+              ),
+              prefixIcon: Icon(
+                Icons.attach_money,
+                color: Colors.green,
+              ),
             ),
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.error,
-                  ),
-                  onPressed: () async {
+          ),
+          SizedBox(height: 20),
+          // Usar Wrap para manejar automáticamente el desbordamiento
+          Wrap(
+            spacing: 10, // Espacio horizontal entre los botones
+            runSpacing: 10, // Espacio vertical cuando los botones cambian de línea
+            alignment: WrapAlignment.spaceBetween, // Distribuye los botones en el espacio disponible
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                ),
+                onPressed: () async {
+                  try {
+                    final travelObj = TravelwithtariffEntitie(
+                      driverId: driverId,
+                      travelId: travelId,
+                    );
+                    final event = RejectTravelofferEventEvent(travel: travelObj);
+                    await Get.find<RejecttravelofferGetx>()
+                        .rejecttravelofferGetx(event);
+                    
+                    navigateToHome();
+                    CustomSnackBar.showSuccess(
+                      'Éxito',
+                      'El rechazo de la oferta de viaje se realizó correctamente',
+                    );
+                    currentTravelGetx.fetchCoDetails(FetchgetDetailsssEvent());
+                  } catch (error) {
+                    Get.back();
+                    CustomSnackBar.showError(
+                      'Error',
+                      'Hubo un problema al rechazar la oferta de viaje',
+                    );
+                  }
+                },
+                child: Text("Rechazar"),
+              ),
+              Obx(() => ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.secondary2,
+                ),
+                onPressed: () async {
+                  if (buttonText.value == "Confirmar") {
                     try {
-                      final travel = TravelwithtariffEntitie(
+                      final travelObj = ConfirmarTariffEntitie(
                         driverId: driverId,
                         travelId: travelId,
                       );
-                      final event = RejectTravelofferEventEvent(travel: travel);
-                      await Get.find<RejecttravelofferGetx>()
-                          .rejecttravelofferGetx(event);
-
-                      // Get.back();
+                      await Get.find<TravelwithtariffGetx>()
+                          .travelwithtariffGetx(
+                              TravelWithtariffEvent(travel: travelObj));
+                      
                       navigateToHome();
+                      
                       CustomSnackBar.showSuccess(
                         'Éxito',
-                        'El rechazo de la oferta de viaje se realizó correctamente',
+                        'La confirmación del viaje se realizó correctamente',
                       );
-                      currentTravelGetx
-                          .fetchCoDetails(FetchgetDetailsssEvent());
                     } catch (error) {
                       Get.back();
                       CustomSnackBar.showError(
                         'Error',
-                        'Hubo un problema al rechazar la oferta de viaje',
+                        'Hubo un problema al confirmar el viaje',
                       );
                     }
-                  },
-                  child: Text("Rechazar"),
-                ),
-                Obx(() => ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(context).colorScheme.secondary2,
-                      ),
-                      onPressed: () async {
-                        if (buttonText.value == "Confirmar") {
-                          try {
-                            final travel = ConfirmarTariffEntitie(
-                              driverId: driverId,
-                              travelId: travelId,
-                            );
-                            await Get.find<TravelwithtariffGetx>()
-                                .travelwithtariffGetx(
-                                    TravelWithtariffEvent(travel: travel));
-
-                            //Get.back();
-                            navigateToHome();
-
-                            CustomSnackBar.showSuccess(
-                              'Éxito',
-                              'La confirmación del viaje se realizó correctamente',
-                            );
-                            // currentTravelGetx.fetchCoDetails(FetchgetDetailsssEvent());
-                          } catch (error) {
-                            Get.back();
-                            CustomSnackBar.showError(
-                              'Error',
-                              'Hubo un problema al confirmar el viaje',
-                            );
-                          }
-                        } else {
-                          final newPrice = int.tryParse(priceController.text);
-                          if (newPrice == null ||
-                              newPrice <= 0 ||
-                              newPrice < (travel?.cost as double)) {
-                            QuickAlert.show(
-                              context: Get.context!,
-                              type: QuickAlertType.error,
-                              title: 'Importe inválido',
-                              text:
-                                  'El Importe debe ser mayor a \$${travel.tarifa} MXN',
-                              confirmBtnText: 'Entendido',
-                              confirmBtnColor:
-                                  Theme.of(Get.context!).colorScheme.error,
-                              borderRadius: 8,
-                              titleColor:
-                                  Theme.of(Get.context!).colorScheme.error,
-                            );
-                            return;
-                          }
-                          if (newPrice == null || newPrice <= 0) {
-                            CustomSnackBar.showError(
-                              'Error',
-                              'Por favor, introduce un precio válido.',
-                            );
-                            return;
-                          }
-
-                          try {
-                            final travel = TravelwithtariffEntitie(
-                              driverId: driverId,
-                              travelId: travelId,
-                              tarifa: newPrice,
-                            );
-                            await Get.find<OffernegotiationGetx>()
-                                .offernegotiation(
-                                    OfferNegotiationevent(travel: travel));
-                            navigateToHome();
-
-                            CustomSnackBar.showSuccess(
-                              'Éxito',
-                              'La oferta se realizó correctamente.',
-                            );
-                            currentTravelGetx
-                                .fetchCoDetails(FetchgetDetailsssEvent());
-                          } catch (error) {
-                            Get.back(); // Cerrar el QuickAlert incluso si hay error
-
-                            CustomSnackBar.showError(
-                              'Error',
-                              'Hubo un problema al realizar la oferta: $error',
-                            );
-                          }
-                        }
-                      },
-                      child: Text(buttonText.value),
-                    )),
-              ],
-            ),
-          ],
-        ),
-      );
-    });
-  }
+                  } else {
+                    final newPrice = int.tryParse(priceController.text);
+                    
+                    // Verificación de precio con null-check similar al código de trabajo
+                    if (newPrice == null || 
+                        newPrice <= 0 || 
+                        newPrice < (travel?.cost as double)) {
+                      QuickAlert.show(
+                        context: Get.context!,
+                        type: QuickAlertType.error,
+                        title: 'Importe inválido',
+                        text: 'El Importe debe ser mayor a \$${travel.tarifa} MXN',
+                        confirmBtnText: 'Entendido',
+                        confirmBtnColor: Theme.of(Get.context!).colorScheme.error,
+                        borderRadius: 8,
+                        titleColor: Theme.of(Get.context!).colorScheme.error,
+                      );
+                      return;
+                    }
+                    
+                    try {
+                      final travelObj = TravelwithtariffEntitie(
+                        driverId: driverId,
+                        travelId: travelId,
+                        tarifa: newPrice,
+                      );
+                      await Get.find<OffernegotiationGetx>()
+                          .offernegotiation(
+                              OfferNegotiationevent(travel: travelObj));
+                      navigateToHome();
+                      
+                      CustomSnackBar.showSuccess(
+                        'Éxito',
+                        'La oferta se realizó correctamente.',
+                      );
+                      currentTravelGetx.fetchCoDetails(FetchgetDetailsssEvent());
+                    } catch (error) {
+                      Get.back();
+                      
+                      CustomSnackBar.showError(
+                        'Error',
+                        'Hubo un problema al realizar la oferta: $error',
+                      );
+                    }
+                  }
+                },
+                child: Text(buttonText.value),
+              )),
+            ],
+          ),
+        ],
+      ),
+    );
+  });
+}
 
   void showacept(BuildContext context, String title, String body) {
-    // currentTravelGetx.fetchCoDetails(FetchgetDetailsssEvent());
-
     QuickAlert.show(
       context: context,
       type: QuickAlertType.success,
@@ -514,8 +599,6 @@ class NotificationService {
       confirmBtnText: 'OK',
       onConfirmBtnTap: () async {
         await Get.find<NavigationService>().navigateToHome(selectedIndex: 1);
-
-        //  Navigator.of(context).pop();
       },
     );
   }
@@ -531,12 +614,11 @@ class NotificationService {
         onConfirmBtnTap: () {
           if (title == 'Viaje terminado') {
             Get.find<NotificationController>().tripAccepted.value = false;
-           Get.find<ModalController>().imageUrl.value = 'assets/images/viajes/add_travel.gif';
- Get.find<ModalController>().modalText.value = 'Buscando chofer...';
+            Get.find<ModalController>().imageUrl.value = 'assets/images/viajes/add_travel.gif';
+            Get.find<ModalController>().modalText.value = 'Buscando chofer...';
           }
 
           currentTravelGetx.fetchCoDetails(FetchgetDetailsssEvent());
-
           Navigator.of(context).pop();
         },
       );
@@ -549,39 +631,50 @@ class NotificationService {
       arguments: {'selectedIndex': 1},
     );
   }
-void _showLocalNotification(RemoteMessage message) {
-  RemoteNotification? notification = message.notification;
-  AndroidNotification? android = message.notification?.android;
+  
+  void _showLocalNotification(RemoteMessage message) {
+    RemoteNotification? notification = message.notification;
+    AndroidNotification? android = message.notification?.android;
 
-  if (notification != null && android != null) {
-    if (notification.title == 'Tu viaje fue aceptado') {
-  Get.find<NotificationController>().tripAccepted.value = true;
-  var modalController = Get.find<ModalController>();
-  modalController.isLottieError.value = false;
-  modalController.lottieUrl.value = 'https://lottie.host/4b6efc1d-1021-48a4-a3dd-df0eecbd8949/1CzFNvYv69.json';
-  modalController.imageUrl.value = 'assets/images/viajes/viaje-aceptado.gif';
-  modalController.modalText.value = 'Viaje aceptado, espera al conductor en el punto de encuentro';
-}
+    if (notification != null) {
+      // Actualizar la UI según el tipo de notificación
+      if (notification.title == 'Tu viaje fue aceptado') {
+        Get.find<NotificationController>().tripAccepted.value = true;
+        var modalController = Get.find<ModalController>();
+        modalController.isLottieError.value = false;
+        modalController.lottieUrl.value = 'https://lottie.host/4b6efc1d-1021-48a4-a3dd-df0eecbd8949/1CzFNvYv69.json';
+        modalController.imageUrl.value = 'assets/images/viajes/viaje-aceptado.gif';
+        modalController.modalText.value = 'Viaje aceptado, espera al conductor en el punto de encuentro';
+      }
+      
+      if (notification.title == 'Nuevo precio para tu viaje') {
+        Get.find<NotificationController>().tripAccepted.value = true;
+        var modalController = Get.find<ModalController>();
+        modalController.isLottieError.value = false;
+        modalController.lottieUrl.value = 'https://lottie.host/4b6efc1d-1021-48a4-a3dd-df0eecbd8949/1CzFNvYv69.json';
+        modalController.imageUrl.value = 'assets/images/viajes/viaje-aceptado.gif';
+        modalController.modalText.value = 'Viaje aceptado, espera al conductor en el punto de encuentro';
+      }
+      
+      if (notification.title == 'Tu viaje ha comenzado') {
+        Get.find<NotificationController>().tripAccepted.value = true;
+        var modalController = Get.find<ModalController>();
+        modalController.isLottieError.value = false;
+        modalController.lottieUrl.value = 'https://lottie.host/4a367cbb-4834-44ba-997a-9a8a62408a99/keSVai2cNe.json';
+        modalController.imageUrl.value = 'assets/images/viajes/viaje-ha-comenzado.gif';
+        modalController.modalText.value = 'Tu viaje ha comenzado';
+      }
 
-if (notification.title == 'Tu viaje ha comenzado') {
-  Get.find<NotificationController>().tripAccepted.value = true;
-  var modalController = Get.find<ModalController>();
-  modalController.isLottieError.value = false;
-  modalController.lottieUrl.value = 'https://lottie.host/4a367cbb-4834-44ba-997a-9a8a62408a99/keSVai2cNe.json';
-  modalController.imageUrl.value = 'assets/images/viajes/viaje-ha-comenzado.gif';
-  modalController.modalText.value = 'Tu viaje ha comenzado';
-}
+      if (notification.title == 'El taxi llego') {
+        Get.find<NotificationController>().tripAccepted.value = true;
+        var modalController = Get.find<ModalController>();
+        modalController.isLottieError.value = false;
+        modalController.lottieUrl.value = 'https://lottie.host/bcf4608b-5b35-4c48-b2c9-c0126124a159/CFerLgDKdO.json';
+        modalController.imageUrl.value = 'assets/images/viajes/taxi-llego.gif';
+        modalController.modalText.value = 'El taxi ha llegado al punto de encuentro';
+      }
 
-if (notification.title == 'El taxi llego') {
-  Get.find<NotificationController>().tripAccepted.value = true;
-  var modalController = Get.find<ModalController>();
-  modalController.isLottieError.value = false;
-  modalController.lottieUrl.value = 'https://lottie.host/bcf4608b-5b35-4c48-b2c9-c0126124a159/CFerLgDKdO.json';
-  modalController.imageUrl.value = 'assets/images/viajes/taxi-llego.gif';
-  modalController.modalText.value = 'El taxi ha llegado al punto de encuentro';
-}
-
-if (notification.title == 'Viaje terminado') {
+      if (notification.title == 'Viaje terminado') {
   Get.find<NotificationController>().tripAccepted.value = true;
   var modalController = Get.find<ModalController>();
   modalController.isLottieError.value = false;

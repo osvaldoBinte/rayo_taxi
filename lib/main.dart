@@ -39,9 +39,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:rayo_taxi/firebase_options.dart';
 import 'features/AuthS/connectivity_service.dart';
-import 'package:rayo_taxi/features/client/presentation/pages/login_clients_page.dart';
+import 'package:rayo_taxi/features/client/presentation/pages/login/login_clients_page.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/add_client/addclient/client_getx.dart';
-import 'package:rayo_taxi/features/client/presentation/getxs/login/loginclient_getx.dart';
+import 'package:rayo_taxi/features/client/presentation/pages/login/loginclient_getx.dart';
 import 'package:rayo_taxi/features/client/presentation/getxs/get/get_client_getx.dart';
 import 'package:rayo_taxi/usecase_config.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -49,39 +49,32 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 UsecaseConfig usecaseConfig = UsecaseConfig();
 final connectivityService = ConnectivityService();
 RemoteMessage? initialMessage;
-
+ 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 AndroidNotificationChannel? channel;
-String enviromentSelect = Enviroment.development.value;
+String enviromentSelect = Enviroment.production.value;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
+ 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();                        
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  ); 
+   WidgetsFlutterBinding.ensureInitialized();
   
-  await Firebase.initializeApp();
-  channel = const AndroidNotificationChannel(
-    'high_importance_channel',
-    'Notificaciones Importantes',
-    description: 'Este canal se usa para notificaciones importantes.',
-    importance: Importance.high,
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,  
   );
+  
  
   print('=========ENVIROMENT SELECTED: $enviromentSelect');
   await dotenv.load(fileName: enviromentSelect);
     Get.testMode = true; 
     //Current_TravelGetx
    // Get.put(CurrentTravelnotificationGetx(travelAlertUsecase: usecaseConfig.currentTravelUsecase!));
-  Get.put(DeviceGetx(idDeviceUsecase: usecaseConfig.idDeviceUsecase!));
     Get.put(RenewTokenGetx(renewTokenUsecase: usecaseConfig.renewTokenUsecase!));
-  Get.put(LifeCycleController());
+  Get.put(LifeCycleController()); 
   Get.put(RateTripController(qualificationUsecase: usecaseConfig.qualificationUsecase!));
   Get.put(ClientGetx(createClientUsecase: usecaseConfig.createClientUsecase!));
   Get.put(
-      LoginclientGetx(loginClientUsecase: usecaseConfig.loginClientUsecase!, loginGoogleUsecase: usecaseConfig.loginGoogleUsecase!));
+      LoginclientGetx(loginClientUsecase: usecaseConfig.loginClientUsecase!, loginGoogleUsecase: usecaseConfig.loginGoogleUsecase!, idDeviceUsecase: usecaseConfig.idDeviceUsecase!,));
   Get.put(GetClientGetx(
       getClientUsecase: usecaseConfig.getClientUsecase!,
       connectivityService: connectivityService));

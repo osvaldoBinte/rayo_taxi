@@ -12,8 +12,8 @@ class NotificationRepositoryImp implements NotificationRepository {
   NotificationRepositoryImp({required this.notificationLocalDataSource});
 
   @override
-  Future<void> updateIdDevice() async {
-    return await notificationLocalDataSource.updateIdDevice();
+  Future<void> updateIdDevice(String? tokenDevice) async {
+    return await notificationLocalDataSource.updateIdDevice(tokenDevice);
   }
 
   @override

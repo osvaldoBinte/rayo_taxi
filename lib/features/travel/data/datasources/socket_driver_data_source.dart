@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:rayo_taxi/common/constants/constants.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-
+ 
 abstract class SocketDriverDataSource {
   void connect();
   void joinTravel(String idTravel);
@@ -10,60 +10,46 @@ abstract class SocketDriverDataSource {
   void disconnect();
   String? get socketId;
   Stream<Map<String, dynamic>> get locationUpdates;
+   void dispose();
 }
 
 class SocketDriverDataSourceImpl implements SocketDriverDataSource {
   late IO.Socket socket;
   final _locationController = StreamController<Map<String, dynamic>>.broadcast();
-  
+          String _baseUrl = AppConstants.serverBase;
+
   @override
   String? get socketId => socket.id;
-    String baseUrl = AppConstants.serverBase;
 
   @override
   Stream<Map<String, dynamic>> get locationUpdates => _locationController.stream;
-    SocketDriverDataSourceImpl() {
-    socket = IO.io(baseUrl, <String, dynamic>{
+  
+  SocketDriverDataSourceImpl() {
+    socket = IO.io('$_baseUrl', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });
 
+    // Escuchar eventos
     socket.onConnect((_) {
-      print('TaxiInfo Socket conectado con ID: ${socket.id}');
-    });
-
-    socket.onDisconnect((_) {
-      print('TaxiInfo Socket desconectado');
+      print('Conectado al servidor de Socket.IO con ID: ${socket.id}');
     });
 
     socket.onDisconnect((_) {
       print('Desconectado del servidor');
     });
 
-  socket.on('driver_location_update', (data) {
-      print('TaxiInfo Socket recibió datos: $data');
-      try {
-        if (data != null) {
-          final Map<String, dynamic> locationData = Map<String, dynamic>.from(data);
-          print('TaxiInfo Enviando datos al stream: $locationData');
-          _locationController.add(locationData);
-        }
-      } catch (e) {
-        print('TaxiInfo Error procesando datos del socket: $e');
-      }
+    socket.on('driver_location_update', (data) {
+      print('Nueva ubicación recibida: $data');
+      _locationController.add(data as Map<String, dynamic>);
     });
   }
-  
 
   @override
   void connect() {
-    try {
-      socket.connect();
-      print('TaxiInfo Intentando conectar socket');
-    } catch (e) {
-      print('TaxiInfo Error conectando socket: $e');
-    }
+    socket.connect();
   }
+
   @override
   void joinTravel(String idTravel) {
     socket.emit('join_travel', {'id_travel': idTravel});
@@ -77,15 +63,44 @@ class SocketDriverDataSourceImpl implements SocketDriverDataSource {
     });
   }
 
-   @override
-  void disconnect() {
+  void dispose() {
+    
     try {
-      socket.disconnect();
-      _locationController.close();
-      print('TaxiInfo Socket desconectado y stream cerrado');
+    
+      
+      if (socket.connected) {
+        socket.disconnect();
+      }
+      
+      try {
+        socket.close();
+        socket.destroy();
+      } catch (e) {
+        // Ignorar
+      }
+      
+      try {
+        if (!_locationController.isClosed) {
+          _locationController.close();
+        }
+      } catch (e) {
+        // Ignorar si ya está cerrado
+      }
+      
+      print('TaxiInfodriver Socket desconectado y recursos liberados');
     } catch (e) {
-      print('TaxiInfo Error desconectando socket: $e');
+      print('TaxiInfodriver Error cerrando recursos: $e');
     }
   }
-
+  @override
+  void disconnect() {
+    try {
+      socket.emit('leave_travel', null);
+      socket.clearListeners();
+      socket.dispose();
+      _locationController.close();
+    } catch (e) {
+      print('Error al desconectar socket: $e');
+    }
+  }
 }

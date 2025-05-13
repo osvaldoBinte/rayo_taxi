@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rayo_taxi/common/theme/app_color.dart';
 import 'package:rayo_taxi/features/client/domain/entities/client.dart';
-import 'emergency_button.dart';
+import '../../../../travel/presentation/page/current_travel/emergency_button.dart';
 import 'ayuda_controller.dart';
 // ayuda_page.dart
 class AyudaPage extends GetView<AyudaController> {
@@ -29,7 +29,6 @@ class AyudaPage extends GetView<AyudaController> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const EmergencyButton(), 
               const SizedBox(height: 32),
               
               ElevatedButton.icon(

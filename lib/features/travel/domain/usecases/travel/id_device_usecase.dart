@@ -5,8 +5,8 @@ import 'package:rayo_taxi/features/travel/domain/repository/travel_repository.da
 class IdDeviceUsecase{
   final NotificationRepository notificationRepository;
   IdDeviceUsecase({required this.notificationRepository});
-    Future<void>execute() async{
-      return await notificationRepository.updateIdDevice();
+    Future<void>execute(String? tokenDevice) async{
+      return await notificationRepository.updateIdDevice(tokenDevice);
     }
 
 }

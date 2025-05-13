@@ -158,7 +158,7 @@ class ClientLocalDataSourceImp implements ClientLocalDataSource {
   }
 @override
 Future<void> loginClient(Client client) async {
-  final DeviceGetx _driverGetx = Get.find<DeviceGetx>();
+  //final DeviceGetx _driverGetx = Get.find<DeviceGetx>();
 
   var response = await http.post(
     Uri.parse('$_baseUrl/api/app_clients/users/auth/login'),
@@ -180,7 +180,7 @@ Future<void> loginClient(Client client) async {
     String? savedToken = await AuthService().getToken();
     print('auth_token recuperado después de guardar: $savedToken');
 
-    await _driverGetx.getDeviceId();
+//    await _driverGetx.getDeviceId();
 
     print(message);
   } else {
@@ -283,7 +283,7 @@ Future<void> loginClient(Client client) async {
 
   @override
 Future<GoogleMensajeModel> loginGoogle(Client client) async {
-    final DeviceGetx _driverGetx = Get.find<DeviceGetx>();
+    //final DeviceGetx _driverGetx = Get.find<DeviceGetx>();
 
     logger.i('Iniciando solicitud HTTP POST a $_baseUrl/api/auth/loginWithGoogle');
 
@@ -318,7 +318,7 @@ Future<GoogleMensajeModel> loginGoogle(Client client) async {
 
       logger.i('Iniciando _driverGetx.getDeviceId()');
       final deviceIdStartTime = DateTime.now();
-      await _driverGetx.getDeviceId();
+      //await _driverGetx.getDeviceId();
       final deviceIdDuration = DateTime.now().difference(deviceIdStartTime);
       logger.i(
           '_driverGetx.getDeviceId() completado en ${deviceIdDuration.inMilliseconds} ms');

@@ -1,4 +1,3 @@
-// ayuda_controller.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
@@ -12,7 +11,7 @@ class AyudaController extends GetxController with GetSingleTickerProviderStateMi
   final Client client;
   late AnimationController animationController;
   final isPressed = false.obs;
-  final holdDuration = 3; // Duración en segundos
+  final holdDuration = 1;
 
   AyudaController({required this.client});
 
@@ -35,7 +34,6 @@ class AyudaController extends GetxController with GetSingleTickerProviderStateMi
     super.onClose();
   }
 
-  // Métodos para el EmergencyButton
   void onEmergencyTapDown() {
     isPressed.value = true;
     animationController.forward();
@@ -51,7 +49,7 @@ class AyudaController extends GetxController with GetSingleTickerProviderStateMi
     animationController.reset();
   }
  Future<void> makeEmergencyCall() async {
-    final phoneUrl = 'tel:+52${client.phone_support?.replaceAll(RegExp(r'[^\d]'), '')}';
+  final phoneUrl = 'tel:911'; 
     
     try {
       Uri uri = Uri.parse(phoneUrl);
@@ -84,7 +82,6 @@ class AyudaController extends GetxController with GetSingleTickerProviderStateMi
 }
 
 
-  // Métodos originales de AyudaController
   Future<void> abrirWhatsApp() async {
     final phoneSupport = client.phone_support?.replaceAll(RegExp(r'[^\d]'), '');
     final whatsappUrl = 'https://wa.me/+52$phoneSupport?text=${'Hola!! necesito ayuda'}';

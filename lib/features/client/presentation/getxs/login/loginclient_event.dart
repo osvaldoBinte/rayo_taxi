@@ -1,4 +1,4 @@
-part of 'loginclient_getx.dart';
+part of '../../pages/login/loginclient_getx.dart';
 
 @immutable
 abstract class LoginclientEvent {}
