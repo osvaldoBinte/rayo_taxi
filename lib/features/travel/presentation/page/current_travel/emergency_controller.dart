@@ -48,8 +48,8 @@ class EmergencyController extends GetxController with GetSingleTickerProviderSta
   }
 
   Future<void> makeEmergencyCall() async {
-    String supportPhone = '352 163 0745';
-    final phoneUrl = 'tel:+52${supportPhone.replaceAll(RegExp(r'[^\d]'), '')}';
+String supportPhone = '911';
+final phoneUrl = 'tel:911';
     
     try {
       Uri uri = Uri.parse(phoneUrl);

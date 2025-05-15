@@ -6,7 +6,7 @@ class TravelwithtariffModal extends TravelwithtariffEntitie {
     
   required int driverId,
   required int travelId,
-required int? tarifa})
+required double? tarifa})
       : super(driverId: driverId,travelId:travelId, tarifa: tarifa);
   factory TravelwithtariffModal.fromJson(Map<String, dynamic> json) {
     return TravelwithtariffModal(

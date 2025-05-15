@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:rayo_taxi/features/travel/presentation/getx/notification/notificationcontroller.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:quickalert/quickalert.dart';
+import 'package:rayo_taxi/common/routes/%20navigation_service.dart';
+import 'package:rayo_taxi/common/settings/routes_names.dart';
 import 'package:rayo_taxi/features/travel/presentation/Travelgetx/TravelAlert/travel_alert_getx.dart';
 import 'package:rayo_taxi/features/travel/presentation/Travelgetx/TravelsAlert/travels_alert_getx.dart';
+import 'package:rayo_taxi/features/travel/presentation/getx/notification/notificationcontroller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:rayo_taxi/features/travel/presentation/page/widgets/customSnacknar.dart';
 
 class AppLifecycleHandler extends StatefulWidget {
   final Widget child;
@@ -27,21 +32,25 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler> with WidgetsB
   static const String _lastNotificationKey = 'lastNotification';
   bool _isUpdating = false;
   int _lastUpdateTimestamp = 0;
-  
-  // Variables para controlar la actualización con retraso
   Timer? _updateTimer;
+  
+  // Observador del árbol de navegación para capturar cambios de ruta
+  RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
   
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     
+    // Configurar verificación de notificaciones periódica
+    _setupPeriodicNotificationCheck();
+    
     // Verificar notificaciones al inicio con un ligero retraso
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkForUpdateNeeded(initialDelay: true);
     });
     
-    // Si el NotificationController expone una variable reactiva para notificaciones pendientes, usarla
+    // Observar tripAccepted
     if (notificationController.tripAccepted != null) {
       ever(notificationController.tripAccepted, (accepted) {
         if (accepted == true) {
@@ -50,6 +59,35 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler> with WidgetsB
         }
       });
     }
+    
+    // Observar lastNotification
+    ever(notificationController.lastNotification, (notification) {
+      if (notification != null) {
+        print('DEBUG: Nueva notificación detectada, programando actualización');
+        _scheduleUpdate();
+      }
+    });
+    
+    // Suscribirse a los cambios de ruta con GetX
+    ever(Get.routing.obs, (_) {
+      print('DEBUG: Cambio de ruta detectado, verificando notificaciones pendientes');
+      _scheduleUpdate();
+    });
+  }
+
+  // Configurar verificación periódica para asegurar que las notificaciones siempre se procesen
+  void _setupPeriodicNotificationCheck() {
+    // Verificar cada 20 segundos si hay notificaciones pendientes
+    Timer.periodic(Duration(seconds: 20), (timer) {
+      if (!_isUpdating) {
+        _checkForPendingNotification().then((hasPendingNotification) {
+          if (hasPendingNotification) {
+            print('DEBUG: Notificación pendiente encontrada en verificación periódica');
+            _scheduleUpdate();
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -63,7 +101,13 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler> with WidgetsB
   void _scheduleUpdate() {
     _updateTimer?.cancel();
     
-    // Usar retraso más largo para el inicio, más corto para actualizaciones posteriores
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastUpdateTimestamp < 2000) {
+      print('DEBUG: Omitiendo actualización duplicada (demasiado cercana a la anterior)');
+      return;
+    }
+    
+    // Usar un retraso corto para actualizaciones
     _updateTimer = Timer(Duration(milliseconds: 500), () {
       _checkForUpdateNeeded();
     });
@@ -82,11 +126,12 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler> with WidgetsB
     }
     
     try {
-      final hasNotification = await _checkForPendingNotification();
+      final notificationInfo = await _getNotificationInfo();
+      final title = notificationInfo['title'];
       
-      if (hasNotification) {
-        print('DEBUG: Notificación pendiente encontrada, actualizando datos');
-        await _updateTravelData();
+      if (title != null) {
+        print('DEBUG: Notificación pendiente encontrada: $title');
+        await _processNotification(title, notificationInfo['body']);
       } else {
         print('DEBUG: No se encontraron notificaciones pendientes');
       }
@@ -95,65 +140,166 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler> with WidgetsB
     }
   }
   
-  // Actualizar datos de viaje
-  Future<void> _updateTravelData() async {
+  // Procesar la notificación según su tipo
+  Future<void> _processNotification(String title, String? body) async {
     if (_isUpdating) {
       return;
     }
     
-    // Prevenir actualizaciones muy cercanas (menos de 2 segundos)
-    final now = DateTime.now().millisecondsSinceEpoch;
-    if (now - _lastUpdateTimestamp < 2000) {
-      print('DEBUG: Omitiendo actualización (demasiado cercana a la anterior)');
-      return;
-    }
-    
     _isUpdating = true;
-    _lastUpdateTimestamp = now;
+    _lastUpdateTimestamp = DateTime.now().millisecondsSinceEpoch;
     
     try {
-      print('DEBUG: Iniciando actualización de datos de viaje');
+      print('DEBUG: Procesando notificación: $title');
       
-      // Usar waitForOperationsToComplete para asegurar que se completen ambas operaciones
+      // Para todos los tipos de notificaciones, primero cargar los datos
       await _waitForOperationsToComplete(
         currentTravelGetx: currentTravelGetx,
         travelAlertGetx: travelAlertGetx
       );
       
-      print('DEBUG: Actualización completada correctamente');
+      // Procesar según el tipo de notificación
+      if (title == 'Nuevo precio para tu viaje') {
+        // En este caso, navegar al home usando la ruta nombrada
+        _navigateToHome(1);
+      } 
+      else if (title == 'Tu viaje fue aceptado' || title == "Contraoferta aceptada por el conductor") {
+        // Mostrar alerta de aceptación
+        _navigateToHome(1, showAlert: true, alertConfig: {
+          'title': title,
+          'body': body ?? '',
+          'type': 'accept'
+        });
+      } 
+      else if (title == 'Viaje terminado') {
+        // Navegar a home y mostrar alerta
+        _navigateToHome(1, showAlert: false, alertConfig: {
+          'title': title,
+          'body': body ?? '',
+          'type': 'info'
+        });
+      } 
+      else {
+        // Para otros tipos de notificaciones
+        if (Get.context != null && body != null) {
+          _showQuickAlert(title, body);
+        }
+      }
       
-      // Limpiar notificación después de actualizar
+      print('DEBUG: Notificación procesada correctamente');
       await _clearLastNotification();
     } catch (e) {
-      print('ERROR en actualización de datos: $e');
+      print('ERROR en procesamiento de notificación: $e');
+      CustomSnackBar.showError('', 'Error al procesar la notificación: $e');
     } finally {
       _isUpdating = false;
     }
   }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) async {
-    super.didChangeAppLifecycleState(state);
-    
-    if (state == AppLifecycleState.resumed) {
-      print('DEBUG: App volvió a primer plano, verificando notificaciones...');
+  
+  // Método mejorado para navegar al home que funciona independientemente del estado de navegación
+  void _navigateToHome(int selectedIndex, {bool showAlert = false, Map<String, dynamic>? alertConfig}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Usar offAllNamed para asegurar que volvemos a la ruta base
+      Get.offAllNamed(
+        RoutesNames.homePage,
+        arguments: {'selectedIndex': selectedIndex},
+      );
       
-      // Esperar un poco para que la UI se estabilice
-      _scheduleUpdate();
-    } else if (state == AppLifecycleState.paused) {
-      // App va a segundo plano
-      print('DEBUG: App pasó a segundo plano');
+      // Si se debe mostrar una alerta, hacerlo después de navegar
+      if (showAlert && alertConfig != null) {
+        // Esperar a que la navegación termine antes de mostrar la alerta
+        Future.delayed(Duration(milliseconds: 300), () {
+          final title = alertConfig['title'] as String;
+          final body = alertConfig['body'] as String;
+          final type = alertConfig['type'] as String;
+          
+          if (type == 'accept') {
+            _showAcceptAlert(title, body);
+          } else if (type == 'info') {
+            _showQuickAlert(title, body);
+          }
+        });
+      }
+    });
+  }
+  
+  // Alerta para viajes aceptados
+  void _showAcceptAlert(String title, String body) {
+    try {
+      if (Get.context != null) {
+        QuickAlert.show(
+          context: Get.context!,
+          type: QuickAlertType.success,
+          title: title,
+          text: body,
+          confirmBtnText: 'OK',
+          onConfirmBtnTap: () {
+            // Cerrar la alerta
+            Navigator.of(Get.context!).pop();
+          },
+        );
+      } else {
+        print('DEBUG: Get.context es null, no se puede mostrar alerta');
+      }
+    } catch (e) {
+      print('ERROR al mostrar alerta de aceptación: $e');
     }
   }
   
+  // Alerta general para otros tipos de notificaciones
+  void _showQuickAlert(String title, String body) {
+    try {
+      if (Get.context != null) {
+        Future.microtask(() {
+          QuickAlert.show(
+            context: Get.context!,
+            type: QuickAlertType.info,
+            title: title,
+            text: body,
+            confirmBtnText: 'OK',
+            onConfirmBtnTap: () {
+              if (title == 'Viaje terminado') {
+                Get.find<NotificationController>().tripAccepted.value = false;
+                Get.find<ModalController>().imageUrl.value = 'assets/images/viajes/add_travel.gif';
+                Get.find<ModalController>().modalText.value = 'Buscando chofer...';
+              }
+
+              currentTravelGetx.fetchCoDetails(FetchgetDetailsssEvent());
+              Navigator.of(Get.context!).pop();
+            },
+          );
+        });
+      } else {
+        print('DEBUG: Get.context es null, no se puede mostrar alerta');
+        // Guardar la notificación para mostrarla cuando haya contexto
+        _saveNotificationForLater(title, body);
+      }
+    } catch (e) {
+      print('ERROR al mostrar alerta rápida: $e');
+    }
+  }
+
+  // Guardar notificación para mostrarla más tarde cuando haya contexto disponible
+  void _saveNotificationForLater(String title, String body) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('pending_alert_title', title);
+      await prefs.setString('pending_alert_body', body);
+      print('DEBUG: Notificación guardada para mostrar más tarde');
+    } catch (e) {
+      print('ERROR al guardar notificación para más tarde: $e');
+    }
+  }
+
   Future<void> _waitForOperationsToComplete({
-      required CurrentTravelGetx currentTravelGetx,
-      required TravelsAlertGetx travelAlertGetx}) async {
+    required CurrentTravelGetx currentTravelGetx,
+    required TravelsAlertGetx travelAlertGetx
+  }) async {
     final currentTravelCompleter = Completer();
     final travelsAlertCompleter = Completer();
     
     // Configurar listeners para detectar cuando las operaciones se completan
-    final currentTravelSubscription = ever(currentTravelGetx.state, (state) {
+    final currentTravelDisposer = ever(currentTravelGetx.state, (state) {
       if ((state is TravelAlertLoaded || state is TravelAlertFailure) && 
           !currentTravelCompleter.isCompleted) {
         print('DEBUG: Completada actualización de CurrentTravel');
@@ -161,7 +307,7 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler> with WidgetsB
       }
     });
     
-    final travelsAlertSubscription = ever(travelAlertGetx.state, (state) {
+    final travelsAlertDisposer = ever(travelAlertGetx.state, (state) {
       if ((state is TravelsAlertLoaded || state is TravelsAlertFailure) && 
           !travelsAlertCompleter.isCompleted) {
         print('DEBUG: Completada actualización de TravelsAlert');
@@ -199,11 +345,93 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler> with WidgetsB
     } catch (e) {
       print('ERROR en waitForOperationsToComplete: $e');
     } finally {
-      // Cancelar el timeout y las suscripciones
+      // Cancelar el timeout y limpiar los listeners
       timeoutTimer.cancel();
+      currentTravelDisposer();
+      travelsAlertDisposer();
     }
   }
 
+  // Obtener información completa de la notificación
+  Future<Map<String, String?>> _getNotificationInfo() async {
+    Map<String, String?> result = {
+      'title': null,
+      'body': null,
+    };
+    
+    try {
+      // Primero verificar en el controlador de notificaciones
+      if (notificationController.lastNotification.value != null) {
+        final notification = notificationController.lastNotification.value!;
+        result['title'] = notification.notification?.title;
+        result['body'] = notification.notification?.body;
+        
+        // Si tenemos título y cuerpo, devolver directamente
+        if (result['title'] != null && result['body'] != null) {
+          return result;
+        }
+      }
+      
+      // Si no está disponible en el controlador, intentar obtenerlo de SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload(); // Asegurar datos frescos
+      final notificationString = prefs.getString(_lastNotificationKey);
+      
+      if (notificationString != null && notificationString.isNotEmpty) {
+        try {
+          final notificationData = Map<String, dynamic>.from(
+            (notificationString.startsWith('{')) 
+              ? Map<String, dynamic>.from(await json.decode(notificationString))
+              : {}
+          );
+          
+          // Intenta obtener el título y cuerpo de diferentes ubicaciones posibles
+          result['title'] = notificationData['notification']?['title'] ?? 
+                 notificationData['title'] ?? 
+                 notificationData['data']?['title'];
+                 
+          result['body'] = notificationData['notification']?['body'] ?? 
+                 notificationData['body'] ?? 
+                 notificationData['data']?['body'];
+        } catch (e) {
+          print('ERROR al parsear notificación guardada: $e');
+        }
+      }
+      
+      // Verificar notificaciones pendientes guardadas
+      final pendingTitle = prefs.getString('pending_alert_title');
+      final pendingBody = prefs.getString('pending_alert_body');
+      
+      if (pendingTitle != null && result['title'] == null) {
+        result['title'] = pendingTitle;
+        result['body'] = pendingBody;
+        // Limpiar notificaciones pendientes después de recuperarlas
+        await prefs.remove('pending_alert_title');
+        await prefs.remove('pending_alert_body');
+      }
+      
+      return result;
+    } catch (e) {
+      print('ERROR al obtener información de notificación: $e');
+      return result;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    super.didChangeAppLifecycleState(state);
+    
+    if (state == AppLifecycleState.resumed) {
+      print('DEBUG: App volvió a primer plano, verificando notificaciones...');
+      
+      // Esperar un poco para que la UI se estabilice
+      _scheduleUpdate();
+    } else if (state == AppLifecycleState.paused) {
+      // App va a segundo plano
+      print('DEBUG: App pasó a segundo plano');
+    }
+  }
+  
   // Verificar si hay una notificación pendiente en SharedPreferences
   Future<bool> _checkForPendingNotification() async {
     try {
@@ -215,12 +443,13 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler> with WidgetsB
       print('DEBUG: Claves en SharedPreferences: $keys');
       
       final storedMessage = prefs.getString(_lastNotificationKey);
-      final hasStoredNotification = storedMessage != null;
+      final pendingTitle = prefs.getString('pending_alert_title');
+      final hasStoredNotification = storedMessage != null || pendingTitle != null;
       
       // Verificar también NotificationController si está disponible
       final hasControllerNotification = 
-          notificationController.tripAccepted.value == true || 
-          (notificationController.lastNotification.value != null);
+          notificationController.tripAccepted?.value == true || 
+          notificationController.lastNotification.value != null;
       
       print('DEBUG: ¿Hay notificación guardada? $hasStoredNotification');
       print('DEBUG: ¿Hay notificación en controller? $hasControllerNotification');
@@ -237,6 +466,8 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler> with WidgetsB
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_lastNotificationKey);
+      await prefs.remove('pending_alert_title');
+      await prefs.remove('pending_alert_body');
       
       // Limpiar también el controlador
       if (Get.isRegistered<NotificationController>()) {
@@ -251,6 +482,45 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler> with WidgetsB
 
   @override
   Widget build(BuildContext context) {
+    // Verificar notificaciones pendientes cada vez que se construye el widget
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForPendingNotification().then((hasPending) {
+        if (hasPending) {
+          _scheduleUpdate();
+        }
+      });
+    });
+    
     return widget.child;
+  }
+}
+
+// Extensión del NavigationService actual
+extension NavigationServiceExtension on NavigationService {
+  // Modificar la función navigateToHome para manejar alertas
+  Future<void> navigateToHomeWithAlert(int selectedIndex, {String? alertTitle, String? alertBody, String? alertType}) async {
+    await navigateToHome(selectedIndex: selectedIndex);
+    
+    if (alertTitle != null && alertBody != null && Get.context != null) {
+      Future.delayed(Duration(milliseconds: 300), () {
+        if (alertType == 'success') {
+          QuickAlert.show(
+            context: Get.context!,
+            type: QuickAlertType.success,
+            title: alertTitle,
+            text: alertBody,
+            confirmBtnText: 'OK',
+          );
+        } else {
+          QuickAlert.show(
+            context: Get.context!,
+            type: QuickAlertType.info,
+            title: alertTitle,
+            text: alertBody,
+            confirmBtnText: 'OK',
+          );
+        }
+      });
+    }
   }
 }

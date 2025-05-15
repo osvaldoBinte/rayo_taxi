@@ -50,19 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyD9ujivJZkEzGrX_WALZ7Jg9oRSE2mOvZM', // Nuevo API key
-    appId: '1:142272499428:android:2f154b05ec6b17a509a6f1',
-    messagingSenderId: '142272499428',
-    projectId: 'rayo-taxi-d58f6',
-    storageBucket: 'rayo-taxi-d58f6.appspot.com',
+    apiKey: 'AIzaSyA3Z1HHLyLnx5g7uBMDYJxvWWyFR6XMmbE',
+    appId: '1:755969155730:android:e2e077108504f1ef477c4b',
+    messagingSenderId: '755969155730',
+    projectId: 'rayo-taxi-61518',
+    storageBucket: 'rayo-taxi-61518.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBYo4E0k5LY5qqVRyqnKWbBbvkOb9aqQ8k',
-    appId: '1:142272499428:ios:39b3674ede8c607e09a6f1',
-    messagingSenderId: '142272499428',
-    projectId: 'rayo-taxi-d58f6',
-    storageBucket: 'rayo-taxi-d58f6.appspot.com',
+    apiKey: 'AIzaSyDItjVuv6Q5s1pE4di9Zvx-o4sj-fZ2K6A',
+    appId: '1:755969155730:ios:93c06d3432a8af00477c4b',
+    messagingSenderId: '755969155730',
+    projectId: 'rayo-taxi-61518',
+    storageBucket: 'rayo-taxi-61518.firebasestorage.app',
     iosBundleId: 'com.rayo.taxi',
   );
 }

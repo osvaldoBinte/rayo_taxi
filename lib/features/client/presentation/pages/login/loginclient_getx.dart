@@ -27,6 +27,7 @@ class LoginclientGetx extends GetxController {
   final LoginClientUsecase loginClientUsecase;
   final LoginGoogleUsecase loginGoogleUsecase;
   final IdDeviceUsecase idDeviceUsecase;
+     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
   var isGoogleSignInAvailable = false.obs;
 
@@ -97,7 +98,6 @@ class LoginclientGetx extends GetxController {
   try {
     final client = Client(email: email, password: password);
     await loginClientUsecase.execute(client);
-     FirebaseMessaging messaging = FirebaseMessaging.instance;
     String? tokenDevice = await messaging.getToken();
     print('Device Token: $tokenDevice');
     final updateGetx = Get.find<UpdateGetx>();
@@ -227,7 +227,11 @@ Future<void> logout() async {
 
         await loginGoogleUsecase.execute(client);
         state.value = LoginclientSuccessfully();
+        String? tokenDevice = await messaging.getToken();
+    print('Device Token: $tokenDevice');
+    idDeviceUsecase.execute(tokenDevice);
         Get.offAll(() => HomePage(selectedIndex: 1));
+
       }
     } catch (e) {
       state.value = LoginclientFailure(e.toString());
@@ -392,7 +396,9 @@ Future<void> loginWithApple() async {
 
       final updateGetx = Get.find<UpdateGetx>();
       updateGetx.isPasswordAuthProvider.value = false;
-      
+            String? tokenDevice = await messaging.getToken();
+    print('Device Token: $tokenDevice');
+    idDeviceUsecase.execute(tokenDevice);
       state.value = LoginclientSuccessfully();
       Get.offAll(() => HomePage(selectedIndex: 1));
       } catch (e) {

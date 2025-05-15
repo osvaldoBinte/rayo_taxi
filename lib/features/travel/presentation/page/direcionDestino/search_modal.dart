@@ -328,7 +328,7 @@ void navigateToMapScreen() {
     modalController.lottieUrl.value = 'https://lottie.host/a811be92-b006-48ce-ad3e-c20bfffc3d7e/NzmrksnYZW.json';
     modalController.imageUrl.value = 'assets/images/viajes/add_travel.gif';
     modalController.modalText.value = 'Buscando chofer...';
-    notificationController.clearNotification();
+//    notificationController.clearNotification();
 
     // Add a debug log to verify values
     print('debug2 Navigating to MapScreen with:');

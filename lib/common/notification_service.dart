@@ -264,40 +264,7 @@ class NotificationService {
         final title = notification.title ?? 'Notificación';
         final body = notification.body ?? 'Tienes una nueva notificación';
 
-        Future.microtask(() async {
-          if (title == 'Nuevo precio para tu viaje') {
-            await Get.find<NavigationService>()
-                .navigateToHome(selectedIndex: 1);
-          } else if (title == 'Tu viaje fue aceptado' ||
-              title == "Contraoferta aceptada por el conductor") {
-            await _waitForOperationsToComplete(
-                currentTravelGetx: Get.find<CurrentTravelGetx>(),
-                travelAlertGetx: Get.find<TravelsAlertGetx>());
-
-            if (Get.context != null) {
-              showacept(Get.context!, title, body);
-            }
-          } else if (title == 'Viaje terminado') {
-            await _waitForOperationsToComplete(
-                currentTravelGetx: Get.find<CurrentTravelGetx>(),
-                travelAlertGetx: Get.find<TravelsAlertGetx>());
-
-            await Get.find<NavigationService>()
-                .navigateToHome(selectedIndex: 1);
-
-            if (Get.context != null) {
-              showQuickAlert(Get.context!, title, body);
-            }
-          } else {
-            await _waitForOperationsToComplete(
-                currentTravelGetx: Get.find<CurrentTravelGetx>(),
-                travelAlertGetx: Get.find<TravelsAlertGetx>());
-
-            if (Get.context != null) {
-              showQuickAlert(Get.context!, title, body);
-            }
-          }
-        });
+        
       }
     }
 
@@ -535,7 +502,8 @@ class NotificationService {
                       );
                     }
                   } else {
-                    final newPrice = int.tryParse(priceController.text);
+                      final newPrice = double.tryParse(priceController.text.replaceAll(',', '.'));
+
                     
                     // Verificación de precio con null-check similar al código de trabajo
                     if (newPrice == null || 

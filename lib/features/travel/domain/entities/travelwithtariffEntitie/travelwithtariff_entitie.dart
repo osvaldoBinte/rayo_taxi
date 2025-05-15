@@ -2,7 +2,7 @@ class TravelwithtariffEntitie {
 
   final int driverId;
   final int travelId;
-  final int? tarifa;
+  final double? tarifa;
   TravelwithtariffEntitie({
     required this.driverId,
        required this.travelId,

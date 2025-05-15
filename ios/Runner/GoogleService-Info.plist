@@ -2,24 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CLIENT_ID</key>
-	<string>142272499428-937p04c8id7dvboov7sfmr8npc2b3ao8.apps.googleusercontent.com</string>
-	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.142272499428-937p04c8id7dvboov7sfmr8npc2b3ao8</string>
-	<key>ANDROID_CLIENT_ID</key>
-	<string>142272499428-63ue1fkho391enh8236092iur6c5t1ck.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
-	<string>AIzaSyBYo4E0k5LY5qqVRyqnKWbBbvkOb9aqQ8k</string>
+	<string>AIzaSyDItjVuv6Q5s1pE4di9Zvx-o4sj-fZ2K6A</string>
 	<key>GCM_SENDER_ID</key>
-	<string>142272499428</string>
+	<string>755969155730</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.rayo.taxi</string>
 	<key>PROJECT_ID</key>
-	<string>rayo-taxi-d58f6</string>
+	<string>rayo-taxi-61518</string>
 	<key>STORAGE_BUCKET</key>
-	<string>rayo-taxi-d58f6.firebasestorage.app</string>
+	<string>rayo-taxi-61518.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -31,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:142272499428:ios:39b3674ede8c607e09a6f1</string>
+	<string>1:755969155730:ios:93c06d3432a8af00477c4b</string>
 </dict>
 </plist>
