@@ -20,6 +20,7 @@ import '../../getxs/calculateAge/calculateAge_getx.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/Widget/card_button.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/Widget/list_option.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class GetClientPage extends StatefulWidget {
   const GetClientPage({super.key});
@@ -35,17 +36,30 @@ class _GetClientPageState extends State<GetClientPage> {
   final LoginclientGetx _loginGetx = Get.find<LoginclientGetx>();
   final RemovedataaccountGetx _removedataaccountGetx =
       Get.find<RemovedataaccountGetx>();
-
+final RxString appVersion = ''.obs;
+  final RxString buildNumber = ''.obs;
   final _picker = ImagePicker();
   String? _imagePath;
  
   Future<void> _logout() async {
    _loginGetx.logoutAlert();
   }
-
+Future<void> _getAppVersion() async {
+    try {
+      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      appVersion.value = packageInfo.version;      
+      buildNumber.value = packageInfo.buildNumber;
+    } catch (e) {
+      print('Error al obtener la versión: $e');
+      appVersion.value = '?';
+      buildNumber.value = '?';
+    }
+  }
   @override
   void initState() {
     super.initState();
+        _getAppVersion();  
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await getClientGetx.fetchCoDetails(FetchgetDetailsEvent());
       final state = getClientGetx.state.value;
@@ -277,6 +291,16 @@ class _GetClientPageState extends State<GetClientPage> {
                     _removedataaccountGetx.confirmDeleteAccount();
                   },
                 ),
+                               Center(
+                  child: Obx(() => Text(
+                    'Versión ${appVersion.value}+${buildNumber.value}',
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 14,
+                    ),
+                  )),
+                ),
+
                 const SizedBox(height: 80),
               ],
             );
