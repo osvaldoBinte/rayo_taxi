@@ -53,7 +53,7 @@ RemoteMessage? initialMessage;
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 AndroidNotificationChannel? channel;
-String enviromentSelect = Enviroment.production.value;
+String enviromentSelect = Enviroment.development.value;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
  
 void main() async {
