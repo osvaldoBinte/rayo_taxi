@@ -6,7 +6,7 @@ import 'package:quickalert/quickalert.dart';
 import 'package:rayo_taxi/common/routes/%20navigation_service.dart';
 import 'package:rayo_taxi/common/settings/routes_names.dart';
 import 'package:rayo_taxi/features/client/presentation/getxs/get/get_client_getx.dart';
-import 'package:rayo_taxi/features/travel/presentation/page/widgets/custom_alert_dialog.dart';
+import 'package:rayo_taxi/common/widge/custom_alert_dialog.dart';
 import 'package:rayo_taxi/features/travel/presentation/page/ratetrip/rate_trip.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/home_page/home_page.dart';
 import 'package:rayo_taxi/features/travel/data/models/travel/travel_alert_model.dart';
@@ -42,16 +42,15 @@ class NotificationService {
   AndroidNotificationChannel? channel;
   final GlobalKey<NavigatorState> navigatorKey;
 
+  bool _isPriceDialogOpen = false;
   RemoteMessage? initialMessage;
 
   NotificationService(this.navigatorKey);
 
   Future<void> initialize() async {
-    // Inicializar Firebase para mensajes en segundo plano
     FirebaseMessaging.onBackgroundMessage(
         NotificationController.firebaseMessagingBackgroundHandler);
 
-    // Configurar canal de notificaciones para Android
     channel = const AndroidNotificationChannel(
       'high_importance_channel',
       'Notificaciones Importantes',
@@ -233,7 +232,7 @@ class NotificationService {
 
   Future<void> _handleTravelStateChange(TravelAlertModel travel) async {
     if (travel.waiting_for == 1 && travel.id_status == 6) {
-      if (Get.context != null) {
+     if (!_isPriceDialogOpen && Get.context != null) {
         showNewPriceDialog(Get.context!);
       }
     }
@@ -307,8 +306,7 @@ class NotificationService {
 
   static Future<void> _firebaseMessagingBackgroundHandler(
       RemoteMessage message) async {
-    await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform);
+  
 
     print('DEBUG: Mensaje recibido en segundo plano');
     print('DEBUG: Título del mensaje: ${message.notification?.title}');
@@ -331,10 +329,16 @@ class NotificationService {
   }
 
  void showNewPriceDialog(BuildContext context) async {
+      if (Get.isDialogOpen == true) {
+      Get.back();
+    }
+    
+    _isPriceDialogOpen = true;
   final state = currentTravelGetx.state.value;
   
-  if (state is! TravelAlertLoaded) {
+   if (state is! TravelAlertLoaded) {
     print("Error: No travel data available.");
+    _isPriceDialogOpen = false; // Resetear en caso de error
     return;
   }
   
@@ -355,6 +359,7 @@ class NotificationService {
       message: '',
       confirmText: '',
       cancelText: null,
+      showBarrier:false,
       customWidget: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -554,8 +559,10 @@ class NotificationService {
           ),
         ],
       ),
-    );
-  });
+    ).then((_) {
+        _isPriceDialogOpen = false;
+      });
+    });
 }
 
   void showacept(BuildContext context, String title, String body) {

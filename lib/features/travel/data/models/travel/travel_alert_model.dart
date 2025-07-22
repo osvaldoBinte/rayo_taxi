@@ -26,6 +26,8 @@ class TravelAlertModel extends TravelAlert {
     String? model,
     required int pending_qualification,
     required int qualification,
+    required String passenger,
+    
   }) : super(
             id: id,
             date: date,
@@ -49,7 +51,8 @@ class TravelAlertModel extends TravelAlert {
             name: name,
             model: model,
             qualification: qualification,
-            pending_qualification: pending_qualification);
+            pending_qualification: pending_qualification,
+            passenger:passenger);
   factory TravelAlertModel.fromJson(Map<String, dynamic> json) {
     return TravelAlertModel(
         id: json['id'] ?? 0,
@@ -76,7 +79,9 @@ class TravelAlertModel extends TravelAlert {
         name: json['name'] ?? '',
         model: json['model'] ?? '',
         qualification: json['qualification'] ?? 0,
-        pending_qualification: json['pending_qualification'] ?? 0);
+        pending_qualification: json['pending_qualification'] ?? 0,
+        passenger: json['passenger'] ?? ''
+        );
   }
 
   factory TravelAlertModel.fromEntity(TravelAlert travelAlert) {
@@ -103,7 +108,8 @@ class TravelAlertModel extends TravelAlert {
         name: travelAlert.name,
         model: travelAlert.model,
         qualification: travelAlert.qualification,
-        pending_qualification: travelAlert.pending_qualification);
+        pending_qualification: travelAlert.pending_qualification,
+        passenger:travelAlert.passenger);
   }
 
   static String _getImporte(dynamic travelData) {
@@ -136,7 +142,8 @@ class TravelAlertModel extends TravelAlert {
       'name': name,
       'model': model,
       'qualification': qualification,
-      'pending_qualification': pending_qualification
+      'pending_qualification': pending_qualification,
+      'passenger':passenger
     };
   }
 }

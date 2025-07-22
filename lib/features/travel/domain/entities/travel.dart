@@ -7,6 +7,7 @@ class Travel {
   String? duration;
   String? state;
   String? municipality;
+  final String passenger;
   Travel(
       {this.start_longitude,
       this.start_latitude,
@@ -15,6 +16,7 @@ class Travel {
       this.kilometers,
       this.duration,
       this.state,
-      this.municipality
+      this.municipality,
+      required this.passenger
       });
 }

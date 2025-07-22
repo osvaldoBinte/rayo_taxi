@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:rayo_taxi/common/theme/app_color.dart';
 import 'package:rayo_taxi/features/travel/data/models/travel/travel_alert_model.dart';
 import 'package:rayo_taxi/features/travel/presentation/Travelgetx/TravelById/travel_by_id_alert_getx.dart';
@@ -19,7 +20,7 @@ class InfoButtonWidget extends StatelessWidget {
     this.defaultImagePath = 'assets/images/viajes/taxi.png',
   }) : super(key: key);
 
-  void _showInfoDialog(BuildContext context) {
+  void _showInfoDialog() {
     String clientName = '';
     String date = '';
     String tarifa = '';
@@ -28,6 +29,7 @@ class InfoButtonWidget extends StatelessWidget {
     int idStatus = 0;
     String rating = '0.0';
     String carModel = '';
+    String passenger = '';
 
     if (travel != null) {
       clientName = travel!.driver == 'N/A' ? 'Sin chofer' : travel!.driver;
@@ -38,6 +40,7 @@ class InfoButtonWidget extends StatelessWidget {
       idStatus = travel!.id_status;
       rating = travel!.qualification?.toString() ?? '0.0';
       carModel = travel!.model ?? 'Taxi';
+      passenger = travel!.passenger ?? '';
     } else if (travelByIdController?.state.value is TravelByIdAlertLoaded) {
       var travelData =
           (travelByIdController!.state.value as TravelByIdAlertLoaded)
@@ -51,6 +54,7 @@ class InfoButtonWidget extends StatelessWidget {
       idStatus = travelData.id_status;
       rating = travelData.qualification?.toString() ?? '0.0';
       carModel = travelData.model ?? 'Taxi';
+      passenger = travelData.passenger ?? '';
     } else if (travelList?.isNotEmpty ?? false) {
       clientName =
           travelList![0].driver == 'N/A' ? 'Sin chofer' : travelList![0].driver;
@@ -61,10 +65,14 @@ class InfoButtonWidget extends StatelessWidget {
       idStatus = travelList![0].id_status;
       rating = travelList![0].qualification?.toString() ?? '0.0';
       carModel = travelList![0].model ?? 'Taxi';
+      passenger = travelList![0].passenger ?? '';
     }
 
+    // Lógica simplificada: solo verificar si hay passenger
+    bool hasPassenger = passenger.isNotEmpty;
+
     showGeneralDialog(
-      context: context,
+      context: Get.context!,
       barrierDismissible: true,
       barrierLabel: '',
       transitionDuration: const Duration(milliseconds: 300),
@@ -155,7 +163,9 @@ class InfoButtonWidget extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
+                                softWrap: true,
                               ),
                               const SizedBox(height: 4),
                               Container(
@@ -167,24 +177,6 @@ class InfoButtonWidget extends StatelessWidget {
                                   color: Colors.white.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
-                                /* child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.star_rounded,
-                                      color: Colors.amber,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      rating,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),*/
                               ),
                             ],
                           ),
@@ -196,6 +188,16 @@ class InfoButtonWidget extends StatelessWidget {
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       children: [
+                        // Solo mostrar información del passenger si existe
+                        if (hasPassenger) ...[
+                          _buildInfoRow(
+                            Icons.person,
+                            'Pasajero',
+                            passenger,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        
                         _buildInfoRow(
                           Icons.calendar_today_rounded,
                           'Fecha',
@@ -232,7 +234,9 @@ class InfoButtonWidget extends StatelessWidget {
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
                                         ),
+                                        maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
+                                        softWrap: true,
                                       ),
                                     ],
                                     if (plates.isNotEmpty) ...[
@@ -312,26 +316,30 @@ class InfoButtonWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
               ),
-            ),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: highlight ? Colors.grey[700] : Colors.black,
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: highlight ? Colors.grey[700] : Colors.black,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                softWrap: true,
               ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -353,7 +361,7 @@ class InfoButtonWidget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           GestureDetector(
-            onTap: () => _showInfoDialog(context),
+            onTap: () => _showInfoDialog(),
             child: Image.asset(
               defaultImagePath,
               width: 48,

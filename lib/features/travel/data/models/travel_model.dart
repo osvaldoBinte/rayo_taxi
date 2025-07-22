@@ -10,6 +10,7 @@ class TravelModel extends Travel {
     String? duration,
     String? state,
     String? municipality,
+    required String passenger,
   }) : super(
             start_longitude: start_longitude,
             start_latitude: start_latitude,
@@ -18,7 +19,8 @@ class TravelModel extends Travel {
             kilometers: kilometers,
             duration: duration,
             state: state,
-            municipality: municipality);
+            municipality: municipality,
+            passenger:passenger);
   factory TravelModel.fromJson(Map<String, dynamic> json) {
     return TravelModel(
       start_longitude: json['start_longitude'] ?? '',
@@ -29,6 +31,7 @@ class TravelModel extends Travel {
       duration: json['duration'] ?? '',
       state: json['state'] ?? '',
       municipality: json['municipality'] ?? '',
+      passenger: json['passenger'] ?? ''
     );
   }
 
@@ -41,7 +44,8 @@ class TravelModel extends Travel {
         kilometers: travel.kilometers,
         duration: travel.duration,
         state: travel.state,
-        municipality: travel.municipality);
+        municipality: travel.municipality,
+        passenger: travel.passenger);
   }
 
   Map<String, dynamic> toJson() {
@@ -53,7 +57,8 @@ class TravelModel extends Travel {
       'kilometers': kilometers,
       'duration': duration,
       'state':state,
-      'municipality':municipality
+      'municipality':municipality,
+      'passenger':passenger
     };
   }
 }

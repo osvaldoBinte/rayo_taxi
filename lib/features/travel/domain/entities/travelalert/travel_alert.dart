@@ -24,6 +24,7 @@ class TravelAlert {
   final String plates;
   final int pending_qualification;
   final int qualification;
+  final String passenger;
   TravelAlert(
       {required this.id,
       required this.date,
@@ -47,5 +48,6 @@ class TravelAlert {
       required this.plates,
       this.name,
       required this.pending_qualification,
-      required this.qualification});
+      required this.qualification,
+      required this.passenger});
 }

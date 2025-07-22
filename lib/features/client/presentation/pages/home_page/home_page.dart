@@ -20,7 +20,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<HomePage> {
-  // Inicializar el controlador y asegurarse de que se mantenga en memoria
   final HomeController controller = Get.put(HomeController(), permanent: true);
   
   // Inicializar páginas
@@ -30,7 +29,6 @@ class _MyHomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     
-    // Inicializar páginas
     _pages = [
       TravelsPage(),
       SelectMap(),

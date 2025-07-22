@@ -12,6 +12,7 @@ import 'package:get/get.dart';
 import 'package:quickalert/quickalert.dart';
 import 'package:rayo_taxi/common/constants/constants.dart';
 import 'package:rayo_taxi/common/widge/calcular_precio_dialogo.dart';
+import 'package:rayo_taxi/common/widge/custom_alert_dialog.dart';
 import 'package:rayo_taxi/features/client/presentation/getxs/get/get_client_getx.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/home_page/home_page.dart';
 import 'package:rayo_taxi/features/travel/data/datasources/travel_local_data_source.dart';
@@ -554,7 +555,8 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
         print('Error al trazar la ruta: $e');
       }
     }
-  }void showRouteDetails(BuildContext context) async {
+  }
+  void showRouteDetails() async {
   if (isModalOpen.value) {
     return;
   }
@@ -577,18 +579,284 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
         title: 'Ubicaciones Iguales',
         text: 'El origen y destino no pueden ser la misma ubicación. Por favor, selecciona ubicaciones diferentes.',
         confirmBtnText: 'Entendido',
-        confirmBtnColor: Theme.of(context).colorScheme.buttonColor,
+        confirmBtnColor: Theme.of(Get.context!).colorScheme.buttonColor,
       );
       return;
     }
   }
 
+  // NUEVO: Mostrar diálogo para preguntar sobre el pasajero
+  await _showPassengerDialog();
+}
+
+// NUEVO MÉTODO: Diálogo para preguntar sobre el pasajero
+Future<void> _showPassengerDialog() async {
+  final TextEditingController passengerController = TextEditingController();
+  String selectedPassenger = '';
+
+  await showGeneralDialog(
+    context: Get.context!,
+    barrierDismissible: false,
+    barrierColor: Colors.black.withOpacity(0.5),
+    transitionDuration: const Duration(milliseconds: 400),
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Center(
+              child: Material(
+                type: MaterialType.transparency,
+                child: CustomAlertDialog(
+                  title: '¿Para quién es el viaje?',
+                  message: 'Selecciona si el viaje es para ti o para otra persona',
+                  confirmText: 'Para mí',
+                  cancelText: 'Continuar',
+                  type: CustomAlertType.confirm,
+                  customWidget: Column(
+                    children: [
+                      // Opción: Para mí
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                selectedPassenger = '';
+                                passengerController.clear();
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: selectedPassenger == '' 
+                                    ? Theme.of(Get.context!).primaryColor 
+                                    : Colors.grey.shade300,
+                                  width: 2,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                color: selectedPassenger == '' 
+                                  ? Theme.of(Get.context!).primaryColor.withOpacity(0.1)
+                                  : Colors.transparent,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.person,
+                                    color: selectedPassenger == '' 
+                                      ? Theme.of(Get.context!).primaryColor 
+                                      : Colors.grey,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'El viaje es para mí',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: selectedPassenger == '' 
+                                          ? FontWeight.w600 
+                                          : FontWeight.normal,
+                                        color: selectedPassenger == '' 
+                                          ? Theme.of(Get.context!).primaryColor 
+                                          : Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                  if (selectedPassenger == '')
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: Theme.of(Get.context!).primaryColor,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      // Opción: Para otra persona
+                      Container(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                selectedPassenger = 'other';
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: selectedPassenger == 'other' 
+                                    ? Theme.of(Get.context!).primaryColor 
+                                    : Colors.grey.shade300,
+                                  width: 2,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                color: selectedPassenger == 'other' 
+                                  ? Theme.of(Get.context!).primaryColor.withOpacity(0.1)
+                                  : Colors.transparent,
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.person_add,
+                                        color: selectedPassenger == 'other' 
+                                          ? Theme.of(Get.context!).primaryColor 
+                                          : Colors.grey,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          'El viaje es para otra persona',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: selectedPassenger == 'other' 
+                                              ? FontWeight.w600 
+                                              : FontWeight.normal,
+                                            color: selectedPassenger == 'other' 
+                                              ? Theme.of(Get.context!).primaryColor 
+                                              : Colors.black87,
+                                          ),
+                                        ),
+                                      ),
+                                      if (selectedPassenger == 'other')
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: Theme.of(Get.context!).primaryColor,
+                                        ),
+                                    ],
+                                  ),
+                                  
+                                  // Campo de texto para el nombre
+                                  if (selectedPassenger == 'other') ...[
+                                    const SizedBox(height: 12),
+                                    TextField(
+                                      controller: passengerController,
+                                      decoration: InputDecoration(
+                                        hintText: 'Ingresa el nombre del pasajero',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(
+                                            color: Colors.grey.shade300,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(
+                                            color: Theme.of(Get.context!).primaryColor,
+                                          ),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                      ),
+                                      textCapitalization: TextCapitalization.words,
+                                      maxLength: 50,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Botones
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.of(Get.context!).pop();
+                              },
+                              child: const Text(
+                                'Cancelar',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(Get.context!).primaryColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: () {
+                                String finalPassengerName = '';
+                                
+                                if (selectedPassenger == 'other') {
+                                  if (passengerController.text.trim().isEmpty) {
+                                    // Mostrar error si no ingresó nombre
+                                    ScaffoldMessenger.of(Get.context!).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Por favor ingresa el nombre del pasajero'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  finalPassengerName = passengerController.text.trim();
+                                } else {
+                                  finalPassengerName = ''; // Viaje para el usuario mismo
+                                }
+                                
+                                Navigator.of(Get.context!).pop();
+                                _proceedWithTravel( finalPassengerName);
+                              },
+                              child: const Text(
+                                'Continuar',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  onConfirm: () {
+                    // Para mí - passenger vacío
+                    Navigator.of(Get.context!).pop();
+                    _proceedWithTravel( '');
+                  },
+                  onCancel: null, // Se maneja en el customWidget
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+// MÉTODO ACTUALIZADO: Proceder con el viaje incluyendo el passenger
+Future<void> _proceedWithTravel(String passengerName) async {
   Get.dialog(
     Container(
-      color: Theme.of(context).colorScheme.loader.withOpacity(0.5),
+      color: Theme.of(Get.context!).colorScheme.loader.withOpacity(0.5),
       child: Center(
         child: SpinKitFadingCube(
-          color: Theme.of(context).colorScheme.loader,
+          color: Theme.of(Get.context!).colorScheme.loader,
           size: 50.0,
         ),
       ),
@@ -621,6 +889,7 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
           municipality = placemark.locality ?? '';
         }
 
+        // ACTUALIZADO: Incluir el passenger en el Travel
         final post = Travel(
           start_longitude: startLocation.value!.longitude,
           start_latitude: startLocation.value!.latitude,
@@ -630,6 +899,7 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
           duration: duration.toStringAsFixed(2),
           state: state,
           municipality: municipality,
+          passenger: passengerName, // NUEVO CAMPO
         );
 
         await travelGetx.poshTravel(CreateTravelEvent(post));
@@ -639,6 +909,7 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
 
       Get.back();
 
+      // Resto del código del modal original...
       Get.bottomSheet(
         WillPopScope(
           onWillPop: () async {
@@ -652,7 +923,7 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
               ),
               child: SizedBox.expand(
                 child: Container(
-                  color: Theme.of(context).colorScheme.card,
+                  color: Theme.of(Get.context!).colorScheme.card,
                   padding: EdgeInsets.all(20),
                   child: SingleChildScrollView(
                     child: Column(
@@ -663,11 +934,45 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
                           height: 5,
                           width: 50,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
+                            color: Theme.of(Get.context!).primaryColor,
                             borderRadius: BorderRadius.circular(2.5),
                           ),
                         ),
                       ),
+                        
+                        // NUEVO: Mostrar información del pasajero si no está vacío
+                        if (passengerName.isNotEmpty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(Get.context!).primaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Theme.of(Get.context!).primaryColor.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.person,
+                                  color: Theme.of(Get.context!).primaryColor,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Viaje para: $passengerName',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Theme.of(Get.context!).primaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        
                         GetBuilder<ModalController>(
                           init: ModalController(),
                           builder: (modalController) => CustomLottieWidget(
@@ -681,7 +986,7 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
                         ),
                         SizedBox(height: 20),
 
-                        // Implementación directa del cálculo de precio
+                        // Resto del código del modal original...
                         Container(
                           padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
                           decoration: BoxDecoration(
@@ -738,7 +1043,6 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
                                           priceText = travelPrice.value;
                                         }
                                         
-                                        // Intentar obtener el precio desde el estado si está disponible
                                         try {
                                           final state = currentTravelGetx.state.value;
                                           if (state is TravelAlertLoaded && 
@@ -806,13 +1110,13 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
                                           }
                                         },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Theme.of(context)
+                                    backgroundColor: Theme.of(Get.context!)
                                         .colorScheme
                                         .buttonColor,
-                                    foregroundColor: Theme.of(context)
+                                    foregroundColor: Theme.of(Get.context!)
                                         .colorScheme
                                         .buttontext,
-                                    disabledBackgroundColor: Theme.of(context)
+                                    disabledBackgroundColor: Theme.of(Get.context!)
                                         .colorScheme
                                         .buttonColor
                                         .withOpacity(0.5),
@@ -838,7 +1142,6 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
         isModalOpen.value = false;
       });
     } else {
-      Get.back();
 
       CustomSnackBar.showError(
         '¡Ups!',
@@ -846,11 +1149,9 @@ void addMarker(LatLng latLng, bool isStartPlace) async {
       );
     }
   } catch (e) {
-    Get.back();
-
     CustomSnackBar.showError(
       '¡Ups!',
-      'Ocurrió un error al procesar tu solicitud.',
+      'Ocurrió un error al procesar tu solicitud.$e',
     );
   }
 }

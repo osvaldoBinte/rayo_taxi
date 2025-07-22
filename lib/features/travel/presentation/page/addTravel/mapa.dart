@@ -189,15 +189,15 @@ class MapScreen extends StatelessWidget {
                   ),
                 ),
                CalculatePrice(
-  travelDuration: controller.travelDuration,
-  travelPrice: controller.travelPrice,
-),
+                      travelDuration: controller.travelDuration,
+                      travelPrice: controller.travelPrice,
+                    ),
                 Positioned(
                   bottom: 20.0,
                   left: 20.0,
                   right: 20.0,
                   child: Obx(() => ElevatedButton(
-                        onPressed: () => controller.showRouteDetails(context),
+                        onPressed: () => controller.showRouteDetails(),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               Theme.of(context).colorScheme.buttonColormap,

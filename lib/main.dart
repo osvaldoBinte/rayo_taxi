@@ -57,19 +57,40 @@ String enviromentSelect = Enviroment.development.value;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
  
 void main() async {
-   WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
   
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,  
-  );
+  // SOLO INICIALIZAR FIREBASE UNA VEZ AQUÍ
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,  
+    );
+    print('DEBUG: Firebase inicializado correctamente');
+  } catch (e) {
+    print('DEBUG: Error al inicializar Firebase: $e');
+    // Si ya está inicializado, continuar
+    if (e.toString().contains('duplicate-app')) {
+      print('DEBUG: Firebase ya estaba inicializado');
+    } else {
+      rethrow;
+    }
+  }
   
- 
   print('=========ENVIROMENT SELECTED: $enviromentSelect');
   await dotenv.load(fileName: enviromentSelect);
-    Get.testMode = true; 
-    //Current_TravelGetx
-   // Get.put(CurrentTravelnotificationGetx(travelAlertUsecase: usecaseConfig.currentTravelUsecase!));
-    Get.put(RenewTokenGetx(renewTokenUsecase: usecaseConfig.renewTokenUsecase!));
+  Get.testMode = true; 
+  
+  // Inicializar todos los controladores GetX
+  _initializeControllers();
+  
+  // Inicializar NotificationService DESPUÉS de Firebase
+  Get.put(NotificationService(navigatorKey));
+  await Get.find<NotificationService>().initialize();
+
+  runApp(MyApp());
+}
+
+void _initializeControllers() {
+  Get.put(RenewTokenGetx(renewTokenUsecase: usecaseConfig.renewTokenUsecase!));
   Get.put(LifeCycleController()); 
   Get.put(RateTripController(qualificationUsecase: usecaseConfig.qualificationUsecase!));
   Get.put(ClientGetx(createClientUsecase: usecaseConfig.createClientUsecase!));
@@ -113,7 +134,6 @@ void main() async {
       confirmTravelWithTariffUsecase:
           usecaseConfig.confirmTravelWithTariffUsecase!));
   Get.put(GetGendersGetx(getGendersUsecase: usecaseConfig.getGendersUsecase!));
-  //Get.put( MapController(getSearchHistoryUsecase: usecaseConfig.getSearchHistoryUsecase!,saveSearchHistoryUsecase: usecaseConfig.saveSearchHistoryUsecase!,getPlaceDetailsAndMoveUsecase: usecaseConfig.getPlaceDetailsAndMoveUsecase!, getPlacePredictionsUsecase: usecaseConfig.getPlacePredictionsUsecase!, ),);
   Get.put(ModalController());
   Get.put(NotificationController());
 
@@ -126,9 +146,4 @@ void main() async {
       createRecoveryCodeUsecase: usecaseConfig.createRecoveryCodeUsecase!,
       checkRecoveryCodeUsecase: usecaseConfig.checkRecoveryCodeUsecase!,
       updatePasswordUsecase: usecaseConfig.updatePasswordUsecase!));
-
-  Get.put(NotificationService(navigatorKey));
-  await Get.find<NotificationService>().initialize();
-
-  runApp(MyApp());
 }

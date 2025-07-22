@@ -539,7 +539,7 @@ class Particle {
   });
 }
 
-void showCustomAlert({
+Future<void> showCustomAlert({
     required BuildContext context,
     required String title,
     required String message,
@@ -550,28 +550,36 @@ void showCustomAlert({
     String? imagePath,
     required CustomAlertType type,
     Widget? customWidget,
-  }) {
+    bool showBarrier = true,
+  }) async {
  showGeneralDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: showBarrier 
+          ? Colors.black.withOpacity(0.5) // Con sombreado
+          : Colors.transparent, 
       transitionDuration: const Duration(milliseconds: 400),
       pageBuilder: (context, animation, secondaryAnimation) {
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
-          child: Center(
-            child: Material(
-              type: MaterialType.transparency,
-              child: CustomAlertDialog(
-                title: title,
-                message: message,
-                confirmText: confirmText,
-                cancelText: cancelText,
-                onConfirm: onConfirm,
-                onCancel: onCancel,
-                imagePath: imagePath,
-                type: type,
-                customWidget: customWidget,
+        return WillPopScope( 
+          onWillPop: () async {
+            return false;
+          },
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
+            child: Center(
+              child: Material(
+                type: MaterialType.transparency,
+                child: CustomAlertDialog(
+                  title: title,
+                  message: message,
+                  confirmText: confirmText,
+                  cancelText: cancelText,
+                  onConfirm: onConfirm,
+                  onCancel: onCancel,
+                  imagePath: imagePath,
+                  type: type,
+                  customWidget: customWidget,
+                ),
               ),
             ),
           ),

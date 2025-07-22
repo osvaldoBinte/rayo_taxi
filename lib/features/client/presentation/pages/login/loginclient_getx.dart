@@ -11,7 +11,7 @@ import 'package:rayo_taxi/features/client/domain/usecases/login_client_usecase.d
 import 'package:rayo_taxi/features/client/domain/usecases/login_google_usecase.dart';
 import 'package:rayo_taxi/features/client/presentation/getxs/update/Update_getx.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/travel/id_device_usecase.dart';
-import 'package:rayo_taxi/features/travel/presentation/page/widgets/custom_alert_dialog.dart';
+import 'package:rayo_taxi/common/widge/custom_alert_dialog.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/login/login_clients_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/home_page/home_page.dart';
@@ -234,12 +234,33 @@ Future<void> logout() async {
 
       }
     } catch (e) {
+       try {
+              final GoogleSignIn googleSignIn = GoogleSignIn();
+              try {
+                if (await googleSignIn.isSignedIn()) {
+                  await googleSignIn.signOut();
+                  await googleSignIn.disconnect();
+                }
+              } catch (e) {
+                print("Error durante el cierre de sesión de Google: $e");
+              }
+              
+            
+              try {
+                await FirebaseAuth.instance.signOut();
+              } catch (e) {
+                print("Error al cerrar sesión de Firebase: $e");
+              }
+              
+            } catch (e) {
+              print("Error durante el logout: $e");
+            }
       state.value = LoginclientFailure(e.toString());
       QuickAlert.show(
         context: Get.context!,
         type: QuickAlertType.error,
         title: 'Error',
-        text: 'No se pudo iniciar sesión con Google. Inténtalo de nuevo.',
+        text: 'No se pudo iniciar sesión con Google. Inténtalo de nuevo. $e',
         confirmBtnText: 'OK',
       );
     } finally {
@@ -247,83 +268,6 @@ Future<void> logout() async {
     }
   }
 
-  Future<String?> _showBirthdateDialog() async {
-    final TextEditingController birthdateController = TextEditingController();
-
-    return await Get.dialog<String>(
-      AlertDialog(
-        title: Text('Fecha de Nacimiento'),
-        content: SingleChildScrollView(
-          child: ListBody(
-            children: <Widget>[
-              Text('Por favor, ingresa tu fecha de nacimiento:'),
-              SizedBox(height: 20),
-              TextFormField(
-                controller: birthdateController,
-                readOnly: true,
-                decoration: InputDecoration(
-                  hintText: 'Seleccionar fecha',
-                  suffixIcon: Icon(Icons.calendar_today),
-                  border: OutlineInputBorder(),
-                ),
-                onTap: () async {
-                  final DateTime? picked = await showDatePicker(
-                    context: Get.context!,
-                    initialDate: DateTime(2000),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime.now(),
-                    builder: (BuildContext context, Widget? child) {
-                      return Theme(
-                        data: Theme.of(context).copyWith(
-                          colorScheme: ColorScheme.light(
-                            primary: Color(0xFFEFC300),
-                            onPrimary: Colors.white,
-                            onSurface: Colors.black,
-                          ),
-                          dialogBackgroundColor: Colors.white,
-                        ),
-                        child: child!,
-                      );
-                    },
-                  );
-                  if (picked != null) {
-                    birthdateController.text =
-                        DateFormat('dd/MM/yyyy').format(picked);
-                  }
-                },
-              ),
-            ],
-          ),
-        ),
-        actions: <Widget>[
-          TextButton(
-            style: TextButton.styleFrom(
-              backgroundColor: Get.theme.colorScheme.backgroundColorLogin,
-            ),
-            child: Text(
-              'Continuar',
-              style: TextStyle(
-                color: Get.theme.colorScheme.textButton,
-              ),
-            ),
-            onPressed: () {
-              if (birthdateController.text.isEmpty) {
-                QuickAlert.show(
-                  context: Get.context!,
-                  type: QuickAlertType.error,
-                  title: 'Error',
-                  text: 'Por favor, selecciona una fecha',
-                  confirmBtnText: 'OK',
-                );
-              } else {
-                Get.back(result: birthdateController.text);
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   
 
@@ -433,7 +377,7 @@ Future<void> loginWithApple() async {
       context: Get.context!,
       type: QuickAlertType.error,
       title: 'Error',
-      text: 'Ocurrió un error inesperado. Inténtalo de nuevo.',
+      text: 'Ocurrió un error inesperado. Inténtalo de nuevo. $e',
       confirmBtnText: 'OK',
     );
   } finally {

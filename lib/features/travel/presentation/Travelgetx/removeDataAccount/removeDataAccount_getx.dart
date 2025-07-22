@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:rayo_taxi/features/client/presentation/pages/login/loginclient_getx.dart';
-import 'package:rayo_taxi/features/travel/presentation/page/widgets/custom_alert_dialog.dart';
+import 'package:rayo_taxi/common/widge/custom_alert_dialog.dart';
 
 import 'package:rayo_taxi/features/client/presentation/pages/login/login_clients_page.dart';
 import 'package:rayo_taxi/features/travel/domain/usecases/travel/confirm_travel_with_tariff_usecase.dart';
