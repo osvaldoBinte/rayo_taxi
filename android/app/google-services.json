@@ -1,37 +1,45 @@
 {
   "project_info": {
-    "project_number": "142272499428",
-    "project_id": "rayo-taxi-d58f6",
-    "storage_bucket": "rayo-taxi-d58f6.firebasestorage.app"
+    "project_number": "755969155730",
+    "project_id": "rayo-taxi-61518",
+    "storage_bucket": "rayo-taxi-61518.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:142272499428:android:2f154b05ec6b17a509a6f1",
+        "mobilesdk_app_id": "1:755969155730:android:e2e077108504f1ef477c4b",
         "android_client_info": {
           "package_name": "com.rayo.taxi"
         }
       },
       "oauth_client": [
         {
-          "client_id": "142272499428-ft4asl531fjlf0n5n7qb947m9o11hrg5.apps.googleusercontent.com",
+          "client_id": "755969155730-1unghipdul1oc5rrqotipds0m96u16av.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rayo.taxi",
+            "certificate_hash": "99d56ee5be58cce746a0e58a4f863f3098a40ca3"
+          }
+        },
+        {
+          "client_id": "755969155730-aqn85r5n7b46rhg0kqolqda9q640b813.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyD9ujivJZkEzGrX_WALZ7Jg9oRSE2mOvZM"
+          "current_key": "AIzaSyA3Z1HHLyLnx5g7uBMDYJxvWWyFR6XMmbE"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "142272499428-ft4asl531fjlf0n5n7qb947m9o11hrg5.apps.googleusercontent.com",
+              "client_id": "755969155730-aqn85r5n7b46rhg0kqolqda9q640b813.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "142272499428-937p04c8id7dvboov7sfmr8npc2b3ao8.apps.googleusercontent.com",
+              "client_id": "755969155730-ds28cj9k92n3fq53i1itaas5n2hocttu.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "com.rayo.taxi"

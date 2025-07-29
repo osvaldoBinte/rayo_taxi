@@ -56,7 +56,6 @@ class _TravelRouteState extends State<CurrentTravel> {
     super.dispose();
   }
   
-  // Función para manejar la cancelación del viaje
   void _handleCancelTravel() {
     final idStatus = widget.travelList[0].id_status;
     if (idStatus == 1) {

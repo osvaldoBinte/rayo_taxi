@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
@@ -33,12 +34,14 @@ class LoginclientGetx extends GetxController {
 
   var state = Rx<LoginclientState>(LoginclientInitial());
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [
-      'email',
-      'https://www.googleapis.com/auth/userinfo.profile',
-    ],
-  );
+ final GoogleSignIn _googleSignIn = GoogleSignIn(
+  scopes: [
+    'email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+  ],
+  // Añadir esto si tienes problemas
+  serverClientId: "755969155730-aqn85r5n7b46rhg0kqolqda9q640b813.apps.googleusercontent.com",
+);
   var isGoogleLoading = false.obs;
 
   final RxInt selectedIndex = 0.obs;
@@ -181,9 +184,12 @@ Future<void> logout() async {
     }
     return true;
   }
-
-  Future<void> loginWithGoogle() async {
-    if (!isGoogleSignInAvailable.value) {
+Future<void> loginWithGoogle() async {
+  print("🔍 === INICIANDO LOGIN CON GOOGLE ===");
+  print("🔍 Google Sign-In disponible: ${isGoogleSignInAvailable.value}");
+  
+  if (!isGoogleSignInAvailable.value) {
+    print("❌ Google Sign-In no disponible en este dispositivo");
     // Use GetX snackbar instead of QuickAlert for more flexibility
     Get.snackbar(
       'Error', 
@@ -194,79 +200,160 @@ Future<void> logout() async {
     );
     return;
   }
-    isGoogleLoading.value = true;
-    state.value = LoginclientLoading();
 
-    try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        state.value = LoginclientFailure('Google sign in cancelled');
-        return;
-      }
+  print("✅ Google Sign-In disponible, continuando...");
+  isGoogleLoading.value = true;
+  state.value = LoginclientLoading();
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final UserCredential userCredential =
-          await _auth.signInWithCredential(credential);
-      final User? user = userCredential.user;
-
-      if (user != null) {
-        // Set default birthdate
-        final String defaultBirthdate = '00/00/0000';
-
-        final client = Client(
-          email: user.email ?? '',
-          name: user.displayName ?? '',
-          birthdate: defaultBirthdate,
-        );
-
-        await loginGoogleUsecase.execute(client);
-        state.value = LoginclientSuccessfully();
-        String? tokenDevice = await messaging.getToken();
-    print('Device Token: $tokenDevice');
-    idDeviceUsecase.execute(tokenDevice);
-        Get.offAll(() => HomePage(selectedIndex: 1));
-
-      }
-    } catch (e) {
-       try {
-              final GoogleSignIn googleSignIn = GoogleSignIn();
-              try {
-                if (await googleSignIn.isSignedIn()) {
-                  await googleSignIn.signOut();
-                  await googleSignIn.disconnect();
-                }
-              } catch (e) {
-                print("Error durante el cierre de sesión de Google: $e");
-              }
-              
-            
-              try {
-                await FirebaseAuth.instance.signOut();
-              } catch (e) {
-                print("Error al cerrar sesión de Firebase: $e");
-              }
-              
-            } catch (e) {
-              print("Error durante el logout: $e");
-            }
-      state.value = LoginclientFailure(e.toString());
-      QuickAlert.show(
-        context: Get.context!,
-        type: QuickAlertType.error,
-        title: 'Error',
-        text: 'No se pudo iniciar sesión con Google. Inténtalo de nuevo. $e',
-        confirmBtnText: 'OK',
-      );
-    } finally {
-      isGoogleLoading.value = false;
+  try {
+    print("🔍 Intentando obtener cuenta de Google...");
+    print("🔍 GoogleSignIn configurado con scopes: ${_googleSignIn.scopes}");
+    
+    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+    
+    if (googleUser == null) {
+      print("❌ Usuario canceló el login de Google");
+      state.value = LoginclientFailure('Google sign in cancelled');
+      return;
     }
+
+    print("✅ Usuario de Google obtenido:");
+    print("   - Email: ${googleUser.email}");
+    print("   - Nombre: ${googleUser.displayName}");
+    print("   - ID: ${googleUser.id}");
+
+    print("🔍 Obteniendo tokens de autenticación...");
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    
+    print("✅ Tokens obtenidos:");
+    print("   - AccessToken disponible: ${googleAuth.accessToken != null}");
+    print("   - IdToken disponible: ${googleAuth.idToken != null}");
+    print("   - AccessToken (primeros 20 chars): ${googleAuth.accessToken?.substring(0, 20) ?? 'null'}...");
+    print("   - IdToken (primeros 20 chars): ${googleAuth.idToken?.substring(0, 20) ?? 'null'}...");
+
+    print("🔍 Creando credencial de Firebase...");
+    final AuthCredential credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+    print("✅ Credencial de Firebase creada");
+
+    print("🔍 Iniciando sesión en Firebase...");
+    final UserCredential userCredential = await _auth.signInWithCredential(credential);
+    final User? user = userCredential.user;
+
+    print("✅ Sesión en Firebase iniciada:");
+    print("   - Usuario Firebase obtenido: ${user != null}");
+    print("   - UID: ${user?.uid}");
+    print("   - Email: ${user?.email}");
+    print("   - Display Name: ${user?.displayName}");
+    print("   - Email verificado: ${user?.emailVerified}");
+
+    if (user != null) {
+      print("🔍 Creando objeto Client...");
+      // Set default birthdate
+      final String defaultBirthdate = '00/00/0000';
+
+      final client = Client(
+        email: user.email ?? '',
+        name: user.displayName ?? '',
+        birthdate: defaultBirthdate,
+      );
+
+      print("✅ Cliente creado:");
+      print("   - Email: ${client.email}");
+      print("   - Nombre: ${client.name}");
+      print("   - Fecha nacimiento: ${client.birthdate}");
+
+      print("🔍 Ejecutando loginGoogleUsecase...");
+      await loginGoogleUsecase.execute(client);
+      print("✅ loginGoogleUsecase ejecutado exitosamente");
+      
+      state.value = LoginclientSuccessfully();
+      
+      print("🔍 Obteniendo token del dispositivo...");
+      String? tokenDevice = await messaging.getToken();
+      print("✅ Device Token obtenido: $tokenDevice");
+      
+      print("🔍 Ejecutando idDeviceUsecase...");
+      idDeviceUsecase.execute(tokenDevice);
+      print("✅ idDeviceUsecase ejecutado");
+      
+      print("🔍 Navegando a HomePage...");
+      Get.offAll(() => HomePage(selectedIndex: 1));
+      print("✅ Navegación completada");
+      print("🎉 === LOGIN CON GOOGLE COMPLETADO EXITOSAMENTE ===");
+    } else {
+      print("❌ Error: Usuario de Firebase es null");
+      throw Exception("Usuario de Firebase es null después de la autenticación");
+    }
+    
+  } catch (e) {
+    print("❌ === ERROR EN LOGIN CON GOOGLE ===");
+    print("❌ Tipo de error: ${e.runtimeType}");
+    print("❌ Error completo: $e");
+    
+    if (e is FirebaseAuthException) {
+      print("❌ Firebase Auth Error:");
+      print("   - Código: ${e.code}");
+      print("   - Mensaje: ${e.message}");
+      print("   - Detalles: ${e.toString()}");
+    } else if (e is PlatformException) {
+      print("❌ Platform Exception:");
+      print("   - Código: ${e.code}");
+      print("   - Mensaje: ${e.message}");
+      print("   - Detalles: ${e.details}");
+    }
+    
+    print("🔍 Iniciando limpieza después del error...");
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      print("🔍 Verificando si hay sesión activa de Google...");
+      
+      try {
+        if (await googleSignIn.isSignedIn()) {
+          print("🔍 Sesión de Google activa, cerrando...");
+          await googleSignIn.signOut();
+          print("✅ Google signOut completado");
+          await googleSignIn.disconnect();
+          print("✅ Google disconnect completado");
+        } else {
+          print("ℹ️ No hay sesión activa de Google");
+        }
+      } catch (googleError) {
+        print("❌ Error durante el cierre de sesión de Google: $googleError");
+      }
+      
+      print("🔍 Cerrando sesión de Firebase...");
+      try {
+        await FirebaseAuth.instance.signOut();
+        print("✅ Firebase signOut completado");
+      } catch (firebaseError) {
+        print("❌ Error al cerrar sesión de Firebase: $firebaseError");
+      }
+      
+    } catch (cleanupError) {
+      print("❌ Error durante la limpieza: $cleanupError");
+    }
+    
+    state.value = LoginclientFailure(e.toString());
+    
+    print("🔍 Mostrando alerta de error al usuario...");
+    QuickAlert.show(
+      context: Get.context!,
+      type: QuickAlertType.error,
+      title: 'Error',
+      text: 'No se pudo iniciar sesión con Google. Inténtalo de nuevo. $e',
+      confirmBtnText: 'OK',
+    );
+    
+  } finally {
+    print("🔍 Finalizando proceso de login...");
+    isGoogleLoading.value = false;
+    print("✅ isGoogleLoading establecido a false");
+    print("🏁 === FIN DEL PROCESO DE LOGIN CON GOOGLE ===");
   }
+}
 
 
   

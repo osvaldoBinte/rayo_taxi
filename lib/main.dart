@@ -53,13 +53,12 @@ RemoteMessage? initialMessage;
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 AndroidNotificationChannel? channel;
-String enviromentSelect = Enviroment.development.value;
+String enviromentSelect = Enviroment.production.value;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
  
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // SOLO INICIALIZAR FIREBASE UNA VEZ AQUÍ
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,  
@@ -79,10 +78,8 @@ void main() async {
   await dotenv.load(fileName: enviromentSelect);
   Get.testMode = true; 
   
-  // Inicializar todos los controladores GetX
   _initializeControllers();
   
-  // Inicializar NotificationService DESPUÉS de Firebase
   Get.put(NotificationService(navigatorKey));
   await Get.find<NotificationService>().initialize();
 

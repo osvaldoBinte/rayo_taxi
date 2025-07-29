@@ -48,6 +48,7 @@ class NotificationService {
   NotificationService(this.navigatorKey);
 
   Future<void> initialize() async {
+    
     FirebaseMessaging.onBackgroundMessage(
         NotificationController.firebaseMessagingBackgroundHandler);
 
@@ -58,59 +59,48 @@ class NotificationService {
       importance: Importance.high,
     );
 
-    // CONFIGURACIÓN PARA iOS: Solicitar todos los permisos necesarios
     await _configureIOSPermissions();
-    
-    // Configurar la inicialización de notificaciones para Android e iOS
     await _initializeLocalNotifications();
 
-    // Crear canal para Android
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel!);
 
-    // Configurar opciones de presentación para iOS (notificaciones en primer plano)
     await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
       alert: true,
       badge: true,
       sound: true,
     );
 
-    // Configurar listeners para diferentes estados de la app
     _setupMessageListeners();
     
-    // Obtener y registrar el token FCM
     await _registerFCMToken();
     
-    // Configurar observers para el estado del viaje
     _setupTravelStateObservers();
   }
 
   Future<void> _configureIOSPermissions() async {
-    // Solicitar permisos para notificaciones (crucial para iOS)
     NotificationSettings settings = await _messaging.requestPermission(
-      alert: true, // Mostrar alertas
+      alert: true, 
       announcement: false, 
-      badge: true, // Mostrar badge en el ícono
+      badge: true,
       carPlay: false,
       criticalAlert: false,
       provisional: false,
-      sound: true, // Reproducir sonidos
+      sound: true, 
     );
     
     print('User granted permission: ${settings.authorizationStatus}');
     
-    // Para iOS, registrar para notificaciones APNs
     await FirebaseMessaging.instance.getAPNSToken();
   }
 
   Future<void> _initializeLocalNotifications() async {
-    // Configuración para Android
+    
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@drawable/ic_launcher_background');
-        
-    // IMPORTANTE: Configuración para iOS
+    
     final DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
       requestSoundPermission: true,
@@ -518,7 +508,7 @@ class NotificationService {
                         context: Get.context!,
                         type: QuickAlertType.error,
                         title: 'Importe inválido',
-                        text: 'El Importe debe ser mayor a \$${travel.tarifa} MXN',
+                        text: 'El Importe debe ser mayor a \$${travel.cost} MXN',
                         confirmBtnText: 'Entendido',
                         confirmBtnColor: Theme.of(Get.context!).colorScheme.error,
                         borderRadius: 8,

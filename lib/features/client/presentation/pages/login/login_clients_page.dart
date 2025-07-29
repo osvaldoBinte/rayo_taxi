@@ -37,12 +37,7 @@ class _LoginClientsPage extends State<LoginClientsPage> {
   bool _isEmailEntered = false;
   bool _obscureText = true;
   final loginController = Get.find<LogingoogleGetx>();
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [
-      'email',
-      'https://www.googleapis.com/auth/userinfo.profile',
-    ],
-  );
+  
 
   void _nextStep() {
     if (_formKey.currentState!.validate()) {
